@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import json
 import os
 import logging
-
 import codecs
 
 from topik.utils import head
