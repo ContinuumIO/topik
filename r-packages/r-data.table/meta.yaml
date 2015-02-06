@@ -24,14 +24,14 @@ requirements:
   # Imports: methods, chron, reshape2
   # Suggests: ggplot2 (≥ 0.9.0), plyr, reshape, testthat (≥ 0.4), hexbin, fastmatch, nlme, xts, bit64
   build:
-    - r ≥ 2.14.0
+    - r >=2.14.0
     - r-reshape2
-    - r-cron
+    - r-chron
 
   run:
-    - r >= 2.14.0
+    - r >=2.14.0
     - r-reshape2
-    - r-cron
+    - r-chron
 
 test:
   commands:
@@ -47,14 +47,14 @@ test:
 
 about:
   #home:
-  license: GPL-2 | GPL-3 [expanded from: GPL (≥ 2)]
+  license: GPL-2, GPL-3
   #summary:
 
 # The original CRAN metadata for this package was:
 
 # Package: data.table
 # Version: 1.9.4
-# License: GPL-2 | GPL-3 [expanded from: GPL (≥ 2)]
+# License: GPL-2, GPL-3
 # NeedsCompilation: yes
 
 # See
