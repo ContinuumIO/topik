@@ -35,6 +35,7 @@ class CorpusBOW(object):
         self.tokens = (tokens for tokens in iter_corpus(self.iter_1))
         # Create dictionary out of input corpus tokens
         self.dict = gensim.corpora.Dictionary(self.tokens)
+        self.filename = None
 
     def __iter__(self):
         for tokens in iter_corpus(self.iter_2):
@@ -62,7 +63,8 @@ class CorpusBOW(object):
         """
         # Serialize and save corpus bag of words
         corpus = gensim.corpora.MmCorpus.serialize(filename, self)
-        return corpus
+        self.filename = filename
+        return self.filename
 
     def save_dict(self, filename):
         """

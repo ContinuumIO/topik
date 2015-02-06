@@ -67,3 +67,15 @@ def iter_documents_folder(folder):
                     yield content
             except ValueError:
                 logging.warning("Unable to process file:\n\t %s" %str(file))
+
+
+def iter_large_json(json_file, prefix_value, event_value):
+    import ijson
+
+    parser = ijson.parse(open(json_file))
+
+    for prefix, event, value in parser:
+        # For Flowdock data ('item.content', 'string')
+        if (prefix, event) == (prefix_value, event_value):
+            yield value
+

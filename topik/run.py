@@ -4,7 +4,8 @@ import os
 import subprocess
 import logging
 
-from topik.readers import iter_document_json_stream, iter_documents_folder
+from topik.readers import iter_document_json_stream, iter_documents_folder,  iter_large_json
+
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
@@ -16,7 +17,8 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 
 def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='topic_model',
-                       termite_plot=True, output_file=False, r_ldavis=False):
+                       termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None, event_value=None,
+                       field=None,):
     """
     Run your data through all topik functionality and save all results to a specified directory.
 
@@ -49,8 +51,10 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
     """
     if format == 'folder_files':
         documents = iter_documents_folder(data)
+    elif format == 'large_json':
+        documents = iter_large_json(data, prefix_value, event_value)
     else:
-        documents = iter_document_json_stream(data)
+        documents = iter_document_json_stream(data, field)
 
     if tokenizer == 'simple':
         corpus = SimpleTokenizer(documents)
@@ -64,15 +68,18 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
         print("Processing value invalid, using 1-Simple by default")
         corpus = SimpleTokenizer(documents)
 
-    os.makedirs(dir_path)
+    if os.path.isfile(dir_path):
+        pass
+    else:
+        os.makedirs(dir_path)
 
     # Create dictionary
     corpus_bow = CorpusBOW(corpus)
     corpus_dict = corpus_bow.save_dict(os.path.join(dir_path, 'corpus.dict'))
     # Serialize and store the corpus
-    corpus_bow.serialize(os.path.join(dir_path, 'corpus.mm'))
+    corpus_file = corpus_bow.serialize(os.path.join(dir_path, 'corpus.mm'))
     # Create LDA model from corpus and dictionary
-    lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.dir_path.join(dir_path,'corpus.dict'), n_topics)
+    lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics)
     # Generate the input for the termite plot
     lda.termite_data(os.path.join(dir_path,'termite.csv'))
     # Get termite plot for this model
@@ -84,8 +91,8 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
         df_results = generate_csv_output_file(documents, corpus, corpus_bow, lda.model)
 
     #WIP
-    #if r_ldavis:
-    #    to_r_ldavis(corpus_bow, dir_name=dir_path, lda=lda)
+    if r_ldavis:
+        to_r_ldavis(corpus_bow, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
     #    os.chdir(dir_path)
     #    try:
     #        subprocess.call(['R'])
