@@ -1,0 +1,10 @@
+pandas
+blaze
+bokeh
+numpy
+gensim
+pattern
+textblob
+into
+nltk
+pattern
