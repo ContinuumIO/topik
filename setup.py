@@ -13,5 +13,5 @@ setup(name='topik',
       keywords='topic modeling lda nltk gensim',
       packages=find_packages(),
       install_requires=list(open('requirements.txt').read().strip().split('\n')),
-      long_description=(open('README.rst').read() if exists('README.rst')
+      long_description=(open('README.md').read() if exists('README.md')
                         else ''), zip_safe=False)
