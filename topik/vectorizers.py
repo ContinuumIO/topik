@@ -15,8 +15,7 @@ def iter_corpus(corpus):
 
 
 class CorpusBOW(object):
-    """
-    A bag-of-words representation of a corpus (collection of documents).
+    """A bag-of-words representation of a corpus (collection of documents).
 
     Parameters
     ----------
@@ -27,8 +26,8 @@ class CorpusBOW(object):
     >>> doc_text = iter_document_json_stream('./topik/tests/data/test-data-1', "text")
     >>> my_corpus = SimpleTokenizer(doc_text)
     >>> corpus_bow = CorpusBOW(my_corpus)
-    """
 
+    """
     def __init__(self, corpus):
         self.corpus = corpus
         self.iter_1, self.iter_2 = itertools.tee(self.corpus, 2)
@@ -42,8 +41,7 @@ class CorpusBOW(object):
             yield self.dict.doc2bow(tokens)
 
     def serialize(self, filename):
-        """
-        Serialize a corpus (collection of documents) in a bag-of-words vector space to a Matrix Market Exchange Format.
+        """Serialize a corpus (collection of documents) in a bag-of-words vector space to a Matrix Market Exchange Format.
 
         References
         ----------
@@ -60,6 +58,7 @@ class CorpusBOW(object):
         >>> my_corpus = SimpleTokenizer("my_data")
         >>> corpus_bow = CorpusBOW(my_corpus)
         >>> corpus_bow.serialize("my_serialized_corpus")
+
         """
         # Serialize and save corpus bag of words
         corpus = gensim.corpora.MmCorpus.serialize(filename, self)
@@ -67,8 +66,7 @@ class CorpusBOW(object):
         return self.filename
 
     def save_dict(self, filename):
-        """
-        Store the dictionary to a file
+        """Store the dictionary to a file
 
         filename: string
             The desired filename for the generated dictionary
@@ -77,6 +75,7 @@ class CorpusBOW(object):
         >>> my_corpus = SimpleTokenizer("my_data")
         >>> corpus_bow = CorpusBOW(my_corpus)
         >>> corpus_bow.save_dict("my_corpus_dictionary")
+
         """
         logging.info("storing dictionary to %s" % filename)
         self.dict.save(filename)

@@ -15,8 +15,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 
 class SimpleTokenizer(object):
-    """
-    A text tokenizer that simply lowercases, matches alphabetic characters and removes stopwords.
+    """A text tokenizer that simply lowercases, matches alphabetic characters and removes stopwords.
     Uses gensim.utils.tokenize and gensim.parsing.preprocessing.STOPWORDS.
 
     Parameters
@@ -32,8 +31,8 @@ class SimpleTokenizer(object):
     >>> head(simple_tokenizer)
         [[u'interstellar', u'incredible', u'visuals', u'score', u'acting', u'amazing', u'plot', u'definitely',
             u'original', u've', u'seen']]
-    """
 
+    """
     def __init__(self, reader):
         self.reader = reader
 
@@ -53,9 +52,7 @@ class SimpleTokenizer(object):
 
 
 class CollocationsTokenizer(object):
-
-    """
-    A text tokenizer that includes collocations(bigrams and trigrams). A collocation is sequence of words or terms
+    """A text tokenizer that includes collocations(bigrams and trigrams). A collocation is sequence of words or terms
     that co-occur more often than would be expected by chance.
 
     Uses gensim.parsing.preprocessing.STOPWORDS. to remove stopwords and nltk.collocations.TrigramCollocationFinder to
@@ -87,7 +84,6 @@ class CollocationsTokenizer(object):
         u'size', u'narrow', u'size_distribution', u'synthesis_route', u'ascorbic_acid'...]
 
     """
-
     def __init__(self, reader, top_n = 10000, min_bigram_freq=50, min_trigram_freq=20):
         self.reader = reader
         self.iter_1, self.iter_2 = itertools.tee(self.reader, 2)
@@ -103,8 +99,7 @@ class CollocationsTokenizer(object):
                                                    min_trigram_freq=self.min_trigram_freq)
 
     def split_words(self, text, stopwords=STOPWORDS):
-        """
-        Split text into a list of single words. Ignore any token in the `stopwords` set.
+        """Split text into a list of single words. Ignore any token in the `stopwords` set.
 
         """
         return [word
@@ -112,8 +107,7 @@ class CollocationsTokenizer(object):
                 if word not in STOPWORDS and len(word) > 2]
 
     def tokenize(self, message):
-        """
-        Break text (string) into a list of Unicode tokens.
+        """Break text (string) into a list of Unicode tokens.
 
         The resulting tokens include found collocations.
 
@@ -130,8 +124,7 @@ class CollocationsTokenizer(object):
 
 
 class EntitiesTokenizer(object):
-    """
-    A tokenizer that extracts noun phrases from text.
+    """A tokenizer that extracts noun phrases from text.
 
     Uses gensim.parsing.preprocessing.STOPWORDS. to remove stopwords and textblob.TextBlob().noun_phrases to find
     `noun_phrases`.
@@ -162,7 +155,6 @@ class EntitiesTokenizer(object):
           u'excellent_antioxidant_ability', u'ascorbic_acid']]
 
     """
-
     def __init__(self, reader, freq_min=2, freq_max=10000):
         self.reader = reader
         self.iter_1, self.iter_2 = itertools.tee(self.reader, 2)
@@ -178,8 +170,7 @@ class EntitiesTokenizer(object):
             yield self.tokenize(message)
 
     def tokenize(self, message, stopwords=STOPWORDS):
-        """
-        Split text (string) into a list of tokens.
+        """Split text (string) into a list of tokens.
         The resulting tokens can be longer phrases, e.g. `material_sciences`, `artificial_intelligence`, etc.
 
         """
@@ -197,8 +188,7 @@ class EntitiesTokenizer(object):
 
 
 class MixedTokenizer(object):
-    """
-    A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
+    """A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
 
     Parameters
     ----------
@@ -210,9 +200,7 @@ class MixedTokenizer(object):
 
     >>> head(mixed_tokenizer)
 
-
     """
-
     def __init__(self, reader):
         self.reader = reader
         self.iter_1, self.iter_2 = itertools.tee(self.reader, 2)
@@ -226,8 +214,7 @@ class MixedTokenizer(object):
             yield self.tokenize(message)
 
     def tokenize(self, message, stopwords=STOPWORDS):
-        """
-        Split text (string) into a list of Unicode tokens.
+        """Split text (string) into a list of Unicode tokens.
 
         The resulting tokens can be longer phrases, e.g. `material_sciences`, `artificial_intelligence`, etc.
 

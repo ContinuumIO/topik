@@ -13,8 +13,7 @@ from bokeh.models.sources import ColumnDataSource
 
 
 class Termite(object):
-    """
-    A Bokeh Termite Visualization for LDA results analysis.
+    """A Bokeh Termite Visualization for LDA results analysis.
 
     Parameters
     ----------
@@ -25,8 +24,8 @@ class Termite(object):
 
     >>> termite = Termite("topik/tests/data/lda.csv", "My lda results")
     >>> termite.plot('my_termite.html')
-    """
 
+    """
     def __init__(self, input_file, title):
         self.input_file = input_file
         self.title = title

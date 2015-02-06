@@ -15,8 +15,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 
 def head(stream, n=1):
-    """
-    Return the first 'n' elements of a stream as plain list.
+    """Return the first 'n' elements of a stream as plain list.
 
     Parameters
     ----------
@@ -25,13 +24,13 @@ def head(stream, n=1):
 
     n: int
         Number of first elements to retrieve
+
     """
     return list(itertools.islice(stream, n))
 
 
 def collocations(stream, top_n=10000, min_bigram_freq=50, min_trigram_freq=20):
-    """
-    Extract text collocations (bigrams and trigrams), from a stream of words.
+    """Extract text collocations (bigrams and trigrams), from a stream of words.
 
     Parameters
     ----------
@@ -67,8 +66,7 @@ def collocations(stream, top_n=10000, min_bigram_freq=50, min_trigram_freq=20):
 
 
 def entities(document_stream, freq_min=2, freq_max=10000):
-    """
-    Return noun phrases from stream of documents.
+    """Return noun phrases from stream of documents.
 
     Parameters
     ----------
@@ -116,8 +114,7 @@ def get_document_length(corpus_bow, folder):
 
 
 def to_r_ldavis(corpus_bow, lda, dir_name):
-    """
-    Generate the input that the R package LDAvis needs.
+    """Generate the input that the R package LDAvis needs.
 
     Parameters
     ----------
@@ -131,7 +128,6 @@ def to_r_ldavis(corpus_bow, lda, dir_name):
         Directory name where to store the files required in R package LDAvis.
 
     """
-
     if os.path.isfile(dir_name):
         pass
     else:
@@ -155,8 +151,7 @@ def to_r_ldavis(corpus_bow, lda, dir_name):
 
 
 def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_file='output.csv'):
-    """
-    Utility function to retrieve the results of your topic modeling in a csv file.
+    """Utility function to retrieve the results of your topic modeling in a csv file.
     Uses a pandas.DataFrame, only useful for smaller datasets.
 
     Parameters

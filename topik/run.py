@@ -18,9 +18,8 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='topic_model',
                        termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None, event_value=None,
-                       field=None,):
-    """
-    Run your data through all topik functionality and save all results to a specified directory.
+                       field=None):
+    """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
     ----------
@@ -41,13 +40,23 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
         Directory path to store all topic modeling results files. Default is `topic_model`.
 
     termite_plot: bool
-        Generate termite plot of your model if True. Default is True
+        Generate termite plot of your model if True. Default is True.
 
     output_file: bool
         Generate a final summary csv file of your results. For each document: text, tokens, lda_probabilities and topic.
 
-    r_ldavis:
-        Generate an interactive data visualization of your topics.
+    r_ldavis: bool
+        Generate an interactive data visualization of your topics. Default is False.
+
+    prefix_value: string
+        For 'large json' format reader, the prefix value to parse.
+
+    event_value: string
+        For 'large json' format reader, the event value to parse.
+
+    field: string
+        For 'json_stream' data, the field to parse.
+
     """
     if format == 'folder_files':
         documents = iter_documents_folder(data)

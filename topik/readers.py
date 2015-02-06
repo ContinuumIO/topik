@@ -11,8 +11,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 
 def iter_document_json_stream(filename, field):
-    """
-    Iterate over a json stream of items and get the field that contains the text to process and tokenize.
+    """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters
     ----------
@@ -29,8 +28,8 @@ def iter_document_json_stream(filename, field):
     >>> head(doc_text)
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
     of the most original I've seen in a while."]
-    """
 
+    """
     with open(filename, 'r') as f:
         for line in f.readlines():
             try:
@@ -43,8 +42,7 @@ def iter_document_json_stream(filename, field):
 
 
 def iter_documents_folder(folder):
-    """
-    Iterate over the files in a folder to retrieve the content to process and tokenize.
+    """Iterate over the files in a folder to retrieve the content to process and tokenize.
 
     Parameters
     ----------
@@ -57,8 +55,8 @@ def iter_documents_folder(folder):
     >>> head(doc_text)
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
     of the most original I've seen in a while."]
-    """
 
+    """
     for directory, subdirectories, files in os.walk(folder):
         for file in files:
             try:

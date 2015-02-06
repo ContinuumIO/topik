@@ -7,8 +7,7 @@ import pandas as pd
 
 
 class LDA(object):
-    """
-    A high interface for an LDA (Latent Dirichlet Allocation) model.
+    """A high interface for an LDA (Latent Dirichlet Allocation) model.
 
     Parameters
     ----------
@@ -18,8 +17,8 @@ class LDA(object):
         Location of the dictionary
 
     >>> my_lda = LDA("my_corpus.mm", "my_dict.dict")
-    """
 
+    """
     def __init__(self, corpus_file, dict_file, ntopics=10, **kwargs):
         self.corpus = gensim.corpora.MmCorpus(corpus_file)
         self.dictionary = gensim.corpora.Dictionary.load(dict_file)
@@ -33,8 +32,7 @@ class LDA(object):
         return top_words
 
     def termite_data(self, filename="termite.csv", topn_words=15):
-        """
-        Generate the csv file input for the termite plot.
+        """Generate the csv file input for the termite plot.
 
         Parameters
         ----------
@@ -42,6 +40,7 @@ class LDA(object):
             Desired name for the generated csv file
         >>> my_lda = LDA("my_corpus.mm", "my_dict.dict")
         >>> my_lda.termite_data('termite.csv', 15)
+
         """
         logging.info("generating termite plot input from %s " % self.corpus)
         top_words = self.get_top_words(topn_words)
