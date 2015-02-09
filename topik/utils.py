@@ -144,9 +144,11 @@ def to_r_ldavis(corpus_bow, lda, dir_name):
     df[1].to_csv(os.path.join(dir_name,'vocab'), index=False, header=False)
 
     tt_dist = np.array(lda.model.expElogbeta)
-    np.savetxt(os.path.join(dir_name,'topicTermDist'), tt_dist)
+    np.savetxt(os.path.join(dir_name,'topicTermDist'), tt_dist, delimiter=',', newline='\n',)
 
-    docTopicProbMat = lda.model[corpus_bow]
+    corpus_file = corpus_bow.filename
+    corpus = gensim.corpora.MmCorpus(corpus_file)
+    docTopicProbMat = lda.model[corpus]
     gensim.corpora.MmCorpus.serialize(os.path.join(dir_name,'docTopicProbMat.mm'), docTopicProbMat)
 
 
