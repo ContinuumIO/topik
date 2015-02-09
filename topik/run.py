@@ -1,11 +1,18 @@
 from __future__ import absolute_import
 
 import os
+import time
 import subprocess
 import logging
+import shutil
+import webbrowser
+import SimpleHTTPServer
+import SocketServer
+import threading
+
+import numpy as np
 
 from topik.readers import iter_document_json_stream, iter_documents_folder,  iter_large_json
-
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
@@ -15,8 +22,24 @@ from topik.utils import to_r_ldavis, generate_csv_output_file
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
-def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='topic_model',
+class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+
+    def do_GET(self):
+        if self.path == '/':
+            self.path = '../topic_model/ldavis/output/index.html'
+        return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
+
+
+def serve_page():
+    PORT = 8000
+    handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+    httpd = SocketServer.TCPServer(("", PORT), handler)
+    print "serving at port", PORT
+    httpd.serve_forever()
+
+def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
                        termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None, event_value=None,
                        field=None):
     """Run your data through all topik functionality and save all results to a specified directory.
@@ -58,6 +81,8 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
         For 'json_stream' data, the field to parse.
 
     """
+    np.random.seed(45)
+
     if format == 'folder_files':
         documents = iter_documents_folder(data)
     elif format == 'large_json':
@@ -77,10 +102,10 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
         print("Processing value invalid, using 1-Simple by default")
         corpus = SimpleTokenizer(documents)
 
-    if os.path.isfile(dir_path):
-        pass
-    else:
-        os.makedirs(dir_path)
+    if os.path.isdir(dir_path):
+        shutil.rmtree(dir_path)
+
+    os.makedirs(dir_path)
 
     # Create dictionary
     corpus_bow = CorpusBOW(corpus)
@@ -102,10 +127,16 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
     #WIP
     if r_ldavis:
         to_r_ldavis(corpus_bow, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
-    #    os.chdir(dir_path)
-    #    try:
-    #        subprocess.call(['R'])
-    #    except ValueError:
-    #        logging.warning("Unable to run runLDAvis.R")
+        os.environ["LDAVIS_DIR"] = os.path.join(dir_path, 'ldavis')
+        #os.chdir(os.path.join(dir_path, 'ldavis'))
+        try:
+            subprocess.call(['Rscript', os.path.join(BASEDIR,'R/runLDAvis.R')])
+        except ValueError:
+            logging.warning("Unable to run runLDAvis.R")
+        os.chdir(os.path.join(dir_path, 'ldavis', 'output'))
+        sp = subprocess.Popen(['python', '-m', 'SimpleHTTPServer', '8000'])
+        webbrowser.open_new_tab('127.0.0.1:8000')
+        time.sleep(30)
+        sp.kill()
 
 
