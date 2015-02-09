@@ -124,11 +124,9 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
     if output_file:
         df_results = generate_csv_output_file(documents, corpus, corpus_bow, lda.model)
 
-    #WIP
     if r_ldavis:
         to_r_ldavis(corpus_bow, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
         os.environ["LDAVIS_DIR"] = os.path.join(dir_path, 'ldavis')
-        #os.chdir(os.path.join(dir_path, 'ldavis'))
         try:
             subprocess.call(['Rscript', os.path.join(BASEDIR,'R/runLDAvis.R')])
         except ValueError:
