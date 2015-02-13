@@ -70,7 +70,6 @@ def entities(document_stream, freq_min=2, freq_max=10000):
 
     Parameters
     ----------
-
     document_stream: iterable object
 
     freq_min: int
@@ -175,12 +174,11 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
             `topic_group`: Topic with max. probability
 
     """
-    iter = itertools.tee(reader, 1)
     logging.info("getting output file %s " %output_file)
     documents = []
 
     with open(output_file, 'w') as wfile:
-        for content in iter:
+        for content in reader:
             document = {}
             document['text'] = content
             tokens = tokenizer.tokenize(content)
