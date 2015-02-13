@@ -6,9 +6,6 @@ import subprocess
 import logging
 import shutil
 import webbrowser
-import SimpleHTTPServer
-import SocketServer
-import threading
 
 import numpy as np
 
@@ -24,24 +21,10 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
-class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
-    def do_GET(self):
-        if self.path == '/':
-            self.path = '../topic_model/ldavis/output/index.html'
-        return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
-
-
-def serve_page():
-    PORT = 8000
-    handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-    httpd = SocketServer.TCPServer(("", PORT), handler)
-    print "serving at port", PORT
-    httpd.serve_forever()
-
-def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
-                       termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None, event_value=None,
-                       field=None):
+def run_topic_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
+                    model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None,
+                    event_value=None, field=None, seed=42):
     """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
@@ -49,7 +32,7 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
     data: string
         Input data (file or folder).
 
-    format: {'json_stream', 'folder_files'}.
+    format: {'json_stream', 'folder_files', 'json_large'}.
         The format of your data input. Currently available a json stream or a folder containing text files. 
         Default is 'json_stream'
 
@@ -60,7 +43,10 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
         Number of topics to find in your data
         
     dir_path: string
-        Directory path to store all topic modeling results files. Default is `topic_model`.
+        Directory path to store all topic modeling results files. Default is `./topic_model`.
+
+    model: {'lda_batch', 'lda_online'}.
+        Statistical modeling algorithm to use. Default 'lda_batch'.
 
     termite_plot: bool
         Generate termite plot of your model if True. Default is True.
@@ -80,8 +66,11 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
     field: string
         For 'json_stream' data, the field to parse.
 
+    seed: int
+        Set random number generator to seed, to be able to reproduce results. Default 42.
+
     """
-    np.random.seed(45)
+    np.random.seed(seed)
 
     if format == 'folder_files':
         documents = iter_documents_folder(data)
@@ -99,7 +88,7 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
     elif tokenizer == 'mixed':
         corpus = MixedTokenizer(documents)
     else:
-        print("Processing value invalid, using 1-Simple by default")
+        print("Processing value invalid, using simple")
         corpus = SimpleTokenizer(documents)
 
     if os.path.isdir(dir_path):
@@ -113,7 +102,19 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
     # Serialize and store the corpus
     corpus_file = corpus_bow.serialize(os.path.join(dir_path, 'corpus.mm'))
     # Create LDA model from corpus and dictionary
-    lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics)
+    if model == 'lda_batch':
+        # To perform lda in batch mode set update_every=0 and passes=20)
+        # https://radimrehurek.com/gensim/wiki.html#latent-dirichlet-allocation
+        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=0,
+                  passes=20)
+    elif model == 'lda_online':
+        # To perform lda in online mode set variables update_every, chuncksize and passes.
+        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=1,
+                  chuncksize=10000, passes=1)
+    else:
+        logging.warning('model provided not valid. Using lda_batch.')
+        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=0,
+                  passes=20)
     # Generate the input for the termite plot
     lda.termite_data(os.path.join(dir_path,'termite.csv'))
     # Get termite plot for this model
@@ -122,6 +123,14 @@ def run_topic_modeling(data, format='json_stream', tokenizer='simple', n_topics=
         termite.plot(os.path.join(dir_path,'termite.html'))
 
     if output_file:
+
+        if format == 'folder_files':
+            documents = iter_documents_folder(data)
+        elif format == 'large_json':
+            documents = iter_large_json(data, prefix_value, event_value)
+        else:
+            documents = iter_document_json_stream(data, field)
+
         df_results = generate_csv_output_file(documents, corpus, corpus_bow, lda.model)
 
     if r_ldavis:
