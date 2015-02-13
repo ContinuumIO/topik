@@ -1,0 +1,20 @@
+name: topik
+channels:
+  - asmeurer
+  - chdoig
+dependencies:
+  - blaze
+  - bokeh
+  - numpy
+  - pandas
+  - r
+  - r-ldavis
+  - r-matrix
+  - r-data.table
+  - bokeh
+  - pip
+  - pip:
+    - pattern
+    - gensim
+    - textblob
+    - ijson
