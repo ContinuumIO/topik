@@ -64,7 +64,6 @@ def collocations(stream, top_n=10000, min_bigram_freq=50, min_trigram_freq=20):
     return bigrams_patterns, trigrams_patterns
 
 
-
 def entities(document_stream, freq_min=2, freq_max=10000):
     """Return noun phrases from stream of documents.
 
@@ -93,7 +92,7 @@ def entities(document_stream, freq_min=2, freq_max=10000):
     # Remove noun phrases in the list that have higher frequencies than 'freq_max' or lower frequencies than 'freq_min'
     np_counts = {}
     for np, count in np_counts_total.iteritems():
-        if count <= freq_max and count >= freq_min:
+        if freq_max >= count >= freq_min:
             np_counts[np] = count
 
     return set(np_counts)

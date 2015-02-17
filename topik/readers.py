@@ -40,7 +40,6 @@ def iter_document_json_stream(filename, field):
                 logging.warning("Unable to process line:\n\t%s" %str(line))
 
 
-
 def iter_documents_folder(folder):
     """Iterate over the files in a folder to retrieve the content to process and tokenize.
 
