@@ -153,7 +153,7 @@ Useful Topic Modeling Resources
 
 Python libraries
 ````````````````
-- `Gensim <http://opensource.org/licenses/BSD-3-Clause>`_
+- `Gensim <https://radimrehurek.com/gensim/>`_
 - `Pattern <http://www.clips.ua.ac.be/pattern>`_
 - `TextBlob <http://textblob.readthedocs.org/en/dev/>`_
 - `NLTK <http://www.nltk.org/>`_
@@ -165,7 +165,6 @@ R libraries
 
 Other
 `````
-
 - `Ditop <http://ditop.hs8.de/>`_
 
 Papers
