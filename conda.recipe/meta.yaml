@@ -3,54 +3,44 @@ package:
   version: "0.1.0"
 
 build:
-  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
-  string: py{{ environ.get('PY_VER').replace('.', '') }}_{{ environ.get('GIT_BUILD_STR', 'GIT_STUB') }}
-  preserve_egg_dir: yes
+  number: 0
+  #number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  #string: py{{ environ.get('PY_VER').replace('.', '') }}_{{ environ.get('GIT_BUILD_STR', 'GIT_STUB') }}
+  #preserve_egg_dir: yes
 
   # Optional Python entry points
   entry_points:
-    # This creates an entry point named bsdiff4 that calls
+    # This creates an entry point named topik that calls
     # topik.cli.run()
     - topik = topik.cli:run
 
 source:
   git_url: git@github.com:ContinuumIO/topik.git
   git_tag: 0.1.0
+  #path: ../
 
 requirements:
   build:
-    - python==2.7
+    - python
     - setuptools
-    - blaze==0.7.0
-    - bokeh==0.7.1
-    - numpy==1.9.1
-    - pandas==0.15.2
-    - gensim==0.10.3
-    - pattern==2.6
-    - textblob==0.9.0
-    - r==3.1.2
-    - r-ldavis==0.2
-    - r-matrix==1.1_5
-    - r-data.table==1.9.4
 
   run:
-    - python==2.7
-    - blaze==0.7.0
-    - bokeh==0.7.1
-    - numpy==1.9.1
-    - pandas==0.15.2
-    - gensim==0.10.3
-    - pattern==2.6
-    - textblob==0.9.0
-    - r==3.1.2
-    - r-ldavis==0.2
-    - r-matrix==1.1_5
-    - r-data.table==1.9.4
-
+    - python
+    - blaze
+    - bokeh
+    - numpy
+    - pandas
+    - gensim
+    - pattern
+    - textblob
+    - r
+    - r-ldavis
+    - r-matrix
+    - r-data.table
 
 test:
-  commands:
-    - python -c "import topik; topik.test(exit=True)"
+  imports:
+    - topik
 
 about:
   home: http://github.com/ContinuumIO/topik/
