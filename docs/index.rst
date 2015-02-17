@@ -116,8 +116,8 @@ User Guide
    :maxdepth: 2
 
    installation
+   example
    output
-   examples
    readers
    tokenizers
    vectorizers
@@ -162,6 +162,10 @@ R libraries
 ```````````
 - `lda <http://cran.r-project.org/web/packages/lda/>`_
 - `LDAvis <https://github.com/cpsievert/LDAvis>`_
+
+Other
+`````
+
 - `Ditop <http://ditop.hs8.de/>`_
 
 Papers
