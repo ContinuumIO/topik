@@ -22,7 +22,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def run_topic_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
+def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
                     model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None,
                     event_value=None, field=None, seed=42):
     """Run your data through all topik functionality and save all results to a specified directory.
