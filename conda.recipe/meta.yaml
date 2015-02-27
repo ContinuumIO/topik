@@ -15,14 +15,25 @@ build:
     - topik = topik.cli:run
 
 source:
-  git_url: git@github.com:ContinuumIO/topik.git
-  git_tag: 0.1.0
-  #path: ../
+  #git_url: git://github.com/ContinuumIO/topik.git
+  #git_tag: v0.1.0
+  path: ../
 
 requirements:
   build:
     - python
     - setuptools
+    - blaze
+    - bokeh
+    - numpy
+    - pandas
+    - gensim
+    - pattern
+    - textblob
+    - r
+    - r-ldavis
+    - r-matrix
+    - r-data.table
 
   run:
     - python
