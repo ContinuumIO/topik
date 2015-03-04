@@ -4,6 +4,7 @@ import json
 import os
 import logging
 import codecs
+import solr
 
 from topik.utils import head
 
@@ -76,3 +77,12 @@ def iter_large_json(json_file, prefix_value, event_value):
         if (prefix, event) == (prefix_value, event_value):
             yield value
 
+
+def iter_solr_query(solr_instance, field, limit, query="*:*", content_in_list=True):
+    s = solr.SolrConnection(solr_instance)
+    response = s.query(query, rows=limit)
+    for item in response.results:
+        if content_in_list:
+            yield item[field][0]
+        else:
+            yield item[field]

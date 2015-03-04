@@ -9,7 +9,7 @@ import webbrowser
 
 import numpy as np
 
-from topik.readers import iter_document_json_stream, iter_documents_folder,  iter_large_json
+from topik.readers import iter_document_json_stream, iter_documents_folder, iter_large_json, iter_solr_query
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
@@ -24,15 +24,15 @@ BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
                     model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None,
-                    event_value=None, field=None, seed=42):
+                    event_value=None, field=None, query='*:*', seed=42):
     """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
     ----------
     data: string
-        Input data (file or folder).
+        Input data (e.g. file or folder or solr instance).
 
-    format: {'json_stream', 'folder_files', 'json_large'}.
+    format: {'json_stream', 'folder_files', 'json_large', 'solr'}.
         The format of your data input. Currently available a json stream or a folder containing text files. 
         Default is 'json_stream'
 
@@ -64,7 +64,13 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         For 'large json' format reader, the event value to parse.
 
     field: string
-        For 'json_stream' data, the field to parse.
+        For 'json_stream' or 'solr' format readers, the field to parse.
+
+    solr_instance: string
+        For 'solr' format reader, the url to the solr instance.
+
+    query: string
+        For 'solr' format reader, an optional query. Default is '*:*' to retrieve all documents.
 
     seed: int
         Set random number generator to seed, to be able to reproduce results. Default 42.
@@ -74,10 +80,14 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
 
     if format == 'folder_files':
         documents = iter_documents_folder(data)
-    elif format == 'large_json':
+    elif format == 'large_json' and prefix_value is not None and event_value is not None:
         documents = iter_large_json(data, prefix_value, event_value)
-    else:
+    elif format == 'json_stream' and field is not None:
         documents = iter_document_json_stream(data, field)
+    elif format == 'solr' and field is not None:
+        documents = iter_solr_query(data, field, query=query, limit='10000000')
+    else:
+        raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
 
     if tokenizer == 'simple':
         corpus = SimpleTokenizer(documents)
