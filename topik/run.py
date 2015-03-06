@@ -85,7 +85,7 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     elif format == 'json_stream' and field is not None:
         documents = iter_document_json_stream(data, field)
     elif format == 'solr' and field is not None:
-        documents = iter_solr_query(data, field, query=query, limit='10000000')
+        documents = iter_solr_query(data, field, query=query)
     else:
         raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
 
