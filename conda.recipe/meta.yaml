@@ -35,6 +35,7 @@ requirements:
     - r-matrix
     - r-data.table
     - click
+    - solrpy
 
   run:
     - python
@@ -50,6 +51,7 @@ requirements:
     - r-matrix
     - r-data.table
     - click
+    - solrpy
 
 test:
   imports:
