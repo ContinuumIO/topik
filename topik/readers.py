@@ -6,7 +6,7 @@ import logging
 import codecs
 import solr
 
-from topik.utils import head
+from topik.utils import head, batch_concat
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -78,11 +78,7 @@ def iter_large_json(json_file, prefix_value, event_value):
             yield value
 
 
-def iter_solr_query(solr_instance, field, limit, query="*:*", content_in_list=True):
+def iter_solr_query(solr_instance, field, query="*:*"):
     s = solr.SolrConnection(solr_instance)
-    response = s.query(query, rows=limit)
-    for item in response.results:
-        if content_in_list:
-            yield item[field][0]
-        else:
-            yield item[field]
+    response = s.query(query)
+    return batch_concat(response, field,  content_in_list=True)
