@@ -1,6 +1,6 @@
 package:
   name: topik
-  version: "0.1.0"
+  version: "0.2.0"
 
 build:
   number: 0
@@ -53,6 +53,7 @@ requirements:
     - r-data.table
     - click
     - solrpy
+    - elasticsearch
 
 test:
   imports:

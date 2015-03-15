@@ -6,7 +6,7 @@ Draw a termite plot to visualize topics and words from an LDA.
 import logging
 
 import blaze as blz
-from into import into
+from odo import into
 import pandas as pd
 import bokeh.plotting as plt
 from bokeh.models.sources import ColumnDataSource

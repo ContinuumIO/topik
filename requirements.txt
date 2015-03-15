@@ -5,7 +5,7 @@ numpy
 gensim
 pattern
 textblob
-into
+odo
 nltk
 pattern
 elasticsearch
