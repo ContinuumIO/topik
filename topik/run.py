@@ -9,7 +9,8 @@ import webbrowser
 
 import numpy as np
 
-from topik.readers import iter_document_json_stream, iter_documents_folder, iter_large_json, iter_solr_query
+from topik.readers import iter_document_json_stream, iter_documents_folder, iter_large_json, iter_solr_query, \
+    iter_elastic_query
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
@@ -24,15 +25,15 @@ BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
                     model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None,
-                    event_value=None, field=None, query='*:*', seed=42):
+                    event_value=None, field=None, query='*:*', index=None, subfield=None, seed=42):
     """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
     ----------
     data: string
-        Input data (e.g. file or folder or solr instance).
+        Input data (e.g. file or folder or solr/elasticsearch instance).
 
-    format: {'json_stream', 'folder_files', 'json_large', 'solr'}.
+    format: {'json_stream', 'folder_files', 'json_large', 'solr', 'elastic'}.
         The format of your data input. Currently available a json stream or a folder containing text files. 
         Default is 'json_stream'
 
@@ -64,7 +65,7 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         For 'large json' format reader, the event value to parse.
 
     field: string
-        For 'json_stream' or 'solr' format readers, the field to parse.
+        For 'json_stream', 'solr' or 'elastic' format readers, the field to parse.
 
     solr_instance: string
         For 'solr' format reader, the url to the solr instance.
@@ -86,6 +87,8 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         documents = iter_document_json_stream(data, field)
     elif format == 'solr' and field is not None:
         documents = iter_solr_query(data, field, query=query)
+    elif format == 'elastic' and field is not None:
+        documents = iter_elastic_query(data, index, field, subfield)
     else:
         raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
 

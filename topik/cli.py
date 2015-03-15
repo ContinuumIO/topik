@@ -16,6 +16,9 @@ from topik.run import run_model
 @click.option("--event_value", help="In 'large json' format the event_value to extract text from", default=None)
 @click.option("--field", help="In 'json stream' and 'solr' formats, the field to extract text from", default=None)
 @click.option("--query", help="In 'solr' format, an optional solr query", default='*:*')
-def run(data, format, output, tokenizer, ntopics, prefix_value, event_value, field, model, query):
+@click.option("--index", help="In 'elastic' format, the index to use", default=None)
+@click.option("--subfield", help="In 'elastic' format, if the content is in a nested structure, the subfield name", default=None)
+def run(data, format, output, tokenizer, ntopics, prefix_value, event_value, field, model, query, index, subfield):
     run_model(data=data, format=format, dir_path=output, tokenizer=tokenizer,n_topics=ntopics,
-                       prefix_value=prefix_value, event_value=event_value, field=field, model=model, query=query)
+                       prefix_value=prefix_value, event_value=event_value, field=field, model=model,
+                       query=query, index=index, subfield=subfield)

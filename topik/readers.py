@@ -5,6 +5,8 @@ import os
 import logging
 import codecs
 import solr
+from elasticsearch import Elasticsearch, helpers
+
 
 from topik.utils import head, batch_concat
 
@@ -81,4 +83,33 @@ def iter_large_json(json_file, prefix_value, event_value):
 def iter_solr_query(solr_instance, field, query="*:*"):
     s = solr.SolrConnection(solr_instance)
     response = s.query(query)
-    return batch_concat(response, field,  content_in_list=True)
+    return batch_concat(response, field,  content_in_list=False)
+
+
+def iter_elastic_query(instance, index, field, subfield=None):
+    es = Elasticsearch(instance)
+
+    # initial search
+    resp = es.search(index, body={"query": {"match_all": {}}}, scroll='5m')
+
+    scroll_id = resp.get('_scroll_id')
+    if scroll_id is None:
+        return
+
+    first_run = True
+    while True:
+        for hit in resp['hits']['hits']:
+            s = hit['_source']
+            try:
+                if subfield is not None:
+                    print s[field][subfield]
+                    yield s[field][subfield]
+                else:
+                    yield s[field]
+            except ValueError:
+                    logging.warning("Unable to process row:\n\t %s" %str(hit))
+
+        scroll_id = resp.get('_scroll_id')
+        # end of scroll
+        if scroll_id is None or not resp['hits']['hits']:
+            break

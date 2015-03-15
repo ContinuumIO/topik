@@ -8,3 +8,4 @@ textblob
 into
 nltk
 pattern
+elasticsearch
