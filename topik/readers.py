@@ -1,9 +1,9 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import json
 import os
 import logging
-import codecs
+import gzip
 import solr
 from elasticsearch import Elasticsearch, helpers
 
@@ -40,7 +40,8 @@ def iter_document_json_stream(filename, field):
                 content = dictionary.get(field)
                 yield content
             except ValueError:
-                logging.warning("Unable to process line:\n\t%s" %str(line))
+                logging.warning("Unable to process line: %s" %
+                                str(line))
 
 
 def iter_documents_folder(folder):
@@ -61,12 +62,14 @@ def iter_documents_folder(folder):
     """
     for directory, subdirectories, files in os.walk(folder):
         for file in files:
+            _open = gzip.open if file.endswith('.gz') else open
             try:
-                with codecs.open(os.path.join(directory, file), "r", "utf-8") as f:
-                    content = f.read()
-                    yield content
-            except ValueError:
-                logging.warning("Unable to process file:\n\t %s" %str(file))
+                fullpath = os.path.join(directory, file)
+                with _open(fullpath) as f:
+                    yield f.read().decode('utf-8')
+            except (ValueError, UnicodeDecodeError) as err:
+                logging.warning("Unable to process file: %s" % 
+                                str(file))
 
 
 def iter_large_json(json_file, prefix_value, event_value):
@@ -102,12 +105,13 @@ def iter_elastic_query(instance, index, field, subfield=None):
             s = hit['_source']
             try:
                 if subfield is not None:
-                    print s[field][subfield]
+                    print(s[field][subfield])
                     yield s[field][subfield]
                 else:
                     yield s[field]
             except ValueError:
-                    logging.warning("Unable to process row:\n\t %s" %str(hit))
+                    logging.warning("Unable to process row: %s" %
+                                    str(hit))
 
         scroll_id = resp.get('_scroll_id')
         # end of scroll

@@ -11,7 +11,7 @@ class TestReader(unittest.TestCase):
                                         The plot is definitely one of the most original I've seen in a while."
 
     def test_iter_document_json_stream(self):
-        doc_text = iter_document_json_stream('./topik/tests/data/test-data-1', "text")
+        doc_text = iter_document_json_stream('./topik/tests/data/test-data-1.json', "text")
         first_document = head(doc_text)
         self.assertTrue(first_document, self.solution_first_document)
 
@@ -20,6 +20,10 @@ class TestReader(unittest.TestCase):
         first_document = head(doc_text)
         self.assertTrue(first_document, self.solution_first_document)
 
+    def test_iter_documents_folder_gz(self):
+        doc_text = iter_documents_folder('./topik/tests/data/test-data-folder-gz')
+        first_document = head(doc_text)
+        self.assertTrue(first_document, self.solution_first_document)
 
 if __name__ == '__main__':
     unittest.main()
