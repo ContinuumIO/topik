@@ -1,6 +1,6 @@
 name: topik
 channels:
-  - asmeurer
+  - r
   - chdoig
 dependencies:
   - blaze
