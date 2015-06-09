@@ -54,6 +54,8 @@ requirements:
     - click
     - solrpy
     - elasticsearch
+    - beautiful-soup
+    - nltk
 
 test:
   imports:

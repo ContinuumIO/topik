@@ -1,8 +1,8 @@
-import itertools
 import logging
 import re
 import os
 import json
+from itertools import tee
 
 from textblob import TextBlob
 from nltk.collocations import TrigramCollocationFinder
@@ -10,24 +10,19 @@ from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
 import numpy as np
 import pandas as pd
 import gensim
+import bs4
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+def unzip(pairs):
+    a, b = tee(pairs)
+    return (_[0] for _ in a), (_[1] for _ in b)
 
-def head(stream, n=1):
-    """Return the first 'n' elements of a stream as plain list.
-
-    Parameters
-    ----------
-    stream: iterable object
-        The iterable where to get the first 'n' elements
-
-    n: int
-        Number of first elements to retrieve
-
-    """
-    return list(itertools.islice(stream, n))
-
+def html2text(html):
+    soup = bs4.BeautifulSoup(html)
+    for s in soup('script'):
+        s.extract()
+    return soup.text
 
 def collocations(stream, top_n=10000, min_bigram_freq=50, min_trigram_freq=20):
     """Extract text collocations (bigrams and trigrams), from a stream of words.
@@ -81,17 +76,18 @@ def entities(document_stream, freq_min=2, freq_max=10000):
     np_counts_total = {}
     for docno, doc in enumerate(document_stream):
         if docno % 1000 == 0:
-            sorted_phrases = sorted(np_counts_total.iteritems(), key=lambda item: -item[1])
+            sorted_phrases = sorted(np_counts_total.items(), 
+                                    key=lambda item: -item[1])
             np_counts_total = dict(sorted_phrases)
             logging.info("at document #%i, considering %i phrases: %s..." %
-                         (docno, len(np_counts_total), head(sorted_phrases)))
+                         (docno, len(np_counts_total), sorted_phrases[0]))
 
         for np in TextBlob(doc).noun_phrases:
             np_counts_total[np] = np_counts_total.get(np, 0) + 1
 
     # Remove noun phrases in the list that have higher frequencies than 'freq_max' or lower frequencies than 'freq_min'
     np_counts = {}
-    for np, count in np_counts_total.iteritems():
+    for np, count in np_counts_total.items():
         if freq_max >= count >= freq_min:
             np_counts[np] = count
 
@@ -177,7 +173,7 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
     documents = []
 
     with open(output_file, 'w') as wfile:
-        for content in reader:
+        for fullpath, content in reader:
             document = {}
             document['text'] = content
             tokens = tokenizer.tokenize(content)
@@ -199,7 +195,7 @@ def batch_concat(resp, field, content_in_list=True):
    while resp.results:
        for item in resp.results:
            if content_in_list:
-               yield item[field][0]
+               yield field, item[field][0]
            else:
-               yield item[field]
+               yield field, item[field]
        resp = resp.next_batch()

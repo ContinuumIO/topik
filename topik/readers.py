@@ -8,7 +8,7 @@ import solr
 from elasticsearch import Elasticsearch, helpers
 
 
-from topik.utils import head, batch_concat
+from topik.utils import batch_concat
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -27,18 +27,19 @@ def iter_document_json_stream(filename, field):
     $ head -n 2 ./topik/tests/data/test-data-1
         {"id": 1, "topic": "interstellar film review", "text":"'Interstellar' was incredible. The visuals, the score..."}
         {"id": 2, "topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in..."}
-    >>> doc_text = iter_document_json_stream('./topik/tests/test-data-1.json', "text")
-    >>> head(doc_text)
+    >>> document = iter_document_json_stream('./topik/tests/test-data-1.json', "text")
+    >>> next(document)[1]
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
     of the most original I've seen in a while."]
 
     """
     with open(filename, 'r') as f:
-        for line in f.readlines():
+        for n, line in enumerate(f):
             try:
                 dictionary = json.loads(line)
                 content = dictionary.get(field)
-                yield content
+                id = "%s/%s[%d]" % (filename, field, n)
+                yield id, content
             except ValueError:
                 logging.warning("Unable to process line: %s" %
                                 str(line))
@@ -55,7 +56,8 @@ def iter_documents_folder(folder):
     $ ls ./topik/tests/test-data-folder
         doc1  doc2  doc3
     >>> doc_text = iter_documents_folder('./topik/tests/test-data-1.json')
-    >>> head(doc_text)
+    >>> fullpath, content = next(doc_text)
+    >>> content
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
     of the most original I've seen in a while."]
 
@@ -65,11 +67,10 @@ def iter_documents_folder(folder):
             _open = gzip.open if file.endswith('.gz') else open
             try:
                 fullpath = os.path.join(directory, file)
-                with _open(fullpath) as f:
-                    yield f.read().decode('utf-8')
+                with _open(fullpath, 'rb') as f:
+                    yield fullpath, f.read().decode('utf-8')
             except (ValueError, UnicodeDecodeError) as err:
-                logging.warning("Unable to process file: %s" % 
-                                str(file))
+                logging.warning("Unable to process file: %s" % fullpath)
 
 
 def iter_large_json(json_file, prefix_value, event_value):
@@ -80,7 +81,7 @@ def iter_large_json(json_file, prefix_value, event_value):
     for prefix, event, value in parser:
         # For Flowdock data ('item.content', 'string')
         if (prefix, event) == (prefix_value, event_value):
-            yield value
+            yield "%s/%s" % (prefix, event), value
 
 
 def iter_solr_query(solr_instance, field, query="*:*"):
@@ -105,10 +106,9 @@ def iter_elastic_query(instance, index, field, subfield=None):
             s = hit['_source']
             try:
                 if subfield is not None:
-                    print(s[field][subfield])
-                    yield s[field][subfield]
+                    yield "%s/%s" % (field, subfield), s[field][subfield]
                 else:
-                    yield s[field]
+                    yield field, s[field]
             except ValueError:
                     logging.warning("Unable to process row: %s" %
                                     str(hit))

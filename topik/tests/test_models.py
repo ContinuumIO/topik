@@ -5,6 +5,7 @@ from topik.readers import iter_document_json_stream
 from topik.tokenizers import SimpleTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
+from topik.utils import unzip
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
@@ -12,7 +13,9 @@ module_path = os.path.dirname(__file__)
 class TestModels(unittest.TestCase):
 
     def setUp(self):
-        doc_text = iter_document_json_stream(os.path.join(module_path,'data/test-data-1'), "text")
+        id_documents =  iter_document_json_stream(
+                os.path.join(module_path,'data/test-data-1'), "text")
+        ids, doc_text = unzip(id_documents)
         my_corpus = SimpleTokenizer(doc_text)
         corpus_bow = CorpusBOW(my_corpus)
         corpus_bow.save_dict(os.path.join(module_path, 'test.dict'))

@@ -9,13 +9,13 @@ import webbrowser
 
 import numpy as np
 
-from topik.readers import iter_document_json_stream, iter_documents_folder, iter_large_json, iter_solr_query, \
-    iter_elastic_query
+from topik.readers import iter_document_json_stream, iter_documents_folder,\
+        iter_large_json, iter_solr_query, iter_elastic_query
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
 from topik.viz import Termite
-from topik.utils import to_r_ldavis, generate_csv_output_file
+from topik.utils import to_r_ldavis, generate_csv_output_file, unzip
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -80,17 +80,18 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     np.random.seed(seed)
 
     if format == 'folder_files':
-        documents = iter_documents_folder(data)
+        id_documents = iter_documents_folder(data)
     elif format == 'large_json' and prefix_value is not None and event_value is not None:
-        documents = iter_large_json(data, prefix_value, event_value)
+        id_documents = iter_large_json(data, prefix_value, event_value)
     elif format == 'json_stream' and field is not None:
-        documents = iter_document_json_stream(data, field)
+        id_documents = iter_document_json_stream(data, field)
     elif format == 'solr' and field is not None:
-        documents = iter_solr_query(data, field, query=query)
+        id_documents = iter_solr_query(data, field, query=query)
     elif format == 'elastic' and field is not None:
-        documents = iter_elastic_query(data, index, field, subfield)
+        id_documents = iter_elastic_query(data, index, field, subfield)
     else:
         raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
+    ids, documents = unzip(id_documents)
 
     if tokenizer == 'simple':
         corpus = SimpleTokenizer(documents)
@@ -138,12 +139,14 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     if output_file:
 
         if format == 'folder_files':
-            documents = iter_documents_folder(data)
-        elif format == 'large_json':
-            documents = iter_large_json(data, prefix_value, event_value)
-        else:
-            documents = iter_document_json_stream(data, field)
+            id_documents = iter_documents_folder(data)
 
+        elif format == 'large_json':
+            id_documents = iter_large_json(data, prefix_value, event_value)
+        else:
+            id_documents = iter_document_json_stream(data, field)
+
+        ids, documents = unzip(id_documents)
         df_results = generate_csv_output_file(documents, corpus, corpus_bow, lda.model)
 
     if r_ldavis:

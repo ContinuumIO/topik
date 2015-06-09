@@ -1,15 +1,9 @@
 import unittest
 import os
 
-from topik.readers import iter_document_json_stream
-from topik.tokenizers import SimpleTokenizer
-from topik.vectorizers import CorpusBOW
-from topik.models import LDA
 from topik.viz import Termite
 
-
 module_path = os.path.dirname(__file__)
-
 
 class TestTokenizers(unittest.TestCase):
 
