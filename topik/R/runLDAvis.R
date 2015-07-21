@@ -20,6 +20,7 @@
   library("LDAvis")
   library("Matrix")
   library("data.table")
+  library("methods")
   r_dir <- Sys.getenv("LDAVIS_DIR")
   setwd(r_dir)
   theta_mm <- read.matrix.mart('docTopicProbMat.mm')

@@ -124,7 +124,7 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     elif model == 'lda_online':
         # To perform lda in online mode set variables update_every, chuncksize and passes.
         lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=1,
-                  chuncksize=10000, passes=1)
+                  chunksize=10000, passes=1)
     else:
         logging.warning('model provided not valid. Using lda_batch.')
         lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=0,

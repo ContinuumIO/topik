@@ -173,7 +173,8 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
     documents = []
 
     with open(output_file, 'w') as wfile:
-        for fullpath, content in reader:
+        #for fullpath, content in reader:
+        for content in reader:
             document = {}
             document['text'] = content
             tokens = tokenizer.tokenize(content)
