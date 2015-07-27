@@ -90,11 +90,14 @@ def iter_solr_query(solr_instance, field, query="*:*"):
     return batch_concat(response, field,  content_in_list=False)
 
 
-def iter_elastic_query(instance, index, field, subfield=None):
+def iter_elastic_query(instance, index, field, subfield=None, doc_type=None, include_id=False):
     es = Elasticsearch(instance)
 
     # initial search
-    resp = es.search(index, body={"query": {"match_all": {}}}, scroll='5m')
+    resp = es.search(index, 
+                    body={"query": {"match_all": {}}}, 
+                    scroll='5m', 
+                    doc_type=doc_type)
 
     scroll_id = resp.get('_scroll_id')
     if scroll_id is None:
@@ -106,9 +109,12 @@ def iter_elastic_query(instance, index, field, subfield=None):
             s = hit['_source']
             try:
                 if subfield is not None:
-                    yield "%s/%s" % (field, subfield), s[field][subfield]
+                    tup =  ("%s/%s" % (field, subfield), s[field][subfield])
                 else:
-                    yield field, s[field]
+                    tup = (field, s[field])
+                if include_id:
+                    tup = (hit['_id'],) + tup
+                yield tup
             except ValueError:
                     logging.warning("Unable to process row: %s" %
                                     str(hit))
@@ -117,3 +123,36 @@ def iter_elastic_query(instance, index, field, subfield=None):
         # end of scroll
         if scroll_id is None or not resp['hits']['hits']:
             break
+def random_elastic_query(instance, index, field, subfield=None, doc_type=None, 
+                        include_id=False, batch_size=400, n_samples=1000000):
+    from random import randint
+    es = Elasticsearch(instance)
+    #[_['_source']['uri'] for _ in 
+    full_doc_count = es.count(index=index, doc_type=doc_type)['count']
+    mid = int(batch_size /2)
+    def random_in_range():
+        return randint(0, full_doc_count - mid)
+    def new_search():
+        return es.search(doc_type="article",
+                        body={"query": {"match_all": {}}}, 
+                        from_=random_in_range(),
+                        size=batch_size)
+    sampled = 0
+    while sampled < n_samples:
+        resp = new_search()
+        for hit in resp['hits']['hits']:
+            s = hit['_source']
+
+            try:
+                if subfield is not None:
+                    tup =  ("%s/%s" % (field, subfield), s[field][subfield])
+                else:
+                    tup = (field, s[field])
+                if include_id:
+                    tup = (hit['_id'],) + tup
+                yield tup
+            except ValueError:
+                    logging.warning("Unable to process row: %s" %
+                                    str(hit))
+        sampled += batch_size
+
