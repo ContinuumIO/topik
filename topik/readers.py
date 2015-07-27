@@ -129,14 +129,21 @@ def random_elastic_query(instance, index, field, subfield=None, doc_type=None,
     es = Elasticsearch(instance)
     #[_['_source']['uri'] for _ in 
     full_doc_count = es.count(index=index, doc_type=doc_type)['count']
-    mid = int(batch_size /2)
     def random_in_range():
-        return randint(0, full_doc_count - mid)
+        r =  randint(0, full_doc_count)
+        if r < 0:
+            siz = batch_size + r
+            r = 0
+        else:
+            siz = batch_size
+        return r, siz
     def new_search():
-        return es.search(doc_type="article",
+        r, siz = random_in_range()
+        return es.search(index=index,
+                        doc_type="article",
                         body={"query": {"match_all": {}}}, 
-                        from_=random_in_range(),
-                        size=batch_size)
+                        from=r,
+                        size=siz)
     sampled = 0
     while sampled < n_samples:
         resp = new_search()
@@ -154,5 +161,5 @@ def random_elastic_query(instance, index, field, subfield=None, doc_type=None,
             except ValueError:
                     logging.warning("Unable to process row: %s" %
                                     str(hit))
-        sampled += batch_size
+        sampled += len(resp['hits']['hits'])
 
