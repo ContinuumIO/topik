@@ -104,6 +104,7 @@ def iter_elastic_query(instance, index, field, subfield=None, doc_type=None, inc
         return
 
     first_run = True
+    error_prints = 0
     while True:
         for hit in resp['hits']['hits']:
             s = hit['_source']
@@ -115,7 +116,9 @@ def iter_elastic_query(instance, index, field, subfield=None, doc_type=None, inc
                 if include_id:
                     tup = (hit['_id'],) + tup
                 yield tup
-            except ValueError:
+            except (ValueError, KeyError):
+                if error_prints < 10:
+                    error_prints += 1
                     logging.warning("Unable to process row: %s" %
                                     str(hit))
 
@@ -141,15 +144,15 @@ def random_elastic_query(instance, index, field, subfield=None, doc_type=None,
         r, siz = random_in_range()
         return es.search(index=index,
                         doc_type="article",
-                        body={"query": {"match_all": {}}}, 
-                        from=r,
+                        body={"query": {"match_all": {}}},
+                        from_=r,
                         size=siz)
     sampled = 0
+    error_prints = 0
     while sampled < n_samples:
         resp = new_search()
         for hit in resp['hits']['hits']:
             s = hit['_source']
-
             try:
                 if subfield is not None:
                     tup =  ("%s/%s" % (field, subfield), s[field][subfield])
@@ -158,8 +161,11 @@ def random_elastic_query(instance, index, field, subfield=None, doc_type=None,
                 if include_id:
                     tup = (hit['_id'],) + tup
                 yield tup
-            except ValueError:
+                sampled += 1
+            except (ValueError, KeyError):
+                if error_prints < 10:
+                    error_prints += 1
                     logging.warning("Unable to process row: %s" %
-                                    str(hit))
-        sampled += len(resp['hits']['hits'])
+                                        str(hit))
+        
 
