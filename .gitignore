@@ -1,6 +1,12 @@
 # ldavis output
 topic_model/ldavis
 
+# output csv file
+output.csv
+
+# temporary files, such as .py~ and .r~
+*~
+
 # PyCharm
 .idea/
 
