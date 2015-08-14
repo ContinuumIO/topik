@@ -19,7 +19,7 @@ STEP 1: Create generator to read from source
 ============================================
 """
 
-def iter_document_json_stream(filename, field):
+def iter_document_json_stream(filename):#, field):
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters
@@ -147,13 +147,16 @@ STEP 2: Load dicts from generator into elasticsearch instance
 =============================================================
 """
 
-def gen_to_elastic(instance, index, documents):
+def reader_to_elastic(instance, index, documents):
+    """Takes the generator yeilded by the selected reader and iterates over it 
+    to load the documents into elasticsearch"""
     #host, port = tuple(instance.rsplit(':', 1))
     es = Elasticsearch(instance)
     for i, document in enumerate(documents):
         es.index(index=index, doc_type='document', body=document,
                  id=document['id'])
         print("\rIndexing Document: %d" % i, end="")
+    print("\nAll documents successfully indexed")
 
 """
 ===========================================================
@@ -162,4 +165,11 @@ STEP 3: Get year-filtered documents back from elasticsearch
 """
 
 def get_filtered_elastic_results(instance, index, content_field, year_field,
-                                 start_year, stop_year)
+                                 start_year, stop_year):
+    """Queries elasticsearch for all documents within the specified year range
+    and returns a generator of the results"""
+    return None
+
+
+
+

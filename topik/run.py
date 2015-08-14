@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import os
 import time
@@ -10,7 +10,8 @@ import webbrowser
 import numpy as np
 
 from topik.readers import iter_document_json_stream, iter_documents_folder,\
-        iter_large_json, iter_solr_query, iter_elastic_query
+        iter_large_json, iter_solr_query, iter_elastic_query, reader_to_elastic,\
+        get_filtered_elastic_results
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
@@ -27,7 +28,7 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
                     model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  
                     prefix_value=None, event_value=None, content_field=None, year_field=False,
                     start_year=False, stop_year=False, query='*:*', subfield=None, seed=42,
-                    destination_elasticsearch_instance=None, destination_elasticsearch_index=None, ):
+                    destination_elasticsearch_instance=None, destination_elasticsearch_index=None):
     """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
@@ -87,20 +88,55 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     """
     np.random.seed(seed)
 
+    """
+    ============================================
+    STEP 1: Create generator to read from source
+    ============================================
+    """
+
     if format == 'folder_files':
         id_documents = iter_documents_folder(data)
     elif format == 'large_json' and prefix_value is not None and event_value is not None:
         id_documents = iter_large_json(data, prefix_value, event_value)
     # working on
-    elif format == 'json_stream' and field is not None:
-        documents = iter_document_json_stream(data, field)
-    elif format == 'solr' and field is not None:
-        id_documents = iter_solr_query(data, field, query=query)
-    elif format == 'elastic' and field is not None:
-        id_documents = iter_elastic_query(data, index, field, subfield)
+    elif format == 'json_stream' and content_field is not None:
+        documents = iter_document_json_stream(data)
+    elif format == 'solr' and content_field is not None:
+        id_documents = iter_solr_query(data, content_field, query=query)
+    elif format == 'elastic' and content_field is not None:
+        id_documents = iter_elastic_query(data, index, content_field, subfield)
     else:
         raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
     #ids, documents = unzip(id_documents)
+
+    """
+    =============================================================
+    STEP 2: Load dicts from generator into elasticsearch instance
+    =============================================================
+    """
+
+    
+    reader_to_elastic(destination_elasticsearch_instance,
+                   destination_elasticsearch_index, documents)
+
+'''
+    """
+    ===========================================================
+    STEP 3: Get year-filtered documents back from elasticsearch
+            in the form of a generator
+    ===========================================================
+    """
+
+    filtered_documents = get_filtered_elastic_results(destination_elasticsearch_instance,
+                            destination_elasticsearch_index, content_field,
+                            year_field, start_year, stop_year)
+
+    """
+    ===========================================================
+    STEP 4: For each document, Tokenize the raw text body into
+            a list of words
+    ===========================================================
+    """
 
     if tokenizer == 'simple':
         corpus = SimpleTokenizer(documents)
@@ -118,6 +154,13 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         shutil.rmtree(dir_path)
 
     os.makedirs(dir_path)
+
+    """
+    ===========================================================
+    STEP 5: For each document, Vectorize the list of words into
+            a Bag of Words (or N-grams?)
+    ===========================================================
+    """
 
     # Create dictionary
     corpus_bow = CorpusBOW(corpus)
@@ -171,4 +214,4 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         time.sleep(30)
         sp.kill()
 
-
+'''
