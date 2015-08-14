@@ -100,7 +100,7 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         id_documents = iter_large_json(data, prefix_value, event_value)
     # working on
     elif format == 'json_stream' and content_field is not None:
-        documents = iter_document_json_stream(data)
+        documents = iter_document_json_stream(data, year_field)
     elif format == 'solr' and content_field is not None:
         id_documents = iter_solr_query(data, content_field, query=query)
     elif format == 'elastic' and content_field is not None:
@@ -119,7 +119,7 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     reader_to_elastic(destination_elasticsearch_instance,
                    destination_elasticsearch_index, documents)
 
-'''
+
     """
     ===========================================================
     STEP 3: Get year-filtered documents back from elasticsearch
@@ -131,6 +131,9 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
                             destination_elasticsearch_index, content_field,
                             year_field, start_year, stop_year)
 
+    print(filtered_documents)
+
+'''
     """
     ===========================================================
     STEP 4: For each document, Tokenize the raw text body into

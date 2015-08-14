@@ -19,7 +19,7 @@ STEP 1: Create generator to read from source
 ============================================
 """
 
-def iter_document_json_stream(filename):#, field):
+def iter_document_json_stream(filename, year_field):#, field):
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters
@@ -46,6 +46,7 @@ def iter_document_json_stream(filename):#, field):
                 dictionary = json.loads(line)
                 # should we check to see whether there are any existing document
                 # attributes called 'filename' or 'id'?
+                dictionary[year_field] = int(dictionary[year_field])
                 dictionary['filename'] = filename
                 dictionary['id'] = n
                 yield dictionary
@@ -147,10 +148,21 @@ STEP 2: Load dicts from generator into elasticsearch instance
 =============================================================
 """
 
-def reader_to_elastic(instance, index, documents):
+def reader_to_elastic(instance, index, documents, clear_index=False):
     """Takes the generator yeilded by the selected reader and iterates over it 
     to load the documents into elasticsearch"""
     #host, port = tuple(instance.rsplit(':', 1))
+    #http://localhost:9200/top/document/101
+    #{"error":"IndexMissingException[[top] missing]","status":404}
+    if clear_index:
+        # DELETE THE INDEX! Can I just give the delete command or do I need
+        # to check for its existence first?  Do I also need to check for
+        # successful deletion afterward?
+        full_index_path = instance + '/' + index 
+        r = requests.get(full_index_path)
+        if r.status_code == 200:
+            r = requests.delete(full_index_path)
+
     es = Elasticsearch(instance)
     for i, document in enumerate(documents):
         es.index(index=index, doc_type='document', body=document,
@@ -168,7 +180,15 @@ def get_filtered_elastic_results(instance, index, content_field, year_field,
                                  start_year, stop_year):
     """Queries elasticsearch for all documents within the specified year range
     and returns a generator of the results"""
-    return None
+    es = Elasticsearch(instance)
+    '''results = es.search(index=index, body={"query": 
+                                            {"constant_score": 
+                                                {"filter":
+                                                    {"range":
+                                                        {"year":
+                                                            {"gte": 1978,
+                                                            "lte": 1981}}}}}})'''
+    results = es.search("spectroscopy", index=index, q=query)
 
 
 
