@@ -5,6 +5,7 @@ import os
 import logging
 import gzip
 import solr
+import requests
 from elasticsearch import Elasticsearch, helpers
 
 
@@ -12,6 +13,11 @@ from topik.utils import batch_concat
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+"""
+============================================
+STEP 1: Create generator to read from source
+============================================
+"""
 
 def iter_document_json_stream(filename, field):
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
@@ -33,6 +39,21 @@ def iter_document_json_stream(filename, field):
     of the most original I've seen in a while."]
 
     """
+    
+    with open(filename, 'r') as f:
+        for n, line in enumerate(f):
+            try:
+                dictionary = json.loads(line)
+                # should we check to see whether there are any existing document
+                # attributes called 'filename' or 'id'?
+                dictionary['filename'] = filename
+                dictionary['id'] = n
+                yield dictionary
+            except ValueError:
+                logging.warning("Unable to process line: %s" %
+                                str(line))
+
+    """
     with open(filename, 'r') as f:
         for n, line in enumerate(f):
             try:
@@ -43,6 +64,7 @@ def iter_document_json_stream(filename, field):
             except ValueError:
                 logging.warning("Unable to process line: %s" %
                                 str(line))
+    """
 
 
 def iter_documents_folder(folder):
@@ -91,6 +113,7 @@ def iter_solr_query(solr_instance, field, query="*:*"):
 
 
 def iter_elastic_query(instance, index, field, subfield=None):
+    host, port = tuple(instance.split(':'))
     es = Elasticsearch(instance)
 
     # initial search
@@ -117,3 +140,26 @@ def iter_elastic_query(instance, index, field, subfield=None):
         # end of scroll
         if scroll_id is None or not resp['hits']['hits']:
             break
+
+"""
+=============================================================
+STEP 2: Load dicts from generator into elasticsearch instance
+=============================================================
+"""
+
+def gen_to_elastic(instance, index, documents):
+    #host, port = tuple(instance.rsplit(':', 1))
+    es = Elasticsearch(instance)
+    for i, document in enumerate(documents):
+        es.index(index=index, doc_type='document', body=document,
+                 id=document['id'])
+        print("\rIndexing Document: %d" % i, end="")
+
+"""
+===========================================================
+STEP 3: Get year-filtered documents back from elasticsearch
+===========================================================
+"""
+
+def get_filtered_elastic_results(instance, index, content_field, year_field,
+                                 start_year, stop_year)

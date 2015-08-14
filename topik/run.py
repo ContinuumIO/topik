@@ -24,8 +24,10 @@ BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
-                    model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  prefix_value=None,
-                    event_value=None, field=None, query='*:*', index=None, subfield=None, seed=42):
+                    model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  
+                    prefix_value=None, event_value=None, content_field=None, year_field=False,
+                    start_year=False, stop_year=False, query='*:*', subfield=None, seed=42,
+                    destination_elasticsearch_instance=None, destination_elasticsearch_index=None, ):
     """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
@@ -67,14 +69,20 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     field: string
         For 'json_stream', 'solr' or 'elastic' format readers, the field to parse.
 
-    solr_instance: string
-        For 'solr' format reader, the url to the solr instance.
+    ----->?solr_instance: string
+    ----->?    For 'solr' format reader, the url to the solr instance.
 
     query: string
         For 'solr' format reader, an optional query. Default is '*:*' to retrieve all documents.
 
     seed: int
         Set random number generator to seed, to be able to reproduce results. Default 42.
+
+    destination_elasticsearch_instance
+    destination_elasticsearch_index: string
+    year_field
+    start_year
+    stop_year
 
     """
     np.random.seed(seed)
@@ -83,15 +91,16 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         id_documents = iter_documents_folder(data)
     elif format == 'large_json' and prefix_value is not None and event_value is not None:
         id_documents = iter_large_json(data, prefix_value, event_value)
+    # working on
     elif format == 'json_stream' and field is not None:
-        id_documents = iter_document_json_stream(data, field)
+        documents = iter_document_json_stream(data, field)
     elif format == 'solr' and field is not None:
         id_documents = iter_solr_query(data, field, query=query)
     elif format == 'elastic' and field is not None:
         id_documents = iter_elastic_query(data, index, field, subfield)
     else:
         raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
-    ids, documents = unzip(id_documents)
+    #ids, documents = unzip(id_documents)
 
     if tokenizer == 'simple':
         corpus = SimpleTokenizer(documents)
