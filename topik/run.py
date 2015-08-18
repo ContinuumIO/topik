@@ -11,7 +11,7 @@ import numpy as np
 
 from topik.readers import iter_document_json_stream, iter_documents_folder,\
         iter_large_json, iter_solr_query, iter_elastic_query, reader_to_elastic,\
-        get_filtered_elastic_results
+        get_filtered_elastic_results, iter_elastic_query_JUNK, print_hits
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
@@ -110,14 +110,14 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     #ids, documents = unzip(id_documents)
 
     """
-    =============================================================
-    STEP 2: Load dicts from generator into elasticsearch instance
-    =============================================================
+    ====================================================================
+    STEP 2: Load dicts from reader-generator into elasticsearch instance
+    ====================================================================
     """
 
     
     reader_to_elastic(destination_elasticsearch_instance,
-                   destination_elasticsearch_index, documents)
+                   destination_elasticsearch_index, documents)#, clear_index = True)
 
 
     """
@@ -127,12 +127,31 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     ===========================================================
     """
 
-    filtered_documents = get_filtered_elastic_results(destination_elasticsearch_instance,
+    """filtered_documents = get_filtered_elastic_results(destination_elasticsearch_instance,
                             destination_elasticsearch_index, content_field,
                             year_field, start_year, stop_year)
 
-    print(filtered_documents)
+    #print(filtered_documents)"""
 
+    """
+    filtered_documents = iter_elastic_query_JUNK(destination_elasticsearch_instance,
+                                                 destination_elasticsearch_index,
+                                                 content_field)
+
+    for field, contents in filtered_documents:
+        print(field)
+        print(contents)"""
+
+    #print_hits(get_filtered_elastic_results(destination_elasticsearch_instance,
+    #                                        destination_elasticsearch_index,
+    #                                        "abstract", "year", 1978, 1978))
+    documents = get_filtered_elastic_results(destination_elasticsearch_instance,
+                                            destination_elasticsearch_index,
+                                            content_field, year_field, 
+                                            start_year, stop_year)
+    for dNum, d in enumerate(documents):
+        print(dNum)
+        print(d)
 '''
     """
     ===========================================================

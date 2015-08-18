@@ -43,12 +43,13 @@ def iter_document_json_stream(filename, year_field):#, field):
     with open(filename, 'r') as f:
         for n, line in enumerate(f):
             try:
-                dictionary = json.loads(line)
+                dictionary = {}
+                dictionary['_source'] = json.loads(line)
                 # should we check to see whether there are any existing document
                 # attributes called 'filename' or 'id'?
-                dictionary[year_field] = int(dictionary[year_field])
-                dictionary['filename'] = filename
-                dictionary['id'] = n
+                dictionary['_source'][year_field] = int(dictionary['_source'][year_field])
+                dictionary['_source']['filename'] = filename
+                dictionary['_id'] = n
                 yield dictionary
             except ValueError:
                 logging.warning("Unable to process line: %s" %
@@ -114,7 +115,6 @@ def iter_solr_query(solr_instance, field, query="*:*"):
 
 
 def iter_elastic_query(instance, index, field, subfield=None):
-    host, port = tuple(instance.split(':'))
     es = Elasticsearch(instance)
 
     # initial search
@@ -164,10 +164,12 @@ def reader_to_elastic(instance, index, documents, clear_index=False):
             r = requests.delete(full_index_path)
 
     es = Elasticsearch(instance)
-    for i, document in enumerate(documents):
-        es.index(index=index, doc_type='document', body=document,
-                 id=document['id'])
-        print("\rIndexing Document: %d" % i, end="")
+    #for i, document in enumerate(documents):
+        #es.index(index=index, doc_type='document', body=document,
+        #         id=document['id'])
+    bulk_index = helpers.bulk(client=es, actions=documents, index=index, 
+                              doc_type='document')
+    #    print("\rIndexing Document: %d" % i, end="")
     print("\nAll documents successfully indexed")
 
 """
@@ -181,15 +183,83 @@ def get_filtered_elastic_results(instance, index, content_field, year_field,
     """Queries elasticsearch for all documents within the specified year range
     and returns a generator of the results"""
     es = Elasticsearch(instance)
-    '''results = es.search(index=index, body={"query": 
-                                            {"constant_score": 
-                                                {"filter":
-                                                    {"range":
-                                                        {"year":
-                                                            {"gte": 1978,
-                                                            "lte": 1981}}}}}})'''
-    results = es.search("spectroscopy", index=index, q=query)
+    results = helpers.scan(client=es, index=index, query={"query":
+    #return es.search(index=index, size=20, search_type="scan",scroll="1m",# search_type="scan"
+    #                 body={
+    #                       "query": 
+                            {"constant_score": 
+                                {"filter":
+                                    {"range":
+                                        {year_field:
+                                            {"gte": start_year,
+                                            "lte": stop_year}}}}}})
+    for result in results:
+        yield result['_source'][content_field]
 
+
+
+def iter_elastic_query_JUNK(instance, index, field, subfield=None):
+    #host, port = tuple(instance.split(':'))
+    es = Elasticsearch(instance)
+
+    # initial search
+    #resp = es.search(index, body={"query": {"match_all": {}}}, scroll='5m')
+    resp = es.search(index=index, #search_type="scan",
+                     query={"query": 
+                            {"constant_score": 
+                                {"filter":
+                                    {"range":
+                                        {"year":
+                                            {"gte": 1979,
+                                            "lte": 1979}}}}}})#, scroll='1m')
+
+    scroll_id = resp.get('_scroll_id')
+    if scroll_id is None:
+        return
+
+    first_run = True
+    while True:
+        for hit in resp['hits']['hits']:
+            s = hit['_source']
+            try:
+                if subfield is not None:
+                    yield "%s/%s" % (field, subfield), s[field][subfield]
+                else:
+                    yield field, s[field]
+            except ValueError:
+                    logging.warning("Unable to process row: %s" %
+                                    str(hit))
+
+        scroll_id = resp.get('_scroll_id')
+        # end of scroll
+        print(scroll_id)
+        if scroll_id is None or not resp['hits']['hits']:
+            break
+
+
+def print_hits(results, facet_masks={}):
+    " Simple utility function to print results of a search query. "
+    print('=' * 80)
+    print('Total %d found in %dms' % (results['hits']['total'], results['took']))
+    if results['hits']['hits']:
+        print('=' * 80)
+        print("Total number of results: %d" % results['hits']['total'])
+        print('-' * 80)
+    for hit in results['hits']['hits']:
+        # get created date for a repo and fallback to authored_date for a commit
+        #created_at = parse_date(hit['_source'].get('created_at', hit['_source']['authored_date']))
+        '''print('/%s/%s/%s (%s): %s' % (
+                hit['_index'], hit['_type'], hit['_id'],
+                created_at.strftime('%Y-%m-%d'),
+                hit['_source']['description'].replace('\n', ' ')))'''
+        print(hit)
+
+    for facet, mask in facet_masks.items():
+        print('-' * 80)
+        for d in results['facets'][facet]['terms']:
+            print(mask % d)
+    print('=' * 80)
+    print()
 
 
 
