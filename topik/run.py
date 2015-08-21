@@ -10,8 +10,8 @@ import webbrowser
 import numpy as np
 
 from topik.readers import iter_document_json_stream, iter_documents_folder,\
-        iter_large_json, iter_solr_query, iter_elastic_query, reader_to_elastic,\
-        get_filtered_elastic_results, iter_elastic_query_JUNK, print_hits
+        iter_large_json, iter_solr_query, iter_elastic_query, iter_elastic_dump,\
+        reader_to_elastic, get_filtered_elastic_results
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
 from topik.models import LDA
@@ -26,9 +26,10 @@ BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
                     model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  
-                    prefix_value=None, event_value=None, content_field=None, year_field=False,
-                    start_year=False, stop_year=False, query='*:*', subfield=None, seed=42,
-                    destination_elasticsearch_instance=None, destination_elasticsearch_index=None):
+                    prefix_value=None, event_value=None, content_field=None, year_field=None,
+                    start_year=None, stop_year=None, query='*:*', subfield=None, seed=42,
+                    destination_es_instance=None, destination_es_index=None, id_field=None,
+                    clear_es_index=False):
     """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
@@ -79,8 +80,8 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     seed: int
         Set random number generator to seed, to be able to reproduce results. Default 42.
 
-    destination_elasticsearch_instance
-    destination_elasticsearch_index: string
+    destination_es_instance
+    destination_es_index: string
     year_field
     start_year
     stop_year
@@ -88,19 +89,23 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     """
     np.random.seed(seed)
 
+
     """
-    ============================================
-    STEP 1: Create generator to read from source
-    ============================================
+    ====================================================================
+    STEP 1: Read all documents from source and yield full-featured dicts
+    ====================================================================
     """
 
+    print("Beginning STEP 1: Reading documents from source")
+
     if format == 'folder_files':
-        id_documents = iter_documents_folder(data)
+        documents = iter_documents_folder(data, content_field)
     elif format == 'large_json' and prefix_value is not None and event_value is not None:
-        id_documents = iter_large_json(data, prefix_value, event_value)
-    # working on
+        documents = iter_large_json(data, prefix_value, event_value)
     elif format == 'json_stream' and content_field is not None:
         documents = iter_document_json_stream(data, year_field)
+    elif format == 'elastic_dump' and content_field is not None:
+        documents = iter_elastic_dump(data, year_field, id_field, prefix_value)
     elif format == 'solr' and content_field is not None:
         id_documents = iter_solr_query(data, content_field, query=query)
     elif format == 'elastic' and content_field is not None:
@@ -109,50 +114,49 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
     #ids, documents = unzip(id_documents)
 
+    #for n, doc in enumerate(documents):
+    #    print(n)
+    #    print(doc['_source'][content_field])
+        #if year_field:
+        #    if year_field in doc['_source'].keys():
+        #        print('%d | %r' % (n, doc['_source'][year_field]))
+        #    else:
+        #        print('NO YEAR FIELD FOR THIS DOC')
+        #print(doc['_source']['name'])
+
+    print("STEP 1 Complete")
+
     """
     ====================================================================
     STEP 2: Load dicts from reader-generator into elasticsearch instance
     ====================================================================
     """
 
+    print("Beginning STEP 2: Loading documents into elasticsearch")
     
-    reader_to_elastic(destination_elasticsearch_instance,
-                   destination_elasticsearch_index, documents)#, clear_index = True)
+    reader_to_elastic(destination_es_instance,
+                   destination_es_index, documents, clear_es_index)
 
+    print("STEP 2 Complete")
 
     """
     ===========================================================
     STEP 3: Get year-filtered documents back from elasticsearch
-            in the form of a generator
     ===========================================================
     """
 
-    """filtered_documents = get_filtered_elastic_results(destination_elasticsearch_instance,
-                            destination_elasticsearch_index, content_field,
+    print("Beginning STEP 3: fetching documents from elasticsearch")
+
+    filtered_documents = get_filtered_elastic_results(destination_es_instance,
+                            destination_es_index, content_field,
                             year_field, start_year, stop_year)
 
-    #print(filtered_documents)"""
 
-    """
-    filtered_documents = iter_elastic_query_JUNK(destination_elasticsearch_instance,
-                                                 destination_elasticsearch_index,
-                                                 content_field)
-
-    for field, contents in filtered_documents:
-        print(field)
-        print(contents)"""
-
-    #print_hits(get_filtered_elastic_results(destination_elasticsearch_instance,
-    #                                        destination_elasticsearch_index,
-    #                                        "abstract", "year", 1978, 1978))
-    documents = get_filtered_elastic_results(destination_elasticsearch_instance,
-                                            destination_elasticsearch_index,
-                                            content_field, year_field, 
-                                            start_year, stop_year)
-    for dNum, d in enumerate(documents):
-        print(dNum)
-        print(d)
-'''
+    #for i, doc in enumerate(filtered_documents):
+    #    print(str(i) + ':' + doc + ',')
+        
+    print("STEP 3 Complete")
+    
     """
     ===========================================================
     STEP 4: For each document, Tokenize the raw text body into
@@ -160,22 +164,32 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     ===========================================================
     """
 
+    print("Beginning STEP 4: Tokenization")
+
     if tokenizer == 'simple':
-        corpus = SimpleTokenizer(documents)
+        corpus = SimpleTokenizer(filtered_documents)
     elif tokenizer == 'collocations' :
-        corpus = CollocationsTokenizer(documents)
+        corpus = CollocationsTokenizer(filtered_documents)
     elif tokenizer == 'entities':
-        corpus = EntitiesTokenizer(documents)
+        corpus = EntitiesTokenizer(filtered_documents)
     elif tokenizer == 'mixed':
-        corpus = MixedTokenizer(documents)
+        corpus = MixedTokenizer(filtered_documents)
     else:
         print("Processing value invalid, using simple")
-        corpus = SimpleTokenizer(documents)
+        corpus = SimpleTokenizer(filtered_documents)
 
     if os.path.isdir(dir_path):
         shutil.rmtree(dir_path)
 
     os.makedirs(dir_path)
+    
+
+    #for i, c in enumerate(corpus):
+    #    print(i)
+    #    print(c)
+    
+    
+    print("STEP 4 Complete")
 
     """
     ===========================================================
@@ -183,6 +197,8 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
             a Bag of Words (or N-grams?)
     ===========================================================
     """
+
+    print("Beginning STEP 5: Vectorization")
 
     # Create dictionary
     corpus_bow = CorpusBOW(corpus)
@@ -210,6 +226,7 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         termite = Termite(os.path.join(dir_path,'termite.csv'), "Termite Plot")
         termite.plot(os.path.join(dir_path,'termite.html'))
 
+    """
     if output_file:
 
         if format == 'folder_files':
@@ -222,7 +239,8 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
 
         ids, documents = unzip(id_documents)
         df_results = generate_csv_output_file(documents, corpus, corpus_bow, lda.model)
-
+    
+    """
     if r_ldavis:
         to_r_ldavis(corpus_bow, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
         os.environ["LDAVIS_DIR"] = os.path.join(dir_path, 'ldavis')
@@ -236,4 +254,6 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         time.sleep(30)
         sp.kill()
 
-'''
+
+
+
