@@ -192,14 +192,8 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
     return pd.DataFrame(documents)
 
 
-def batch_concat(resp, field, content_in_list=True):
+def batch_concat(resp):
    while resp.results:
        for item in resp.results:
-           """
-           if content_in_list:
-               yield field, item[field][0]
-           else:
-               yield field, item[field]
-            """
             yield item
        resp = resp.next_batch()

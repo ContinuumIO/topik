@@ -7,7 +7,7 @@ import gzip
 import solr
 import requests
 import time
-import pdb
+from ijson import items
 from elasticsearch import Elasticsearch, helpers
 
 
@@ -15,7 +15,7 @@ from topik.utils import batch_concat
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-
+# TODO: look for helper functions where I've defined default values, preferable not to do that so that it shows up if not defined.
 
 """
 ====================================================================
@@ -61,16 +61,19 @@ def iter_document_json_stream(filename, year_field=None, id_field=None):
 
 def iter_large_json(filename, year_field=None, id_field=None, item_prefix='item'):
 
-    from ijson import items
-
     with open(filename, 'r') as f:
         for item in items(f, item_prefix):
-            if type(item) == dict:
+            if hasattr(item, 'keys'):
+            # TODO: if type(item) == dict:
                 yield dict_to_es_doc(item, year_field=year_field, id_field=id_field)
+            # TODO: elif hasattr(item, '') find some way to see that it (1) is iterable but (2) not a string
             elif type(item) == list:
                 for sub_item in item:
                     if type(sub_item) ==  dict:
                         yield dict_to_es_doc(sub_item, year_field=year_field, id_field=id_field)
+            #else:
+            #    raise ValueError:
+                    # TODO: logging.warning("") Warning: Any other objects
 
 '''
 def iter_large_json_OLD(json_file, prefix_value, event_value):
@@ -103,23 +106,8 @@ def iter_documents_folder(folder, content_field='text'):
     of the most original I've seen in a while."]
 
     """
-    """
-    for directory, subdirectories, files in os.walk(folder):
-        for n, file in enumerate(files):
-            _open = gzip.open if file.endswith('.gz') else open
-            try:
-                fullpath = os.path.join(directory, file)
-                with _open(fullpath, 'rb') as f:
-                    dictionary = {}
-                    dictionary['_source'] = {}
-                    dictionary['_source']['filename'] = fullpath
-                    dictionary['_id'] = n
-                    dictionary['_source'][content_field] = f.read().decode('utf-8')
-                    #pdb.set_trace()
-                    yield dictionary
-            except (ValueError, UnicodeDecodeError) as err:
-                logging.warning("Unable to process file: %s" % fullpath)
-    """
+    # TODO: write a default year-field to some "unknown" value
+
     for directory, subdirectories, files in os.walk(folder):
         for n, file in enumerate(files):
             _open = gzip.open if file.endswith('.gz') else open
@@ -143,8 +131,7 @@ def iter_solr_query(solr_instance, field, query="*:*"):
 
 def iter_elastic_query(instance, index, query=None,
                        year_field=None, id_field=None):
-    """Queries elasticsearch for all documents within the specified year range
-    and returns a generator of the results"""
+    # TODO: add description
     es = Elasticsearch(instance)
 
     results = helpers.scan(client=es, index=index, scroll='5m', query=query)
@@ -152,41 +139,12 @@ def iter_elastic_query(instance, index, query=None,
     for result in results:
         yield dict_to_es_doc(result['_source'], year_field, id_field)
 
-    '''
-    es = Elasticsearch(instance)
-
-    # initial search
-    resp = es.search(index, body={"query": {"match_all": {}}}, scroll='5m')
-
-    scroll_id = resp.get('_scroll_id')
-    if scroll_id is None:
-        return
-
-    first_run = True
-    while True:
-        for hit in resp['hits']['hits']:
-            s = hit['_source']
-            try:
-                if subfield is not None:
-                    yield "%s/%s" % (field, subfield), s[field][subfield]
-                else:
-                    yield field, s[field]
-            except ValueError:
-                    logging.warning("Unable to process row: %s" %
-                                    str(hit))
-
-        scroll_id = resp.get('_scroll_id')
-        # end of scroll
-        if scroll_id is None or not resp['hits']['hits']:
-            break
-    '''
-
 """
 ===================================================================
 STEP 1.5: Conform dict to elasticsearch standard document structure
 ===================================================================
 """
-
+# TODO: generate the _id by hashing content field, always (take away the option for them to do it).  Also means content_field needs to be an input here.
 def dict_to_es_doc(dictionary, year_field=None, id_field=None, addtl_fields=None):
     doc_dict = {}
     doc_dict['_source'] = dictionary
@@ -209,7 +167,8 @@ STEP 2: Load dicts from generator into elasticsearch instance
 def reader_to_elastic(instance, index, documents, clear_index=False):
     """Takes the generator yeilded by the selected reader and iterates over it 
     to load the documents into elasticsearch"""
-    
+    #TODO: replace all with logging
+    #TODO: es.indices.exists(es_index), es.indices.delete
     if clear_index:
         full_index_path = instance + '/' + index 
         r = requests.get(full_index_path) #Check to see if the index exists
@@ -239,16 +198,20 @@ def reader_to_elastic(instance, index, documents, clear_index=False):
     bulk_index = helpers.bulk(client=es, actions=documents, index=index, 
                               doc_type='document')#, chunk_size=5000)
 
-    print(bulk_index)
+    # TODO: replace with logging: print(bulk_index)
     pre_clock = time.clock()
     number_of_docs_pushed_to_bulk = bulk_index[0]
     number_of_docs_in_index = -1
+    # TODO: replace with api call to get document count for the index
+    # full_doc_count = es.count(index=index, doc_type=doc_type)['count']
     while number_of_docs_pushed_to_bulk != number_of_docs_in_index:
         r = requests.get('http://localhost:9200/_cat/indices?v')
         rlist = r.text.split()
         number_of_docs_in_index = int(rlist[rlist.index(index)+ 3])
         print("Number of documents in the index '%s': " % index, end="")
         print(number_of_docs_in_index)
+        # TODO: add timeout, and also sleep function
+    # TODO: replace all prints with logging
     print("Time it took after displaying bulk results for ES to catch up: ", end="")
     print(time.clock() - pre_clock)
     print("All documents successfully indexed")
@@ -275,6 +238,7 @@ def get_filtered_elastic_results(instance, index, content_field, year_field,
                                             {year_field:
                                                 {"gte": start_year,
                                                  "lte": stop_year}}}}}})
+    # TODO: confirm that this is necessary
     else:
         results = helpers.scan(client=es, index=index, scroll='5m')
 

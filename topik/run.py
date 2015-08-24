@@ -98,7 +98,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     """
     np.random.seed(seed)
 
-
+    # TODO: replace all prints with logging
     """
     ====================================================================
     STEP 1: Read all documents from source and yield full-featured dicts
@@ -109,8 +109,6 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
 
     if format == 'folder_files':
         documents = iter_documents_folder(data, content_field)
-    #elif format == 'large_json' and prefix_value is not None and event_value is not None:
-    #    documents = iter_large_json(data, prefix_value, event_value)
     elif format == 'json_stream' and content_field is not None:
         documents = iter_document_json_stream(data, year_field)
     elif format == 'large_json' and content_field is not None:
@@ -121,11 +119,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
         documents = iter_elastic_query(data, es_index, query=es_query)
     else:
         raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
-    #ids, documents = unzip(id_documents)
 
-    #for n, doc in enumerate(documents):
-    #    print(n)
-    #    print(doc)
 
     print("STEP 1 Complete")
 
@@ -231,17 +225,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
 
 
     if output_file:
-        '''
-        if format == 'folder_files':
-            id_documents = iter_documents_folder(data)
 
-        elif format == 'large_json':
-            id_documents = iter_large_json(data, prefix_value, event_value)
-        else:
-            id_documents = iter_document_json_stream(data, field)
-
-        ids, documents = unzip(id_documents)
-        '''
         filtered_documents = get_filtered_elastic_results(destination_es_instance,
                         destination_es_index, content_field,
                         year_field, start_year, stop_year)
