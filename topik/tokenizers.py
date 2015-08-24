@@ -167,12 +167,11 @@ class EntitiesTokenizer(object):
 
     """
     def __init__(self, reader, freq_min=2, freq_max=10000):
-        self.reader = reader
-        self.iter_1, self.iter_2 = itertools.tee(self.reader, 2)
-        logging.info("collecting entities from %s" % self.reader)
+        self.iter_1, self.iter_2 = itertools.tee(reader, 2)
+        logging.info("collecting entities from %s" % reader)
         self.freq_min = freq_min
         self.freq_max = freq_max
-        self.entities = entities(self.iter_1, freq_max=self.freq_max, freq_min=self.freq_min)
+        self.entities = entities(self.iter_1, freq_max=freq_max, freq_min=freq_min)
         logging.info("selected %i entities: %s..." %
                      (len(self.entities), list(self.entities)[:10]))
 
@@ -209,7 +208,6 @@ class MixedTokenizer(object):
     >>> id_documents = iter_document_json_stream('./topik/tests/data/test-data-2.json', "abstract")
     >>> ids, doc_text = unzip(id_documents)
     >>> mixed_tokenizer = MixedTokenizer(doc_text)
-
     >>> head(mixed_tokenizer)
 
     """
@@ -228,7 +226,8 @@ class MixedTokenizer(object):
     def tokenize(self, message, stopwords=STOPWORDS):
         """Split text (string) into a list of Unicode tokens.
 
-        The resulting tokens can be longer phrases, e.g. `material_sciences`, `artificial_intelligence`, etc.
+        The resulting tokens can be longer phrases, e.g. `material_sciences`,
+        `artificial_intelligence`, etc.
 
         """
         result = []
@@ -243,3 +242,11 @@ class MixedTokenizer(object):
                     continue
                 result.append(token)
         return result
+
+
+# Add additional methods here as necessary to expose them to outside consumers.
+tokenizer_methods = {"simple": SimpleTokenizer,
+                     "collocation": CollocationsTokenizer,
+                     "entities": EntitiesTokenizer,
+                     "mixed": MixedTokenizer
+                     }

@@ -28,7 +28,7 @@ class LDA(object):
         self.model.save(filename)
 
     def get_top_words(self, topn):
-        top_words = [ self.model.show_topic(topicno, topn) for topicno in range(self.model.num_topics) ]
+        top_words = [self.model.show_topic(topicno, topn) for topicno in range(self.model.num_topics)]
         return top_words
 
     def termite_data(self, filename="termite.csv", topn_words=15):

@@ -75,7 +75,7 @@ def entities(document_stream, freq_min=2, freq_max=10000):
     """
     np_counts_total = {}
     for docno, doc in enumerate(document_stream):
-        if docno % 1000 == 0:
+        if docno > 0 and docno % 1000 == 0:
             sorted_phrases = sorted(np_counts_total.items(), 
                                     key=lambda item: -item[1])
             np_counts_total = dict(sorted_phrases)
@@ -197,3 +197,8 @@ def batch_concat(resp):
        for item in resp.results:
             yield item
        resp = resp.next_batch()
+
+
+def _iter_corpus(corpus):
+    for document in corpus:
+        yield document

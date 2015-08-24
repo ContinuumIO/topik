@@ -200,27 +200,22 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
 
     # Create dictionary
     corpus_bow = CorpusBOW(corpus)
-    corpus_dict = corpus_bow.save_dict(os.path.join(dir_path, 'corpus.dict'))
     # Serialize and store the corpus
-    corpus_file = corpus_bow.serialize(os.path.join(dir_path, 'corpus.mm'))
     # Create LDA model from corpus and dictionary
     if model == 'lda_batch':
         # To perform lda in batch mode set update_every=0 and passes=20)
         # https://radimrehurek.com/gensim/wiki.html#latent-dirichlet-allocation
-        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=0,
-                  passes=20)
+        lda = LDA(corpus_input, n_topics, update_every=0, passes=20)
     elif model == 'lda_online':
         # To perform lda in online mode set variables update_every, chuncksize and passes.
-        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=1,
-                  chunksize=10000, passes=1)
+        lda = LDA(corpus_input, n_topics, update_every=1, chunksize=10000, passes=1)
     else:
         logging.warning('model provided not valid. Using lda_batch.')
-        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=0,
-                  passes=20)
-    # Generate the input for the termite plot
-    lda.termite_data(os.path.join(dir_path,'termite.csv'))
+        lda = LDA(corpus_input, n_topics, update_every=0, passes=20)
     # Get termite plot for this model
     if termite_plot:
+        # Generate the input for the termite plot
+        lda.termite_data(os.path.join(dir_path,'termite.csv'))
         termite = Termite(os.path.join(dir_path,'termite.csv'), "Termite Plot")
         termite.plot(os.path.join(dir_path,'termite.html'))
 
@@ -237,7 +232,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
         to_r_ldavis(corpus_bow, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
         os.environ["LDAVIS_DIR"] = os.path.join(dir_path, 'ldavis')
         try:
-            subprocess.call(['Rscript', os.path.join(BASEDIR,'R/runLDAvis.R')])
+            subprocess.call(['Rscript', os.path.join(BASEDIR, 'R/runLDAvis.R')])
         except ValueError:
             logging.warning("Unable to run runLDAvis.R")
         os.chdir(os.path.join(dir_path, 'ldavis', 'output'))
@@ -245,7 +240,3 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
         webbrowser.open_new_tab('127.0.0.1:8000')
         time.sleep(30)
         sp.kill()
-
-
-
-
