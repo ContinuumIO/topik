@@ -48,49 +48,42 @@ def iter_document_json_stream(filename, year_field=None, id_field=None):
       u'topic': u'interstellar film review',
       u'year': 1998}}
     """
-    """
-    with open(filename, 'r') as f:
-        for n, line in enumerate(f):
-            try:
-                dictionary = {}
-                dictionary['_source'] = json.loads(line)
-                # should we check to see whether there are any existing document
-                # attributes called 'filename'?
-                if year_field:
-                    dictionary['_source'][year_field] = int(dictionary['_source'][year_field])
-                dictionary['_source']['filename'] = filename
-                if id_field:
-                    dictionary['_id'] = dictionary['_source'][id_field]
-                else:
-                    dictionary['_id'] = n
-                yield dictionary
-            except ValueError:
-                logging.warning("Unable to process line: %s" %
-                                str(line))
-    """
+
     with open(filename, 'r') as f:
         for n, line in enumerate(f):
             try:
                 dictionary = {}
                 dictionary = json.loads(line)
-                yield dict_to_doc(dictionary, year_field, id_field)
+                yield dict_to_es_doc(dictionary, year_field, id_field)
             except ValueError:
                 logging.warning("Unable to process line: %s" %
                                 str(line))
 
-def iter_elastic_dump(filename, year_field=None, id_field=None, item_prefix='item'):
+def iter_large_json(filename, year_field=None, id_field=None, item_prefix='item'):
 
     from ijson import items
 
     with open(filename, 'r') as f:
         for item in items(f, item_prefix):
             if type(item) == dict:
-                yield dict_to_doc(item, year_field=year_field, id_field=id_field)
+                yield dict_to_es_doc(item, year_field=year_field, id_field=id_field)
             elif type(item) == list:
                 for sub_item in item:
                     if type(sub_item) ==  dict:
-                        yield dict_to_doc(sub_item, year_field=year_field, id_field=id_field)
+                        yield dict_to_es_doc(sub_item, year_field=year_field, id_field=id_field)
 
+'''
+def iter_large_json_OLD(json_file, prefix_value, event_value):
+    import ijson
+
+    parser = ijson.parse(open(json_file))
+
+    for prefix, event, value in parser:
+        # For Flowdock data ('item.content', 'string')
+        if (prefix, event) == (prefix_value, event_value):
+            yield "%s/%s" % (prefix, event), value
+
+'''
 
 
 def iter_documents_folder(folder, content_field='text'):
@@ -135,35 +128,11 @@ def iter_documents_folder(folder, content_field='text'):
                 with _open(fullpath, 'rb') as f:
                     dictionary = {}
                     fields = [(content_field    , f.read().decode('utf-8')),
-                              (filename         , fullpath)]
+                              ('filename'       , fullpath)]
 
-                    yield dict_to_doc(dictionary, addtl_fields=fields)
+                    yield dict_to_es_doc(dictionary, addtl_fields=fields)
             except (ValueError, UnicodeDecodeError) as err:
                 logging.warning("Unable to process file: %s" % fullpath)
-
-'''
-def iter_large_json(json_file, prefix_value, event_value):
-    import ijson
-
-    parser = ijson.parse(open(json_file))
-
-    for prefix, event, value in parser:
-        # For Flowdock data ('item.content', 'string')
-        if (prefix, event) == (prefix_value, event_value):
-            yield "%s/%s" % (prefix, event), value
-
-'''
-def iter_large_json(json_file, prefix_value, event_value):
-    import ijson
-    
-    parser = ijson.parse(open(json_file))
-    
-    for prefix, event, value in parser:
-        # For Flowdock data ('item.content', 'string')
-        #print('%r|%r|%r' % (prefix, event, value))
-        #pdb.set_trace()
-        if (prefix, event) == (prefix_value, event_value):
-            yield "%s/%s" % (prefix, event), value
 
 
 def iter_solr_query(solr_instance, field, query="*:*"):
@@ -172,7 +141,18 @@ def iter_solr_query(solr_instance, field, query="*:*"):
     return batch_concat(response, field,  content_in_list=False)
 
 
-def iter_elastic_query(instance, index, field, subfield=None):
+def iter_elastic_query(instance, index, query=None,
+                       year_field=None, id_field=None):
+    """Queries elasticsearch for all documents within the specified year range
+    and returns a generator of the results"""
+    es = Elasticsearch(instance)
+
+    results = helpers.scan(client=es, index=index, scroll='5m', query=query)
+
+    for result in results:
+        yield dict_to_es_doc(result['_source'], year_field, id_field)
+
+    '''
     es = Elasticsearch(instance)
 
     # initial search
@@ -199,6 +179,7 @@ def iter_elastic_query(instance, index, field, subfield=None):
         # end of scroll
         if scroll_id is None or not resp['hits']['hits']:
             break
+    '''
 
 """
 ===================================================================
@@ -206,7 +187,7 @@ STEP 1.5: Conform dict to elasticsearch standard document structure
 ===================================================================
 """
 
-def dict_to_doc(dictionary, year_field=None, id_field=None, addtl_fields=None):
+def dict_to_es_doc(dictionary, year_field=None, id_field=None, addtl_fields=None):
     doc_dict = {}
     doc_dict['_source'] = dictionary
     if year_field:

@@ -10,7 +10,7 @@ import webbrowser
 import numpy as np
 
 from topik.readers import iter_document_json_stream, iter_documents_folder,\
-        iter_large_json, iter_solr_query, iter_elastic_query, iter_elastic_dump,\
+        iter_large_json, iter_solr_query, iter_elastic_query,\
         reader_to_elastic, get_filtered_elastic_results
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
 from topik.vectorizers import CorpusBOW
@@ -24,10 +24,10 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
+def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
                     model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  
                     prefix_value=None, event_value=None, content_field=None, year_field=None,
-                    start_year=None, stop_year=None, query='*:*', subfield=None, seed=42,
+                    start_year=None, stop_year=None, es_query=None, solr_query='*:*', subfield=None, seed=42,
                     destination_es_instance=None, destination_es_index=None, id_field=None,
                     clear_es_index=False):
     """Run your data through all topik functionality and save all results to a specified directory.
@@ -68,23 +68,32 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
     event_value: string
         For 'large json' format reader, the event value to parse.
 
-    field: string
+    content_field: string
         For 'json_stream', 'solr' or 'elastic' format readers, the field to parse.
 
-    ----->?solr_instance: string
-    ----->?    For 'solr' format reader, the url to the solr instance.
+    year_field: string
+        For 'json_stream', 'solr' or 'elastic' format readers, the field containing year of publicaiton (for filtering).
 
-    query: string
+    start_year: int
+        For beginning of range filter on year_field values
+
+    stop_year: int
+        For beginning of range filter on year_field values
+
+    destination_es_instance: string
+        The address of the intermediate elasticsearch instance
+
+    destination_es_index: string
+        The index to use within the intermediate elasticsearch instance
+
+    solr_query: string
         For 'solr' format reader, an optional query. Default is '*:*' to retrieve all documents.
 
+    es_query:
+        For 'elastic' format reader, an optional query. Default is None to retrieve all documents.
     seed: int
         Set random number generator to seed, to be able to reproduce results. Default 42.
 
-    destination_es_instance
-    destination_es_index: string
-    year_field
-    start_year
-    stop_year
 
     """
     np.random.seed(seed)
@@ -100,29 +109,23 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
 
     if format == 'folder_files':
         documents = iter_documents_folder(data, content_field)
-    elif format == 'large_json' and prefix_value is not None and event_value is not None:
-        documents = iter_large_json(data, prefix_value, event_value)
+    #elif format == 'large_json' and prefix_value is not None and event_value is not None:
+    #    documents = iter_large_json(data, prefix_value, event_value)
     elif format == 'json_stream' and content_field is not None:
         documents = iter_document_json_stream(data, year_field)
-    elif format == 'elastic_dump' and content_field is not None:
-        documents = iter_elastic_dump(data, year_field, id_field, prefix_value)
+    elif format == 'large_json' and content_field is not None:
+        documents = iter_large_json(data, year_field, id_field, prefix_value)
     elif format == 'solr' and content_field is not None:
-        id_documents = iter_solr_query(data, content_field, query=query)
+        id_documents = iter_solr_query(data, content_field, query=solr_query)
     elif format == 'elastic' and content_field is not None:
-        id_documents = iter_elastic_query(data, index, content_field, subfield)
+        documents = iter_elastic_query(data, es_index, query=es_query)
     else:
         raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
     #ids, documents = unzip(id_documents)
 
     #for n, doc in enumerate(documents):
     #    print(n)
-    #    print(doc['_source'][content_field])
-        #if year_field:
-        #    if year_field in doc['_source'].keys():
-        #        print('%d | %r' % (n, doc['_source'][year_field]))
-        #    else:
-        #        print('NO YEAR FIELD FOR THIS DOC')
-        #print(doc['_source']['name'])
+    #    print(doc)
 
     print("STEP 1 Complete")
 
@@ -226,9 +229,9 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
         termite = Termite(os.path.join(dir_path,'termite.csv'), "Termite Plot")
         termite.plot(os.path.join(dir_path,'termite.html'))
 
-    """
-    if output_file:
 
+    if output_file:
+        '''
         if format == 'folder_files':
             id_documents = iter_documents_folder(data)
 
@@ -238,9 +241,13 @@ def run_model(data, format='json_stream', tokenizer='simple', n_topics=10, dir_p
             id_documents = iter_document_json_stream(data, field)
 
         ids, documents = unzip(id_documents)
-        df_results = generate_csv_output_file(documents, corpus, corpus_bow, lda.model)
+        '''
+        filtered_documents = get_filtered_elastic_results(destination_es_instance,
+                        destination_es_index, content_field,
+                        year_field, start_year, stop_year)
+        df_results = generate_csv_output_file(filtered_documents, corpus, corpus_bow, lda.model)
     
-    """
+
     if r_ldavis:
         to_r_ldavis(corpus_bow, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
         os.environ["LDAVIS_DIR"] = os.path.join(dir_path, 'ldavis')
