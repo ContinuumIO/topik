@@ -32,5 +32,5 @@ class DigestedDocumentCollection(TextCorpus):
         for tokens in _iter_corpus(self.corpus):
             yield self.dict.doc2bow(tokens)
 
-    def get_word_dictionary(self):
+    def get_id2word_dict(self):
         return self.dict
