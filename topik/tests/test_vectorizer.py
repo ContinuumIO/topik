@@ -4,7 +4,6 @@ import unittest
 from topik.readers import iter_document_json_stream
 from topik.tokenizers import SimpleTokenizer
 from topik.vectorizers import CorpusBOW
-from topik.utils import unzip
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
@@ -25,8 +24,6 @@ class TestCorpusBOW(unittest.TestCase):
 
         fullpath = os.path.join(module_path, 'data/test-data-1.json')
         id_documents = iter_document_json_stream(fullpath, "text")
-        _, doc_text = unzip(id_documents)
-        _, texts = unzip(doc_text)
         self.my_corpus = SimpleTokenizer(texts)
 
     def test_corpus_bow_content(self):

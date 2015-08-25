@@ -1,10 +1,9 @@
 import os
 import unittest
 
-from topik.readers import iter_document_json_stream
+from topik.readers import read_input
 from topik.preprocessing import preprocess
 from topik.models import LDA
-from topik.utils import unzip
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
@@ -13,13 +12,19 @@ module_path = os.path.dirname(__file__)
 class TestModels(unittest.TestCase):
 
     def setUp(self):
-        raw_data = iter_document_json_stream(
-                os.path.join(module_path, 'data/test-data-1.json'), "text")
+        output_config = {"host": "localhost",
+                         "index": "model_testing",
+                         "text_field": "text"}
+        raw_data = read_input(
+                source=os.path.join(module_path, 'data/test-data-1.json'),
+                content_field=output_config["text_field"],
+                output_args=output_config)
         self.digested_data = preprocess(raw_data)
 
     def tearDown(self):
         if os.path.exists(os.path.join(module_path, 'test.model')):
             os.remove(os.path.join(module_path, 'test.model'))
+        self.digested_data.corpus.instance.indices.delete("model_testing")
 
     def test_lda(self):
         my_lda = LDA(self.digested_data, ntopics=3)

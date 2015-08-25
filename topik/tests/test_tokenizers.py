@@ -1,10 +1,9 @@
 import os
 import unittest
 
-from topik.readers import iter_document_json_stream
-from topik.tokenizers import (SimpleTokenizer, CollocationsTokenizer,
-                              EntitiesTokenizer, MixedTokenizer)
-from topik.utils import unzip
+from topik.readers import read_input
+from topik.intermediaries.raw_data import ElasticSearchCorpus, _get_hash_identifier
+from topik.tokenizers import tokenizer_methods
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
@@ -48,40 +47,62 @@ class TestTokenizers(unittest.TestCase):
             'nanoparticles', 'xrd', 'vis', 'copper', 'nanoparticles',
             'excellent', 'antioxidant', 'ability', 'ascorbic_acid']
 
+        self.output_config = {"host": "localhost",
+                         "index": "tokenizer_testing",
+                         "text_field": "text"}
+        es = ElasticSearchCorpus(**self.output_config)
+        if es.instance.indices.exists("tokenizer_testing"):
+            es.instance.indices.delete("tokenizer_testing")
+        self.raw_data = None
+
         self.data_1_path = os.path.join(module_path, 'data/test-data-1.json')
         self.data_2_path = os.path.join(module_path, 'data/test-data-2')
         assert os.path.exists(self.data_1_path)
         assert os.path.exists(self.data_2_path)
 
+    def tearDown(self):
+        es = ElasticSearchCorpus(**self.output_config)
+        es.instance.indices.delete("tokenizer_testing")
+
     def test_simple_tokenizer(self):
-        id_documents = iter_document_json_stream(self.data_1_path, "text")
-        _, doc_text = unzip(id_documents)
-        simple_tokenizer = SimpleTokenizer(doc_text)
-        doc_tokens = next(iter(simple_tokenizer))
+        raw_data = read_input(
+                source=self.data_1_path,
+                content_field=self.output_config["text_field"],
+                output_args=self.output_config,
+                synchronous_wait=10)
+        raw_data = raw_data.instance.search(index="tokenizer_testing", _source="text",
+                                            body={"query": {"match": {'id': "1"}}})['hits']['hits'][0]["_source"]["text"]
+        doc_tokens = tokenizer_methods["simple"](raw_data)
         self.assertEqual(doc_tokens,
                          self.solution_simple_tokenizer_test_data_1)
 
     def test_collocations_tokenizer(self):
-        id_documents = iter_document_json_stream(self.data_2_path, "abstract")
-        _, doc_text = unzip(id_documents)
-        collocations_tokenizer = CollocationsTokenizer(doc_text,
+        raw_data = read_input(
+                source=self.data_2_path,
+                content_field=self.output_config["text_field"],
+                output_args=self.output_config)
+        collocations_tokenizer = CollocationsTokenizer(raw_data,
                                   min_bigram_freq=2, min_trigram_freq=2)
         doc_tokens = next(iter(collocations_tokenizer))
         self.assertEqual(doc_tokens,
                          self.solution_collocations_tokenizer_test_data_2)
 
     def test_entities_tokenizer(self):
-        id_documents = iter_document_json_stream(self.data_2_path, "abstract")
-        _, doc_text = unzip(id_documents)
-        entities_tokenizer = EntitiesTokenizer(doc_text, 1)
+        raw_data = read_input(
+                source=self.data_2_path,
+                content_field=self.output_config["text_field"],
+                output_args=self.output_config)
+        entities_tokenizer = EntitiesTokenizer(raw_data, 1)
         doc_tokens = next(iter(entities_tokenizer))
         self.assertEqual(doc_tokens,
                          self.solution_entities_tokenizer_test_data_2)
 
     def test_mixed_tokenizer(self):
-        id_documents = iter_document_json_stream(self.data_2_path, "abstract")
-        ids, doc_text = unzip(id_documents)
-        mixed_tokenizer = MixedTokenizer(doc_text)
+        raw_data = read_input(
+                source=self.data_2_path,
+                content_field=self.output_config["text_field"],
+                output_args=self.output_config)
+        mixed_tokenizer = MixedTokenizer(raw_data)
         doc_tokens = next(iter(mixed_tokenizer))
         self.assertEqual(doc_tokens,
                          self.solution_mixed_tokenizer_test_data_2)

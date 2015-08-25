@@ -14,10 +14,6 @@ import bs4
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-def unzip(pairs):
-    a, b = tee(pairs)
-    return (_[0] for _ in a), (_[1] for _ in b)
-
 def html2text(html):
     soup = bs4.BeautifulSoup(html)
     for s in soup('script'):

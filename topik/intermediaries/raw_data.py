@@ -12,7 +12,7 @@ def _get_hash_identifier(input_data, id_field):
 
 class ElasticSearchCorpus(object):
     def __init__(self, host, index, text_field, port=9200, username=None,
-                 password=None, doc_type=None, query=None):
+                 password=None, doc_type=None, query=None, iterable=None):
         super(ElasticSearchCorpus, self).__init__()
         self.host = host
         self.port = port
@@ -25,15 +25,17 @@ class ElasticSearchCorpus(object):
         self.text_field = text_field
         self.doc_type = doc_type
         self.query = query
+        if iterable:
+            self.import_from_iterable(iterable, text_field)
 
     def __iter__(self):
         results = helpers.scan(self.instance, index=self.index,
                                query=self.query, doc_type=self.doc_type)
         for result in results:
-            yield result['_source'][self.text_field]
+            yield result["_id"], result['_source'][self.text_field]
 
     def append_to_record(self, record_id, field_name, field_value):
-        self.instance.update(index=self.index, id=record_id,
+        self.instance.update(index=self.index, id=record_id, doc_type="continuum",
                              body={"doc": {field_name: field_value}})
 
     def get_field(self, field=None):
@@ -64,3 +66,12 @@ class ElasticSearchCorpus(object):
                                 id=id, body=item)
         # TODO: is there a good way to do bulk without forcing in-memory of whole data?
         # helpers.bulk(self.instance, )
+
+    def get_number_of_items_stored(self):
+        return self.instance.count(index=self.index, doc_type=self.doc_type)['count']
+
+
+# Collection of output formats: people put files, folders, etc in, and they can choose from these to be the output
+# These consume the iterable collection of dictionaries produced by the various iter_ functions.
+output_formats = {"elasticsearch": ElasticSearchCorpus,
+                  }

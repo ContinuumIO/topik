@@ -1,17 +1,11 @@
 from __future__ import absolute_import, print_function
 
-import json
 import os
 import logging
-import gzip
-import solr
-import requests
-import time
-from ijson import items
+
 from elasticsearch import Elasticsearch, helpers
 
-
-from topik.utils import batch_concat
+from topik.intermediaries.raw_data import output_formats
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -23,7 +17,7 @@ STEP 1: Read all documents from source and yield full-featured dicts
 ====================================================================
 """
 
-def iter_document_json_stream(filename, year_field=None, id_field=None):
+def _iter_document_json_stream(filename, year_field=None, id_field=None, **kwargs):
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters
@@ -37,7 +31,7 @@ def iter_document_json_stream(filename, year_field=None, id_field=None):
     $ head -n 2 ./topik/tests/data/test-data-1
         {"id": 1, "topic": "interstellar film review", "text":"'Interstellar' was incredible. The visuals, the score..."}
         {"id": 2, "topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in..."}
-    >>> document = iter_document_json_stream('./topik/tests/test-data-1.json', "text")
+    >>> document = _iter_document_json_stream('./topik/tests/test-data-1.json', "text")
     >>> next(document)
     {'_id': 0,
      '_source': {'filename': './topik/tests/data/test-data-3.json',
@@ -48,29 +42,27 @@ def iter_document_json_stream(filename, year_field=None, id_field=None):
       u'topic': u'interstellar film review',
       u'year': 1998}}
     """
-
+    import json
     with open(filename, 'r') as f:
         for n, line in enumerate(f):
             try:
-                dictionary = {}
-                dictionary = json.loads(line)
-                yield dict_to_es_doc(dictionary, year_field, id_field)
-            except ValueError:
-                logging.warning("Unable to process line: %s" %
-                                str(line))
+                yield json.loads(line)
+            except ValueError as e:
+                logging.warning("Unable to process line: {} (error was: {})".format(str(line), e))
 
-def iter_large_json(filename, year_field=None, id_field=None, item_prefix='item'):
 
+def _iter_large_json(filename, year_field=None, id_field=None, item_prefix='item', **kwargs):
+    from ijson import items
     with open(filename, 'r') as f:
         for item in items(f, item_prefix):
             if hasattr(item, 'keys'):
             # TODO: if type(item) == dict:
-                yield dict_to_es_doc(item, year_field=year_field, id_field=id_field)
+                yield item
             # TODO: elif hasattr(item, '') find some way to see that it (1) is iterable but (2) not a string
             elif type(item) == list:
                 for sub_item in item:
                     if type(sub_item) ==  dict:
-                        yield dict_to_es_doc(sub_item, year_field=year_field, id_field=id_field)
+                        yield sub_item
             #else:
             #    raise ValueError:
                     # TODO: logging.warning("") Warning: Any other objects
@@ -89,7 +81,7 @@ def iter_large_json_OLD(json_file, prefix_value, event_value):
 '''
 
 
-def iter_documents_folder(folder, content_field='text'):
+def _iter_documents_folder(folder, content_field='text', **kwargs):
     """Iterate over the files in a folder to retrieve the content to process and tokenize.
 
     Parameters
@@ -107,6 +99,7 @@ def iter_documents_folder(folder, content_field='text'):
 
     """
     # TODO: write a default year-field to some "unknown" value
+    import gzip
 
     for directory, subdirectories, files in os.walk(folder):
         for n, file in enumerate(files):
@@ -114,49 +107,29 @@ def iter_documents_folder(folder, content_field='text'):
             try:
                 fullpath = os.path.join(directory, file)
                 with _open(fullpath, 'rb') as f:
-                    dictionary = {}
-                    fields = [(content_field    , f.read().decode('utf-8')),
-                              ('filename'       , fullpath)]
-
-                    yield dict_to_es_doc(dictionary, addtl_fields=fields)
+                    yield {content_field: f.read().decode('utf-8'),
+                                  'filename': fullpath}
             except (ValueError, UnicodeDecodeError) as err:
                 logging.warning("Unable to process file: %s" % fullpath)
 
 
-def iter_solr_query(solr_instance, field, query="*:*"):
+def _iter_solr_query(solr_instance, field, query="*:*", **kwargs):
+    import solr
+    from topik.utils import batch_concat
     s = solr.SolrConnection(solr_instance)
     response = s.query(query)
     return batch_concat(response, field,  content_in_list=False)
 
 
-def iter_elastic_query(instance, index, query=None,
-                       year_field=None, id_field=None):
+def _iter_elastic_query(instance, index, query=None,
+                       year_field=None, id_field=None, **kwargs):
     # TODO: add description
     es = Elasticsearch(instance)
 
     results = helpers.scan(client=es, index=index, scroll='5m', query=query)
 
     for result in results:
-        yield dict_to_es_doc(result['_source'], year_field, id_field)
-
-"""
-===================================================================
-STEP 1.5: Conform dict to elasticsearch standard document structure
-===================================================================
-"""
-# TODO: generate the _id by hashing content field, always (take away the option for them to do it).  Also means content_field needs to be an input here.
-def dict_to_es_doc(dictionary, year_field=None, id_field=None, addtl_fields=None):
-    doc_dict = {}
-    doc_dict['_source'] = dictionary
-    if year_field:
-        if year_field in dictionary.keys():
-            doc_dict['_source'][year_field] = int(doc_dict['_source'][year_field])
-    if id_field and id_field in dictionary.keys():
-        doc_dict['_id'] = dictionary[id_field]
-    if addtl_fields:
-        for key, value in addtl_fields:
-            doc_dict['_source'][key] = value
-    return doc_dict
+        yield result['_source']
 
 """
 =============================================================
@@ -164,57 +137,50 @@ STEP 2: Load dicts from generator into elasticsearch instance
 =============================================================
 """
 
-def reader_to_elastic(instance, index, documents, clear_index=False):
-    """Takes the generator yeilded by the selected reader and iterates over it 
-    to load the documents into elasticsearch"""
-    #TODO: replace all with logging
-    #TODO: es.indices.exists(es_index), es.indices.delete
-    if clear_index:
-        full_index_path = instance + '/' + index 
-        r = requests.get(full_index_path) #Check to see if the index exists
-        if r.status_code == 200:
-            print("Index '%s' exists, so can be deleted..." % full_index_path)
-            r = requests.delete(full_index_path)
-            if r.status_code == 200:
-                print("Index '%s' successfully deleted" % full_index_path)
-                r = requests.get(full_index_path)
-                if r.status_code != 200:
-                    print("Unsuccessful request for index '%s' confirms its absence." 
-                            % full_index_path)
-                    r = requests.put(full_index_path)
-                    if r.status_code == 200:
-                        print("Index '%s' successfully recreated" % full_index_path)
-                else:
-                    print("Actually, deletion appears unsuccessful after all!")
-            else:
-                print("Problem reported with deletion request!")
-        else:
-            print("No index '%s' exists, so can't be deleted." % full_index_path)
+def read_input(source, content_field, source_type="auto", output_type="elasticsearch", output_args=None,
+               synchronous_wait=0, **kwargs):
+    import re
+    import time
+    json_extensions = [".js", ".json"]
+    ip_regex = "/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/"
+    web_regex = "^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/"
+    if output_args is None:
+        output_args = {}
 
+    ip_match = re.compile(ip_regex)
+    web_match = re.compile(web_regex)
 
+    # solr defaults to port 8983
+    if (source_type=="auto" and "8983" in source) or source_type == "solr":
+        data_iterator = _iter_solr_query(source, **kwargs)
+    # web addresses default to elasticsearch
+    elif (source_type == "auto" and (ip_match.search(source) or web_match.search(source))) or source_type == "elastic":
+        data_iterator = _iter_elastic_query(source, **kwargs)
+    # files must end in .json.  Try json parser first, try large_json parser next.  Fail otherwise.
+    elif (source_type == "auto" and os.path.splitext(source)[1] in json_extensions) or source_type == "json_stream":
+        try:
+            data_iterator = _iter_document_json_stream(source, **kwargs)
+        except ValueError:
+            data_iterator = _iter_large_json(source, **kwargs)
+    elif source_type == "large_json":
+        data_iterator = _iter_large_json(source, **kwargs)
+    # folder paths are simple strings that don't end in an extension (.+3-4 characters), or end in a /
+    elif (source_type == "auto" and os.path.splitext(source)[1] == "") or source_type == "folder":
+        data_iterator = _iter_documents_folder(source, content_field=content_field)
+    else:
+        raise ValueError("Unrecognized source type: {}.  Please either manually specify the type, or convert your input"
+                         " to a supported type.".format(source))
+    output = output_formats[output_type](iterable=data_iterator, **output_args)
 
-    es = Elasticsearch(instance)
+    if synchronous_wait > 0:
+        start = time.time()
+        items_stored = output.get_number_of_items_stored()
+        time.sleep(1)
+        while items_stored != output.get_number_of_items_stored() and time.time() - start < synchronous_wait:
+            logging.debug("Number of documents added to the index: {}".format(output.get_number_of_items_stored()))
+            time.sleep(3)
 
-    bulk_index = helpers.bulk(client=es, actions=documents, index=index, 
-                              doc_type='document')#, chunk_size=5000)
-
-    # TODO: replace with logging: print(bulk_index)
-    pre_clock = time.clock()
-    number_of_docs_pushed_to_bulk = bulk_index[0]
-    number_of_docs_in_index = -1
-    # TODO: replace with api call to get document count for the index
-    # full_doc_count = es.count(index=index, doc_type=doc_type)['count']
-    while number_of_docs_pushed_to_bulk != number_of_docs_in_index:
-        r = requests.get('http://localhost:9200/_cat/indices?v')
-        rlist = r.text.split()
-        number_of_docs_in_index = int(rlist[rlist.index(index)+ 3])
-        print("Number of documents in the index '%s': " % index, end="")
-        print(number_of_docs_in_index)
-        # TODO: add timeout, and also sleep function
-    # TODO: replace all prints with logging
-    print("Time it took after displaying bulk results for ES to catch up: ", end="")
-    print(time.clock() - pre_clock)
-    print("All documents successfully indexed")
+    return output
 
 """
 ===========================================================

@@ -8,25 +8,21 @@ from textblob import TextBlob
 import gensim
 from gensim.parsing.preprocessing import STOPWORDS
 
-from topik.readers import iter_document_json_stream
-from topik.utils import collocations, entities, unzip
+from topik.utils import collocations, entities
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', 
                     level=logging.INFO)
 
-class SimpleTokenizer(object):
-    """A text tokenizer that simply lowercases, matches alphabetic 
+
+def tokenize_simple(text, stopwords=STOPWORDS):
+    """A text tokenizer that simply lowercases, matches alphabetic
     characters and removes stopwords.
     Uses gensim.utils.tokenize and gensim.parsing.preprocessing.STOPWORDS.
 
     Parameters
     ----------
-    reader: generator
-        A generator that yields each of the documents to tokenize.
-        (e.g. topik.readers.iter_document_json_stream)
-        Each item yielded is a tuple of (id, content)
-
-    Readers iterate over tuples (id, content)
+    text: input text to be tokenized
+    stopwords: words to ignore as noise
 
     >>> id_documents = iter_document_json_stream(
                     './topik/tests/data/test-data-1.json', "text")
@@ -38,33 +34,41 @@ class SimpleTokenizer(object):
     seen in a while."
     >>> simple_tokenizer = SimpleTokenizer(text)
     >>> head(simple_tokenizer)
-        [['interstellar', 'incredible', 'visuals', 'score', 'acting', 
+        [['interstellar', 'incredible', 'visuals', 'score', 'acting',
           'amazing', 'plot', 'definitely', 'original', 've', 'seen']]
 
     """
-    def __init__(self, reader):
-        self.reader = reader
-
-    def __iter__(self):
-        for text in self.reader:
-            # tokenize each message; simply lowercase & match alphabetic chars
-            tokenized_text = self.tokenize(text)
-            yield tokenized_text
-
-    def tokenize(self, text, stopwords=STOPWORDS):
-        """
-        Split text into a list of single words. Ignore any token in the `stopwords` set.
-
-        """
-        return [word for word in gensim.utils.tokenize(text, lower=True)
-                if word not in STOPWORDS]
+    return [word for word in gensim.utils.tokenize(text, lower=True)
+            if word not in stopwords]
 
 
-class CollocationsTokenizer(object):
-    """A text tokenizer that includes collocations(bigrams and trigrams). A collocation is sequence of words or terms
-    that co-occur more often than would be expected by chance.
 
-    Uses gensim.parsing.preprocessing.STOPWORDS. to remove stopwords and nltk.collocations.TrigramCollocationFinder to
+def collect_trigrams_and_bigrams(collection, top_n = 10000, min_bigram_freq=50,
+                                 min_trigram_freq=20, stopwords=STOPWORDS):
+    # generator of documents, turn each element to its list of words
+    documents = (_split_words(text, stopwords) for text in collection)
+    # generator, concatenate (chain) all words into a single sequence, lazily
+    words = itertools.chain.from_iterable(documents)
+    bigrams, trigrams = collocations(words, top_n=top_n,  min_bigram_freq=min_bigram_freq,
+                                     min_trigram_freq=min_trigram_freq)
+    return bigrams, trigrams
+
+def _split_words(text, stopwords):
+    """Split text into a list of single words. Ignore any token in the `stopwords` set.
+
+    """
+    return [word
+            for word in gensim.utils.tokenize(text, lower=True)
+            if word not in stopwords and len(word) > 2]
+
+def tokenize_collocation(text, bigrams, trigrams, stopwords=STOPWORDS):
+    """A text tokenizer that includes collocations(bigrams and trigrams).
+
+    A collocation is sequence of words or terms
+    that co-occur more often than would be expected by chance.  Bigrams and trigrams must be found from the document
+    collection a-priori.  Use the collect_bigrams_and_trigrams function to do so.
+
+    Uses gensim.parsing.preprocessing.STOPWORDS to remove stopwords and nltk.collocations.TrigramCollocationFinder to
     find trigrams and bigrams.
 
     Parameters
@@ -94,47 +98,19 @@ class CollocationsTokenizer(object):
         u'size', u'narrow', u'size_distribution', u'synthesis_route', u'ascorbic_acid'...]
 
     """
-    def __init__(self, reader, top_n = 10000, min_bigram_freq=50, min_trigram_freq=20):
-        self.reader = reader
-        self.iter_1, self.iter_2 = itertools.tee(self.reader, 2)
-        self.min_bigram_freq = min_bigram_freq
-        self.min_trigram_freq = min_trigram_freq
-        self.top_n = top_n
-        logging.info("collecting bigrams and trigrams from %s" % self.iter_1)
-        # generator of documents, turn each element to its list of words
-        documents = (self.split_words(text) for text in self.iter_1)
-        # generator, concatenate (chain) all words into a single sequence, lazily
-        words = itertools.chain.from_iterable(documents)
-        self.bigrams, self.trigrams = collocations(words, top_n=self.top_n,  min_bigram_freq=self.min_bigram_freq,
-                                                   min_trigram_freq=self.min_trigram_freq)
-
-    def split_words(self, text, stopwords=STOPWORDS):
-        """Split text into a list of single words. Ignore any token in the `stopwords` set.
-
-        """
-        return [word
-                for word in gensim.utils.tokenize(text, lower=True)
-                if word not in STOPWORDS and len(word) > 2]
-
-    def tokenize(self, message):
-        """Break text (string) into a list of Unicode tokens.
-
-        The resulting tokens include found collocations.
-
-        """
-        text = ' '.join(self.split_words(message))
-        text = re.sub(self.trigrams, lambda match: match.group(0).replace(' ', '_'), text)
-        text = re.sub(self.bigrams, lambda match: match.group(0).replace(' ', '_'), text)
-        return text.split()
-
-    def __iter__(self):
-        for message in self.iter_2:
-            yield self.tokenize(message)
+    text = ' '.join(_split_words(text, stopwords))
+    text = re.sub(trigrams, lambda match: match.group(0).replace(' ', '_'), text)
+    text = re.sub(bigrams, lambda match: match.group(0).replace(' ', '_'), text)
+    return text.split()
 
 
+def find_entities(collection, freq_min=2, freq_max=10000):
+        return entities(collection, freq_max=freq_max, freq_min=freq_min)
 
-class EntitiesTokenizer(object):
+def tokenize_entities(text, entities, stopwords=STOPWORDS):
     """A tokenizer that extracts noun phrases from text.
+
+    Requires that you first establish entities
 
     Uses gensim.parsing.preprocessing.STOPWORDS. to remove stopwords and textblob.TextBlob().noun_phrases to find
     `noun_phrases`.
@@ -166,38 +142,20 @@ class EntitiesTokenizer(object):
           u'excellent_antioxidant_ability', u'ascorbic_acid']]
 
     """
-    def __init__(self, reader, freq_min=2, freq_max=10000):
-        self.iter_1, self.iter_2 = itertools.tee(reader, 2)
-        logging.info("collecting entities from %s" % reader)
-        self.freq_min = freq_min
-        self.freq_max = freq_max
-        self.entities = entities(self.iter_1, freq_max=freq_max, freq_min=freq_min)
-        logging.info("selected %i entities: %s..." %
-                     (len(self.entities), list(self.entities)[:10]))
-
-    def __iter__(self):
-        for message in self.iter_2:
-            yield self.tokenize(message)
-
-    def tokenize(self, message, stopwords=STOPWORDS):
-        """Split text (string) into a list of tokens.
-        The resulting tokens can be longer phrases, e.g. `material_sciences`, `artificial_intelligence`, etc.
-
-        """
-        result = []
-        for np in TextBlob(message).noun_phrases:
-            if np not in self.entities:
-                # only consider phrases detected in entities (with frequency parameters)
-                continue
-            token = '_'.join(part for part in gensim.utils.tokenize(np))
-            if len(token) < 2 or token in stopwords:
-                # ignore very short phrases and stop words
-                continue
-            result.append(token)
-        return result
+    result = []
+    for np in TextBlob(text).noun_phrases:
+        if np not in entities:
+            # only consider phrases detected in entities (with frequency parameters)
+            continue
+        token = '_'.join(part for part in gensim.utils.tokenize(np))
+        if len(token) < 2 or token in stopwords:
+            # ignore very short phrases and stop words
+            continue
+        result.append(token)
+    return result
 
 
-class MixedTokenizer(object):
+def tokenize_mixed(text, entities, stopwords=STOPWORDS):
     """A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
 
     Parameters
@@ -211,42 +169,23 @@ class MixedTokenizer(object):
     >>> head(mixed_tokenizer)
 
     """
-    def __init__(self, reader):
-        self.reader = reader
-        self.iter_1, self.iter_2 = itertools.tee(self.reader, 2)
-        logging.info("collecting entities from %s" % self.iter_1)
-        self.entities = entities(self.iter_1)
-        logging.info("selected %i entities: %s..." %
-                     (len(self.entities), list(self.entities)[:10]))
-
-    def __iter__(self):
-        for message in self.iter_2:
-            yield self.tokenize(message)
-
-    def tokenize(self, message, stopwords=STOPWORDS):
-        """Split text (string) into a list of Unicode tokens.
-
-        The resulting tokens can be longer phrases, e.g. `material_sciences`,
-        `artificial_intelligence`, etc.
-
-        """
-        result = []
-        for np in TextBlob(message).noun_phrases:
-            if ' ' in np and np not in self.entities:
-                tokens = [word for word in gensim.utils.tokenize(np, lower=True) if word not in STOPWORDS]
-                result.extend(tokens)
-            else:
-                token = '_'.join(part for part in gensim.utils.tokenize(np) if len(part) > 2)
-                if len(token) < 2 or token in stopwords:
-                    # ignore very short phrases and stop words
-                    continue
-                result.append(token)
-        return result
+    result = []
+    for np in TextBlob(text).noun_phrases:
+        if ' ' in np and np not in entities:
+            tokens = [word for word in gensim.utils.tokenize(np, lower=True) if word not in stopwords]
+            result.extend(tokens)
+        else:
+            token = '_'.join(part for part in gensim.utils.tokenize(np) if len(part) > 2)
+            if len(token) < 2 or token in stopwords:
+                # ignore very short phrases and stop words
+                continue
+            result.append(token)
+    return result
 
 
 # Add additional methods here as necessary to expose them to outside consumers.
-tokenizer_methods = {"simple": SimpleTokenizer,
-                     "collocation": CollocationsTokenizer,
-                     "entities": EntitiesTokenizer,
-                     "mixed": MixedTokenizer
+tokenizer_methods = {"simple": tokenize_simple,
+                     "collocation": tokenize_collocation,
+                     "entities": tokenize_entities,
+                     "mixed": tokenize_mixed
                      }
