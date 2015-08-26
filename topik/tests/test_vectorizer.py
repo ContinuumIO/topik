@@ -3,9 +3,7 @@ import unittest
 
 from topik.readers import read_input
 from topik.preprocessing import preprocess
-
-# sample data files are located in the same folder
-module_path = os.path.dirname(__file__)
+from topik.tests import test_data_path
 
 
 class TestCorpusBOW(unittest.TestCase):
@@ -17,7 +15,7 @@ class TestCorpusBOW(unittest.TestCase):
         self.corpus_bow_head_2_simple_test_data_1 = [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1),
                                                      (6, 1), (7, 1), (8, 1), (9, 1), (10, 1)]
 
-        raw_data = read_input(os.path.join(module_path, 'data/test-data-1.json'),
+        raw_data = read_input(os.path.join(test_data_path, 'test-data-1.json'),
                                    content_field="text",
                                    output_type="dictionary")
         self.processed_data = preprocess(raw_data)

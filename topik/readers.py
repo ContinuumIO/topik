@@ -7,51 +7,26 @@ from elasticsearch import Elasticsearch, helpers
 
 from topik.intermediaries.raw_data import output_formats
 
+# imports used only for doctests
+from topik.tests import test_data_path
+
+
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-# TODO: look for helper functions where I've defined default values, preferable not to do that so that it shows up if not defined.
 
-"""
-====================================================================
-STEP 1: Read all documents from source and yield full-featured dicts
-====================================================================
-"""
-
-def _iter_document_json_stream(filename, year_field=None, id_field=None, **kwargs):
-    """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
-
-    Parameters
-    ----------
-    filename: string
-        The filename of the json stream.
-
-    year_field: string
-        The field name (if any) that contains the year associated with the document
-
-    $ head -n 2 ./topik/tests/data/test-data-1
-        {"id": 1, "topic": "interstellar film review", "text":"'Interstellar' was incredible. The visuals, the score..."}
-        {"id": 2, "topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in..."}
-    >>> document = _iter_document_json_stream('./topik/tests/test-data-1.json', "text")
-    >>> next(document)
-    {'_id': 0,
-     '_source': {'filename': './topik/tests/data/test-data-3.json',
-      u'id': 1,
-      u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, 
-                  were all amazing. The plot is definitely one of the most original 
-                  I've seen in a while.",
-      u'topic': u'interstellar film review',
-      u'year': 1998}}
-    """
+def _iter_document_json_stream(filename):
     import json
     with open(filename, 'r') as f:
         for n, line in enumerate(f):
             try:
-                yield json.loads(line)
+                output = json.loads(line)
+                output["filename"] = filename
+                yield output
             except ValueError as e:
                 logging.warning("Unable to process line: {} (error was: {})".format(str(line), e))
 
 
-def _iter_large_json(filename, year_field=None, id_field=None, item_prefix='item', **kwargs):
+def _iter_large_json(filename, item_prefix='item'):
     from ijson import items
     with open(filename, 'r') as f:
         for item in items(f, item_prefix):
@@ -63,42 +38,11 @@ def _iter_large_json(filename, year_field=None, id_field=None, item_prefix='item
                 for sub_item in item:
                     if type(sub_item) ==  dict:
                         yield sub_item
-            #else:
-            #    raise ValueError:
-                    # TODO: logging.warning("") Warning: Any other objects
-
-'''
-def iter_large_json_OLD(json_file, prefix_value, event_value):
-    import ijson
-
-    parser = ijson.parse(open(json_file))
-
-    for prefix, event, value in parser:
-        # For Flowdock data ('item.content', 'string')
-        if (prefix, event) == (prefix_value, event_value):
-            yield "%s/%s" % (prefix, event), value
-
-'''
+            else:
+                raise ValueError("unrecognized entry type in large json file: {}".format(item))
 
 
 def _iter_documents_folder(folder, content_field='text', **kwargs):
-    """Iterate over the files in a folder to retrieve the content to process and tokenize.
-
-    Parameters
-    ----------
-    folder: string
-        The folder containing the files you want to analyze.
-
-    $ ls ./topik/tests/test-data-folder
-        doc1  doc2  doc3
-    >>> doc_text = iter_documents_folder('./topik/tests/test-data-1.json')
-    >>> fullpath, content = next(doc_text)
-    >>> content
-    [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
-    of the most original I've seen in a while."]
-
-    """
-    # TODO: write a default year-field to some "unknown" value
     import gzip
 
     for directory, subdirectories, files in os.walk(folder):
@@ -137,8 +81,37 @@ STEP 2: Load dicts from generator into elasticsearch instance
 =============================================================
 """
 
-def read_input(source, content_field, source_type="auto", output_type="elasticsearch", output_args=None,
+def read_input(source, content_field, source_type="auto", output_type="dictionary", output_args=None,
                synchronous_wait=0, **kwargs):
+    """Read data from given source into Topik's internal data structures.
+
+    Parameters
+    ----------
+    source: (string) input data.  Can be file path, directory, or server address.
+    content_field: (string) Which field contains your data to be analyzed.  Hash of this is used as id.
+    source_type: (string) "auto" tries to figure out data type of source.  Can be manually specified instead.
+        options for manual specification are:
+    output_type: (string) internal format for handling user data.  Current options are:
+        ["elasticsearch", "dictionary"].  default is "dictionary"
+    output_args: (dictionary) configuration to pass through to output
+    synchronous_wait: (integer) number of seconds to wait for data to finish uploading to output (this happens
+        asynchronously.)  Only relevant for some output types ("elasticsearch", not "dictionary")
+    kwargs: any other arguments to pass to input parsers
+
+    Returns
+    -------
+    iterable output object
+
+    >>> raw_data = read_input(
+                '{}/test-data-1.json',
+                content_field="text")
+    >>> id, text = next(iter(raw_data))
+    >>> text
+    "'Interstellar' was incredible.  The visuals, the score, the acting,
+    were all amazing.  The plot is definitely on of the most original I've
+    seen in a while."
+
+    """.format(test_data_path)
     import re
     import time
     json_extensions = [".js", ".json"]

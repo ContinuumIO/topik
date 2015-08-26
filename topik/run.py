@@ -8,7 +8,7 @@ import webbrowser
 
 import numpy as np
 
-from topik.readers import read_input, get_filtered_elastic_results
+from topik.readers import read_input
 from topik.preprocessing import preprocess
 from topik.models import LDA
 from topik.viz import Termite
