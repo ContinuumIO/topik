@@ -70,16 +70,18 @@ def entities(document_stream, freq_min=2, freq_max=10000):
 
     """
     np_counts_total = {}
-    for docno, doc in enumerate(document_stream):
-        if docno > 0 and docno % 1000 == 0:
+    docs_examined = 0
+    for id, doc in document_stream:
+        if docs_examined > 0 and docs_examined % 1000 == 0:
             sorted_phrases = sorted(np_counts_total.items(), 
                                     key=lambda item: -item[1])
             np_counts_total = dict(sorted_phrases)
             logging.info("at document #%i, considering %i phrases: %s..." %
-                         (docno, len(np_counts_total), sorted_phrases[0]))
+                         (docs_examined, len(np_counts_total), sorted_phrases[0]))
 
         for np in TextBlob(doc).noun_phrases:
             np_counts_total[np] = np_counts_total.get(np, 0) + 1
+        docs_examined += 1
 
     # Remove noun phrases in the list that have higher frequencies than 'freq_max' or lower frequencies than 'freq_min'
     np_counts = {}

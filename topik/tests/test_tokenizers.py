@@ -89,7 +89,7 @@ class TestTokenizers(unittest.TestCase):
                 source=self.data_2_path,
                 content_field="abstract",
                 output_type="dictionary")
-        entities = find_entities(raw_data, freq_min=1)
+        entities = find_entities(raw_data)
         id, text = next(iter(raw_data))
         doc_tokens = tokenizer_methods["mixed"](text, entities)
         self.assertEqual(doc_tokens,
