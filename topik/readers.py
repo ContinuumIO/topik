@@ -60,7 +60,7 @@ def _iter_documents_folder(folder, content_field='text', **kwargs):
     import gzip
 
     for directory, subdirectories, files in os.walk(folder):
-        for n, file in enumerate(files):
+        for n, file in enumerate(sorted(files)):
             _open = gzip.open if file.endswith('.gz') else open
             try:
                 fullpath = os.path.join(directory, file)
