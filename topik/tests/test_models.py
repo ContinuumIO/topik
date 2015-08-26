@@ -29,10 +29,10 @@ class TestModels(unittest.TestCase):
         self.assertEqual(len(top_words), 3)
         self.assertEqual(len(top_words[1]), 15)
 
-        my_lda.termite_data(os.path.isfile(os.path.join(module_path, 'test_termite.csv')))
+        my_lda.termite_data(os.path.join(module_path, 'test_termite.csv'))
 
         self.assertTrue(os.path.isfile(os.path.join(module_path, 'test.model')))
-        self.assertTrue(os.path.isfile(os.path.join(module_path, 'test_termite.model')))
+        self.assertTrue(os.path.isfile(os.path.join(module_path, 'test_termite.csv')))
 
 if __name__ == '__main__':
     unittest.main()

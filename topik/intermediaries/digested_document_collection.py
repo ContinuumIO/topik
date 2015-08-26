@@ -28,13 +28,12 @@ class DigestedDocumentCollection(TextCorpus):
         super(DigestedDocumentCollection, self).__init__()
 
     def __iter__(self):
-        for _, doc in self.corpus:
-            yield doc
+        for _, doc_tokens in self.corpus:
+            yield self.dict.doc2bow(doc_tokens)
 
     def get_generator_with_id(self):
         for id, doc in self.corpus:
             yield id, doc
-
 
     def get_texts(self):
         """Each iteration gets a tokenized document from the corpus"""
