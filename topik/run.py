@@ -1,22 +1,23 @@
 from __future__ import absolute_import, print_function
 
-import os
-import time
-import subprocess
 import logging
+import os
 import shutil
+import subprocess
+import time
 import webbrowser
 
 import numpy as np
 
+from topik.models import LDA
 from topik.readers import iter_document_json_stream, iter_documents_folder,\
         iter_large_json, iter_solr_query, iter_elastic_query,\
         reader_to_elastic, get_filtered_elastic_results
 from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
-from topik.vectorizers import CorpusBOW
-from topik.models import LDA
-from topik.viz import Termite
 from topik.utils import to_r_ldavis, generate_csv_output_file, unzip
+from topik.vectorizers import CorpusBOW
+from topik.viz import Termite
+
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -108,9 +109,9 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     print("Beginning STEP 1: Reading documents from source")
 
     if format == 'folder_files':
-        documents = iter_documents_folder(data, content_field)
+        documents = iter_documents_folder(data, content_field, year_field)
     elif format == 'json_stream' and content_field is not None:
-        documents = iter_document_json_stream(data, year_field)
+        documents = iter_document_json_stream(data, year_field, id_field)
     elif format == 'large_json' and content_field is not None:
         documents = iter_large_json(data, year_field, id_field, prefix_value)
     elif format == 'solr' and content_field is not None:

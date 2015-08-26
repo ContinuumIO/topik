@@ -1,21 +1,19 @@
 from __future__ import absolute_import, print_function
 
-import json
-import os
-import logging
 import gzip
-import solr
-import requests
+import json
+import logging
+import os
 import time
-from ijson import items
-from elasticsearch import Elasticsearch, helpers
 
+from elasticsearch import Elasticsearch, helpers
+from ijson import items
+import requests
+import solr
 
 from topik.utils import batch_concat
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-
-# TODO: look for helper functions where I've defined default values, preferable not to do that so that it shows up if not defined.
 
 """
 ====================================================================
@@ -23,7 +21,7 @@ STEP 1: Read all documents from source and yield full-featured dicts
 ====================================================================
 """
 
-def iter_document_json_stream(filename, year_field=None, id_field=None):
+def iter_document_json_stream(filename, year_field, id_field):
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters
@@ -59,37 +57,21 @@ def iter_document_json_stream(filename, year_field=None, id_field=None):
                 logging.warning("Unable to process line: %s" %
                                 str(line))
 
-def iter_large_json(filename, year_field=None, id_field=None, item_prefix='item'):
-
+def iter_large_json(filename, year_field, id_field, item_prefix='item'):
+    """Iterate over all items and sub-items in a json object that match the specified prefix"""
     with open(filename, 'r') as f:
         for item in items(f, item_prefix):
-            if hasattr(item, 'keys'):
-            # TODO: if type(item) == dict:
+            if hasattr(item, 'keys'): # check if item is a dictionary
                 yield dict_to_es_doc(item, year_field=year_field, id_field=id_field)
-            # TODO: elif hasattr(item, '') find some way to see that it (1) is iterable but (2) not a string
-            elif type(item) == list:
+            elif isinstance(item, Iterable) and not isinstance(item, str): # check if item is both iterable and not a string
                 for sub_item in item:
-                    if type(sub_item) ==  dict:
+                    if hasattr(sub_item, 'keys'): # check if sub_item is a dictionary
                         yield dict_to_es_doc(sub_item, year_field=year_field, id_field=id_field)
-            #else:
-            #    raise ValueError:
-                    # TODO: logging.warning("") Warning: Any other objects
-
-'''
-def iter_large_json_OLD(json_file, prefix_value, event_value):
-    import ijson
-
-    parser = ijson.parse(open(json_file))
-
-    for prefix, event, value in parser:
-        # For Flowdock data ('item.content', 'string')
-        if (prefix, event) == (prefix_value, event_value):
-            yield "%s/%s" % (prefix, event), value
-
-'''
+            else:
+                raise ValueError("'item' in json source is not a dict, and is either a string or not iterable: %r" % item)
 
 
-def iter_documents_folder(folder, content_field='text'):
+def iter_documents_folder(folder, content_field='text', year_field='year'):
     """Iterate over the files in a folder to retrieve the content to process and tokenize.
 
     Parameters
@@ -104,9 +86,7 @@ def iter_documents_folder(folder, content_field='text'):
     >>> content
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
     of the most original I've seen in a while."]
-
     """
-    # TODO: write a default year-field to some "unknown" value
 
     for directory, subdirectories, files in os.walk(folder):
         for n, file in enumerate(files):
@@ -116,7 +96,8 @@ def iter_documents_folder(folder, content_field='text'):
                 with _open(fullpath, 'rb') as f:
                     dictionary = {}
                     fields = [(content_field    , f.read().decode('utf-8')),
-                              ('filename'       , fullpath)]
+                              ('filename'       , fullpath),
+                              (year_field       , 'N/A')]
 
                     yield dict_to_es_doc(dictionary, addtl_fields=fields)
             except (ValueError, UnicodeDecodeError) as err:
@@ -124,14 +105,14 @@ def iter_documents_folder(folder, content_field='text'):
 
 
 def iter_solr_query(solr_instance, field, query="*:*"):
+    """Iterate over all documents in the specified solr intance that match the specified query"""
     s = solr.SolrConnection(solr_instance)
     response = s.query(query)
     return batch_concat(response, field,  content_in_list=False)
 
 
-def iter_elastic_query(instance, index, query=None,
-                       year_field=None, id_field=None):
-    # TODO: add description
+def iter_elastic_query(instance, index, query, year_field, id_field):
+    """Iterate over all documents in the specified elasticsearch intance and index that match the specified query"""
     es = Elasticsearch(instance)
 
     results = helpers.scan(client=es, index=index, scroll='5m', query=query)
@@ -145,7 +126,8 @@ STEP 1.5: Conform dict to elasticsearch standard document structure
 ===================================================================
 """
 # TODO: generate the _id by hashing content field, always (take away the option for them to do it).  Also means content_field needs to be an input here.
-def dict_to_es_doc(dictionary, year_field=None, id_field=None, addtl_fields=None):
+def dict_to_es_doc(dictionary, year_field, id_field, addtl_fields=None):
+    """Convert a dictionary to one that is formatted as a standard elasticsearch document"""
     doc_dict = {}
     doc_dict['_source'] = dictionary
     if year_field:
@@ -164,58 +146,47 @@ STEP 2: Load dicts from generator into elasticsearch instance
 =============================================================
 """
 
-def reader_to_elastic(instance, index, documents, clear_index=False):
-    """Takes the generator yeilded by the selected reader and iterates over it 
+def reader_to_elastic(instance, index, documents, clear_index, doc_type='document'):
+    """Takes the generator yielded by the selected reader and iterates over it 
     to load the documents into elasticsearch"""
-    #TODO: replace all with logging
-    #TODO: es.indices.exists(es_index), es.indices.delete
-    if clear_index:
-        full_index_path = instance + '/' + index 
-        r = requests.get(full_index_path) #Check to see if the index exists
-        if r.status_code == 200:
-            print("Index '%s' exists, so can be deleted..." % full_index_path)
-            r = requests.delete(full_index_path)
-            if r.status_code == 200:
-                print("Index '%s' successfully deleted" % full_index_path)
-                r = requests.get(full_index_path)
-                if r.status_code != 200:
-                    print("Unsuccessful request for index '%s' confirms its absence." 
-                            % full_index_path)
-                    r = requests.put(full_index_path)
-                    if r.status_code == 200:
-                        print("Index '%s' successfully recreated" % full_index_path)
-                else:
-                    print("Actually, deletion appears unsuccessful after all!")
-            else:
-                print("Problem reported with deletion request!")
-        else:
-            print("No index '%s' exists, so can't be deleted." % full_index_path)
-
-
 
     es = Elasticsearch(instance)
-
+    
+    if clear_index:
+        if es.indices.exists(index):
+            logging.info("Index '%s' exists, so can be deleted..." % index)
+            
+            es.indices.delete(index)
+            logging.info("Index '%s' deleted." % index)
+        else:
+            logging.warning("Index '%s' does not exist so cannot be deleted." % index)
+            
     bulk_index = helpers.bulk(client=es, actions=documents, index=index, 
-                              doc_type='document')#, chunk_size=5000)
-
-    # TODO: replace with logging: print(bulk_index)
+                              doc_type=doc_type)
+    
     pre_clock = time.clock()
     number_of_docs_pushed_to_bulk = bulk_index[0]
-    number_of_docs_in_index = -1
-    # TODO: replace with api call to get document count for the index
-    # full_doc_count = es.count(index=index, doc_type=doc_type)['count']
+    number_of_docs_in_index = es.count(index=index, doc_type=doc_type)['count']
+    
     while number_of_docs_pushed_to_bulk != number_of_docs_in_index:
-        r = requests.get('http://localhost:9200/_cat/indices?v')
-        rlist = r.text.split()
-        number_of_docs_in_index = int(rlist[rlist.index(index)+ 3])
-        print("Number of documents in the index '%s': " % index, end="")
-        print(number_of_docs_in_index)
-        # TODO: add timeout, and also sleep function
-    # TODO: replace all prints with logging
-    print("Time it took after displaying bulk results for ES to catch up: ", end="")
-    print(time.clock() - pre_clock)
-    print("All documents successfully indexed")
-
+        time.sleep(0.1)
+        number_of_docs_in_index = es.count(index=index, doc_type=doc_type)['count']
+        logging.debug("Number of documents in the index '%s': %d" % (index, number_of_docs_in_index))
+        if (time.clock() - pre_clock) > 10:
+            break
+            
+    if number_of_docs_in_index == number_of_docs_pushed_to_bulk:
+        logging.debug("Time it took after displaying bulk results for ES to catch up: %d" % (time.clock() - pre_clock))
+        logging.info("All %d documents successfully indexed" % number_of_docs_in_index)
+    elif not clear_index:
+        if (number_of_docs_in_index > number_of_docs_pushed_to_bulk):
+            logging.warning("Timeout reached and the number of documents in the index does not match the number bulked. This may be due to previously existing documents in the index")
+            logging.info("All %r documents NOT successfully indexed" % number_of_docs_in_index)
+        else:
+            logging.warning("Number of documents in the index (%d) is less than the number pushed to bulk (%d)." % (number_of_docs_in_index, number_of_docs_pushed_to_bulk))
+    else:
+        logging.warning("Number of documents in the index (%d) is different than the number pushed to bulk (%d)." % (number_of_docs_in_index, number_of_docs_pushed_to_bulk))
+        
 """
 ===========================================================
 STEP 3: Get year-filtered documents back from elasticsearch
@@ -229,7 +200,7 @@ def get_filtered_elastic_results(instance, index, content_field, year_field,
     es = Elasticsearch(instance)
 
     if year_field and (start_year or stop_year):
-        # Do we need to do a check to make sure this field exists in the mapping?
+
         results = helpers.scan(client=es, index=index, scroll='5m',
                         query={"query": 
                                 {"constant_score": 
@@ -238,7 +209,7 @@ def get_filtered_elastic_results(instance, index, content_field, year_field,
                                             {year_field:
                                                 {"gte": start_year,
                                                  "lte": stop_year}}}}}})
-    # TODO: confirm that this is necessary
+
     else:
         results = helpers.scan(client=es, index=index, scroll='5m')
 

@@ -1,16 +1,16 @@
-import logging
-import re
-import os
-import json
 from itertools import tee
+import json
+import logging
+import os
+import re
 
-from textblob import TextBlob
+import bs4
+import gensim
 from nltk.collocations import TrigramCollocationFinder
 from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
 import numpy as np
 import pandas as pd
-import gensim
-import bs4
+from textblob import TextBlob
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -173,7 +173,7 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
     documents = []
 
     with open(output_file, 'w') as wfile:
-        #for fullpath, content in reader:
+        #for fullpath, content in reader:3
         for content in reader:
             document = {}
             document['text'] = content
