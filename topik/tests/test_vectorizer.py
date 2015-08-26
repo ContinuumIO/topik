@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from topik.readers import iter_document_json_stream
+from topik.readers import _iter_document_json_stream
 from topik.tokenizers import SimpleTokenizer
 from topik.vectorizers import CorpusBOW
 

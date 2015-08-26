@@ -11,7 +11,7 @@ def _get_hash_identifier(input_data, id_field):
 
 
 class ElasticSearchCorpus(object):
-    def __init__(self, host, index, text_field, port=9200, username=None,
+    def __init__(self, host, index, content_field, port=9200, username=None,
                  password=None, doc_type=None, query=None, iterable=None):
         super(ElasticSearchCorpus, self).__init__()
         self.host = host
@@ -22,17 +22,17 @@ class ElasticSearchCorpus(object):
                                               "http_auth": "{}:{}".format(username, password)}
                                              ])
         self.index = index
-        self.text_field = text_field
+        self.content_field = content_field
         self.doc_type = doc_type
         self.query = query
         if iterable:
-            self.import_from_iterable(iterable, text_field)
+            self.import_from_iterable(iterable, content_field)
 
     def __iter__(self):
         results = helpers.scan(self.instance, index=self.index,
                                query=self.query, doc_type=self.doc_type)
         for result in results:
-            yield result["_id"], result['_source'][self.text_field]
+            yield result["_id"], result['_source'][self.content_field]
 
     def append_to_record(self, record_id, field_name, field_value):
         self.instance.update(index=self.index, id=record_id, doc_type="continuum",
@@ -42,12 +42,12 @@ class ElasticSearchCorpus(object):
         """Get a different field to iterate over, keeping all other
            connection details."""
         if not field:
-            field = self.text_field
+            field = self.content_field
         return ElasticSearchCorpus(self.host, self.index, field, self.port,
                                    self.username, self.password, self.doc_type,
                                    self.query)
 
-    def import_from_iterable(self, iterable, id_field="text"):
+    def import_from_iterable(self, iterable, id_field="text", batch_size=500):
         """Load data into Elasticsearch from iterable.
 
         iterable: generally a list of dicts, but possibly a list of strings
@@ -58,20 +58,86 @@ class ElasticSearchCorpus(object):
             list of strings, a dictionary with one key, "text" is created and
             used.
         """
+        batch = []
         for item in iterable:
             if isinstance(item, basestring):
                 item = {"text": item}
             id = _get_hash_identifier(item, id_field)
-            self.instance.index(index=self.index, doc_type="continuum",
-                                id=id, body=item)
+            batch.append({"_id": id, "_source": item, "_type": "continuum"})
+            if len(batch) >= batch_size:
+                helpers.bulk(client=self.instance, actions=batch, index=self.index)
+                batch = []
+        if batch:
+            helpers.bulk(client=self.instance, actions=batch, index=self.index)
         # TODO: is there a good way to do bulk without forcing in-memory of whole data?
         # helpers.bulk(self.instance, )
 
     def get_number_of_items_stored(self):
         return self.instance.count(index=self.index, doc_type=self.doc_type)['count']
 
+    # TODO: generalize for datetimes
+    # TODO: validate input data to ensure that it has valid year data
+    def get_data_by_year(self, start_year, end_year, year_field="year"):
+        """Queries elasticsearch for all documents within the specified year range
+        and returns a generator of the results"""
+        results = self.instance.scan(index=self.index, scroll='5m',
+                                     query={"query":
+                                                {"constant_score":
+                                                    {"filter":
+                                                        {"range":
+                                                            {year_field:
+                                                                {"gte": start_year,
+                                                                 "lte": end_year}}}}}})
+
+        for result in results:
+            yield result['_source'][self.content_field]
+
+
+class DictionaryCorpus(object):
+    def __init__(self, content_field, iterable=None):
+        super(DictionaryCorpus, self).__init__()
+        self.content_field = content_field
+        self._documents = []
+        self.idx = 0
+        if iterable:
+            self.import_from_iterable(iterable, content_field)
+
+    def __iter__(self):
+        for doc in self._documents:
+            yield doc["_id"], doc["_source"][self.content_field]
+
+    def append_to_record(self, record_id, field_name, field_value):
+        raise NotImplementedError
+
+    def get_field(self, field=None):
+        """Get a different field to iterate over, keeping all other details."""
+        if not field:
+            field = self.content_field
+        return DictionaryCorpus(content_field=field, iterable=self._documents)
+
+    def import_from_iterable(self, iterable, content_field):
+        """Load data into Elasticsearch from iterable.
+
+        iterable: generally a list of dicts, but possibly a list of strings
+            This is your data.  Your dictionary structure defines the schema
+            of the elasticsearch index.
+        """
+        self._documents = [{"_id": hash(doc[content_field]),
+                            "_source": doc} for doc in iterable]
+
+    def get_number_of_items_stored(self):
+        return len(self._documents)
+
+    # TODO: generalize for datetimes
+    # TODO: validate input data to ensure that it has valid year data
+    def get_data_by_year(self, start_year, end_year, year_field="year"):
+        for result in self._documents:
+            if start_year <= result[year_field] <= end_year:
+                yield result["_source"][self.content_field]
+
 
 # Collection of output formats: people put files, folders, etc in, and they can choose from these to be the output
 # These consume the iterable collection of dictionaries produced by the various iter_ functions.
 output_formats = {"elasticsearch": ElasticSearchCorpus,
+                  "dictionary": DictionaryCorpus,
                   }

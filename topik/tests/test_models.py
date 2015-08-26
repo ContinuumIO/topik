@@ -14,10 +14,10 @@ class TestModels(unittest.TestCase):
     def setUp(self):
         output_config = {"host": "localhost",
                          "index": "model_testing",
-                         "text_field": "text"}
+                         "content_field": "text"}
         raw_data = read_input(
                 source=os.path.join(module_path, 'data/test-data-1.json'),
-                content_field=output_config["text_field"],
+                content_field=output_config["content_field"],
                 output_args=output_config)
         self.digested_data = preprocess(raw_data)
 
