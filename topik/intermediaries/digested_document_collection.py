@@ -1,5 +1,4 @@
 from gensim.corpora.textcorpus import TextCorpus
-from topik.utils import _iter_corpus
 
 
 class DigestedDocumentCollection(TextCorpus):
@@ -26,10 +25,20 @@ class DigestedDocumentCollection(TextCorpus):
     def __init__(self, tokenized_corpus, word_dict):
         self.corpus = tokenized_corpus
         self.dict = word_dict
+        super(DigestedDocumentCollection, self).__init__()
+
+    def __iter__(self):
+        for _, doc in self.corpus:
+            yield doc
+
+    def get_generator_with_id(self):
+        for id, doc in self.corpus:
+            yield id, doc
+
 
     def get_texts(self):
         """Each iteration gets a tokenized document from the corpus"""
-        for tokens in _iter_corpus(self.corpus):
+        for tokens in self.corpus.get_generator_without_id():
             yield self.dict.doc2bow(tokens)
 
     def get_id2word_dict(self):
