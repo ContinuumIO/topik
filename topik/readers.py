@@ -170,6 +170,8 @@ def read_input(source, content_field, source_type="auto", output_type="elasticse
     else:
         raise ValueError("Unrecognized source type: {}.  Please either manually specify the type, or convert your input"
                          " to a supported type.".format(source))
+    if "content_field" not in output_args:
+        output_args["content_field"] = content_field
     output = output_formats[output_type](iterable=data_iterator, **output_args)
 
     if synchronous_wait > 0:
@@ -178,40 +180,6 @@ def read_input(source, content_field, source_type="auto", output_type="elasticse
         time.sleep(1)
         while items_stored != output.get_number_of_items_stored() and time.time() - start < synchronous_wait:
             logging.debug("Number of documents added to the index: {}".format(output.get_number_of_items_stored()))
-            time.sleep(3)
+            time.sleep(1)
 
     return output
-
-"""
-===========================================================
-STEP 3: Get year-filtered documents back from elasticsearch
-===========================================================
-"""
-
-def get_filtered_elastic_results(instance, index, content_field, year_field,
-                                 start_year, stop_year):
-    """Queries elasticsearch for all documents within the specified year range
-    and returns a generator of the results"""
-    es = Elasticsearch(instance)
-
-    if year_field and (start_year or stop_year):
-        # Do we need to do a check to make sure this field exists in the mapping?
-        results = helpers.scan(client=es, index=index, scroll='5m',
-                        query={"query": 
-                                {"constant_score": 
-                                    {"filter":
-                                        {"range":
-                                            {year_field:
-                                                {"gte": start_year,
-                                                 "lte": stop_year}}}}}})
-    # TODO: confirm that this is necessary
-    else:
-        results = helpers.scan(client=es, index=index, scroll='5m')
-
-    for result in results:
-        if content_field in result['_source'].keys():
-            yield result['_source'][content_field]
-
-
-
-
