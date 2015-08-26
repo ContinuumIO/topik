@@ -51,7 +51,12 @@ def _iter_large_json(filename, item_prefix='item'):
 
 
 def _iter_documents_folder(folder, content_field='text', **kwargs):
-    """Iterate over the files in a folder to retrieve the content to process and tokenize."""
+    """Iterate over the files in a folder to retrieve the content to process and tokenize.
+
+    content_field is different from most other sources.  The assumption is that each file contains
+    raw text, NOT dictionaries of categorized data.  The content_field argument here specifies
+    what key to store the raw text under in the returned dictionary for each document.
+    """
     import gzip
 
     for directory, subdirectories, files in os.walk(folder):

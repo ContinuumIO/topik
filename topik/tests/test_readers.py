@@ -2,10 +2,7 @@ import os
 import unittest
 
 from topik.readers import read_input
-
-# sample data files are located in the same folder
-module_path = os.path.dirname(__file__)
-
+from topik.tests import test_data_path
 
 class TestReader(unittest.TestCase):
 
@@ -21,9 +18,8 @@ class TestReader(unittest.TestCase):
                               ' formation of pure face-centered cubic (fcc) copper nanoparticles and the excellent'
                               ' antioxidant ability of ascorbic acid.')
 
-
     def test_read_document_json_stream(self):
-        iterable_data = read_input(os.path.join(module_path, 'data/test-data-1.json'),
+        iterable_data = read_input('{}/test-data-1.json'.format(test_data_path),
                                    content_field="text")
         id, first_text = next(iter(iterable_data))
         self.assertEqual(first_text, self.solution_1)
@@ -31,26 +27,26 @@ class TestReader(unittest.TestCase):
     def test_read_document_json_stream_with_year_field(self):
         raise NotImplementedError("TODO: need data source that actually has date data!  test-data-1.json does not!")
         iterable_data = _iter_document_json_stream(
-                os.path.join(module_path, 'data/test-data-1.json'))
+                '{}/test-data-1.json'.format(test_data_path))
         first_text = next(iterable_data)
         self.assertEqual(first_text, self.solution_1)
 
     def test_read_documents_folder(self):
         loaded_dictionaries = read_input(
-            os.path.join(module_path, 'data/test-data-folder'),
+            '{}/test-data_folder-files'.format(test_data_path),
             content_field="abstract")
         id, first_text = next(iter(loaded_dictionaries))
         self.assertEqual(first_text, self.solution_1)
 
     def test_iter_documents_folder_gz(self):
         loaded_dictionaries = read_input(
-            os.path.join(module_path, 'data/test-data-folder-gz'),
+            '{}/test-data_folder-files-gz'.format(test_data_path),
             content_field="abstract")
         id, first_text = next(iter(loaded_dictionaries))
         self.assertEqual(first_text, self.solution_1)
 
     def test_iter_large_json(self):
-        iterable_data = read_input(os.path.join(module_path, 'data/test-data-2.json'),
+        iterable_data = read_input('{}/test-data-2.json'.format(test_data_path),
                                    content_field="abstract")
         id, first_text = next(iter(iterable_data))
         self.assertEqual(first_text, self.solution_2)
