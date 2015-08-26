@@ -46,7 +46,7 @@ def tokenize_simple(text, stopwords=STOPWORDS):
 def collect_trigrams_and_bigrams(collection, top_n = 10000, min_bigram_freq=50,
                                  min_trigram_freq=20, stopwords=STOPWORDS):
     # generator of documents, turn each element to its list of words
-    documents = (_split_words(text, stopwords) for text in collection)
+    documents = (_split_words(text, stopwords) for id, text in collection)
     # generator, concatenate (chain) all words into a single sequence, lazily
     words = itertools.chain.from_iterable(documents)
     bigrams, trigrams = collocations(words, top_n=top_n,  min_bigram_freq=min_bigram_freq,
