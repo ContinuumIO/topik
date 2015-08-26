@@ -30,7 +30,7 @@ class TestReader(unittest.TestCase):
         self.assertEqual(first_text, self.solution_1)
 
     def test_read_document_json_stream_with_year_field(self):
-        raise NotImplementedError, "TODO: need data source that actually has date data!  test-data-1.json does not!"
+        raise NotImplementedError("TODO: need data source that actually has date data!  test-data-1.json does not!")
         iterable_data = _iter_document_json_stream(
                 os.path.join(module_path, 'data/test-data-1.json'))
         first_text = next(iterable_data)

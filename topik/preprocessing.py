@@ -34,9 +34,8 @@ def _tokenize(raw_record, method="simple", **tokenizer_kwargs):
 
 
 def _to_bag_of_words(data_object, **kwargs):
-    tokens = data_object.get_field("tokens_"+_get_parameter_string(**kwargs))
-    tokens = itertools.chain.from_iterable(tokens)
-    return gensim.corpora.Dictionary(tokens)
+    tokenized_docs = data_object.get_generator_without_id("tokens_"+_get_parameter_string(**kwargs))
+    return gensim.corpora.Dictionary(tokenized_docs)
 
 
 def preprocess(raw_data, tokenizer_method="simple", **kwargs):

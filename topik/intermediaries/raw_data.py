@@ -34,6 +34,14 @@ class ElasticSearchCorpus(object):
         for result in results:
             yield result["_id"], result['_source'][self.content_field]
 
+    def get_generator_without_id(self, field=None):
+        if not field:
+            field = self.content_field
+        results = helpers.scan(self.instance, index=self.index,
+                               query=self.query, doc_type=self.doc_type)
+        for result in results:
+            yield result["_source"][field]
+
     def append_to_record(self, record_id, field_name, field_value):
         self.instance.update(index=self.index, id=record_id, doc_type="continuum",
                              body={"doc": {field_name: field_value}})
@@ -94,36 +102,49 @@ class ElasticSearchCorpus(object):
 
 
 class DictionaryCorpus(object):
-    def __init__(self, content_field, iterable=None):
+    def __init__(self, content_field, iterable=None, generate_id=True):
         super(DictionaryCorpus, self).__init__()
         self.content_field = content_field
         self._documents = []
         self.idx = 0
         if iterable:
-            self.import_from_iterable(iterable, content_field)
+            self.import_from_iterable(iterable, content_field, generate_id)
 
     def __iter__(self):
         for doc in self._documents:
             yield doc["_id"], doc["_source"][self.content_field]
 
     def append_to_record(self, record_id, field_name, field_value):
-        raise NotImplementedError
+        for doc in self._documents:
+            if doc["_id"] == record_id:
+                doc["_source"][field_name] = field_value
+                return
+        raise ValueError("No record with id '{}' was found.".format(record_id))
 
     def get_field(self, field=None):
         """Get a different field to iterate over, keeping all other details."""
         if not field:
             field = self.content_field
-        return DictionaryCorpus(content_field=field, iterable=self._documents)
+        return DictionaryCorpus(content_field=field, iterable=self._documents, generate_id=False)
 
-    def import_from_iterable(self, iterable, content_field):
+    def get_generator_without_id(self, field=None):
+        if not field:
+            field = self.content_field
+        for doc in self._documents:
+            yield doc["_source"][field]
+
+    def import_from_iterable(self, iterable, content_field, generate_id=True):
         """Load data into Elasticsearch from iterable.
 
         iterable: generally a list of dicts, but possibly a list of strings
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
         """
-        self._documents = [{"_id": hash(doc[content_field]),
-                            "_source": doc} for doc in iterable]
+        if generate_id:
+            self._documents = [{"_id": hash(doc[content_field]),
+                                "_source": doc} for doc in iterable]
+        else:
+            self._documents = [item for item in iterable]
 
     def get_number_of_items_stored(self):
         return len(self._documents)
