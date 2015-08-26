@@ -1,7 +1,13 @@
 from abc import ABCMeta, abstractmethod
-import pandas as pd
 import logging
+
+import pandas as pd
 from six import with_metaclass
+
+# doctest-only imports
+from topik.preprocessing import preprocess
+from topik.readers import read_input
+from topik.tests import test_data_path
 
 
 class TopicModelBase(with_metaclass(ABCMeta)):
@@ -17,8 +23,14 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         ----------
         filename: string
             Desired name for the generated csv file
-        >>> model_object.termite_data('termite.csv', 15)
-        """
+
+        >>> raw_data = read_input(
+            '{}/test-data-1.json', "text")
+        >>> processed_data = preprocess(raw_data)  # preprocess returns a DigestedDocumentCollection
+        >>> model = LDA(processed_data, ntopics=3)
+        >>> model.termite_data('termite.csv', 15)
+        
+        """.format(test_data_path)
         count = 1
         for topic in self.get_top_words(topn_words):
             if count == 1:

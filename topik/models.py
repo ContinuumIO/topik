@@ -5,6 +5,11 @@ import logging
 import gensim
 import pandas as pd
 
+# imports used only for doctests
+from topik.readers import read_input
+from topik.tests import test_data_path
+from topik.preprocessing import preprocess
+
 
 class LDA(object):
     """A high interface for an LDA (Latent Dirichlet Allocation) model.
@@ -16,9 +21,13 @@ class LDA(object):
     dict_file: string
         Location of the dictionary
 
-    >>> my_lda = LDA("my_corpus.mm", "my_dict.dict")
+    >>> raw_data = read_input(
+                    '{}/test-data-1.json',
+                    content_field="text")
+    >>> processed_data = preprocess(raw_data)
+    >>> my_lda = LDA(processed_data)
 
-    """
+    """.format(test_data_path)
     def __init__(self, corpus_file, dict_file, ntopics=10, **kwargs):
         self.corpus = gensim.corpora.MmCorpus(corpus_file)
         self.dictionary = gensim.corpora.Dictionary.load(dict_file)
@@ -38,10 +47,14 @@ class LDA(object):
         ----------
         filename: string
             Desired name for the generated csv file
-        >>> my_lda = LDA("my_corpus.mm", "my_dict.dict")
+        >>> raw_data = read_input(
+                        '{}/test-data-1.json',
+                        content_field="text")
+        >>> processed_data = preprocess(raw_data)
+        >>> my_lda = LDA(processed_data)
         >>> my_lda.termite_data('termite.csv', 15)
 
-        """
+        """.format(test_data_path)
         logging.info("generating termite plot input from %s " % self.corpus)
         top_words = self.get_top_words(topn_words)
         count = 1

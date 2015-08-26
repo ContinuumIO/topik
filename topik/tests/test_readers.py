@@ -24,8 +24,7 @@ class TestReader(unittest.TestCase):
 
     def test_read_document_json_stream(self):
         iterable_data = read_input(os.path.join(module_path, 'data/test-data-1.json'),
-                                   content_field="text",
-                                   output_type="dictionary")
+                                   content_field="text")
         id, first_text = next(iter(iterable_data))
         self.assertEqual(first_text, self.solution_1)
 
@@ -39,23 +38,20 @@ class TestReader(unittest.TestCase):
     def test_read_documents_folder(self):
         loaded_dictionaries = read_input(
             os.path.join(module_path, 'data/test-data-folder'),
-            content_field="abstract",
-            output_type="dictionary")
+            content_field="abstract")
         id, first_text = next(iter(loaded_dictionaries))
         self.assertEqual(first_text, self.solution_1)
 
     def test_iter_documents_folder_gz(self):
         loaded_dictionaries = read_input(
             os.path.join(module_path, 'data/test-data-folder-gz'),
-            content_field="abstract",
-            output_type="dictionary")
+            content_field="abstract")
         id, first_text = next(iter(loaded_dictionaries))
         self.assertEqual(first_text, self.solution_1)
 
     def test_iter_large_json(self):
         iterable_data = read_input(os.path.join(module_path, 'data/test-data-2.json'),
-                                   content_field="abstract",
-                                   output_type="dictionary")
+                                   content_field="abstract")
         id, first_text = next(iter(iterable_data))
         self.assertEqual(first_text, self.solution_2)
 

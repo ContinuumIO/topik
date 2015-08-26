@@ -1,5 +1,7 @@
 from gensim.corpora.textcorpus import TextCorpus
 
+# Doctest-only imports
+
 
 class DigestedDocumentCollection(TextCorpus):
     """A bag-of-words representation of a corpus (collection of documents).
@@ -14,12 +16,6 @@ class DigestedDocumentCollection(TextCorpus):
         (either utf8 or unicode) (e.g. output of topik.SimpleTokenizer)
 
     Readers iterate over tuples (id, content)
-
-    >>> id_documents = iter_document_json_stream(
-            './topik/tests/data/test-data-1', "text")
-    >>> ids, texts = unzip(id_documents)
-    >>> my_corpus = SimpleTokenizer(texts)
-    >>> corpus_bow = CorpusBOW(my_corpus)
 
     """
     def __init__(self, tokenized_corpus, word_dict):

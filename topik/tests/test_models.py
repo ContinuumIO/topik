@@ -14,8 +14,7 @@ class TestModels(unittest.TestCase):
     def setUp(self):
         raw_data = read_input(
                 source=os.path.join(module_path, 'data/test-data-1.json'),
-                content_field="text",
-                output_type="dictionary")
+                content_field="text")
         self.digested_data = preprocess(raw_data)
 
     def tearDown(self):

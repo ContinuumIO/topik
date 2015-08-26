@@ -3,7 +3,7 @@ import unittest
 
 from topik.readers import read_input
 from topik.intermediaries.raw_data import ElasticSearchCorpus, _get_hash_identifier
-from topik.tokenizers import tokenizer_methods, find_entities, collect_trigrams_and_bigrams
+from topik.tokenizers import tokenizer_methods, find_entities, collect_bigrams_and_trigrams
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
@@ -67,7 +67,7 @@ class TestTokenizers(unittest.TestCase):
                 source=self.data_2_path,
                 content_field="abstract",
                 output_type="dictionary")
-        bigrams, trigrams = collect_trigrams_and_bigrams(raw_data, min_bigram_freq=2, min_trigram_freq=2)
+        bigrams, trigrams = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=2, min_trigram_freq=2)
         id, text = next(iter(raw_data))
         doc_tokens = tokenizer_methods["collocation"](text, bigrams, trigrams)
         self.assertEqual(doc_tokens,

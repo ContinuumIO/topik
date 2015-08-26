@@ -1,4 +1,4 @@
-from gensim.corpors.textcorpus import TextCorpus
+from gensim.corpora.textcorpus import TextCorpus
 from elasticsearch import Elasticsearch, helpers
 
 
