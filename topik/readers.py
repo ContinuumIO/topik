@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+from collections import Iterable
 import gzip
 import json
 import logging
@@ -21,7 +22,7 @@ STEP 1: Read all documents from source and yield full-featured dicts
 ====================================================================
 """
 
-def iter_document_json_stream(filename, year_field, id_field):
+def iter_document_json_stream(filename, content_field, year_field):
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters
@@ -29,22 +30,24 @@ def iter_document_json_stream(filename, year_field, id_field):
     filename: string
         The filename of the json stream.
 
-    year_field: string
-        The field name (if any) that contains the year associated with the document
+    content_field: string
+        The name fo the field that contains the main text body of the document.
 
-    $ head -n 2 ./topik/tests/data/test-data-1
+    year_field: string
+        The field name (if any) that contains the year associated with the document.
+
+    $ head -n 2 ./tests/data/test-data-1
         {"id": 1, "topic": "interstellar film review", "text":"'Interstellar' was incredible. The visuals, the score..."}
         {"id": 2, "topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in..."}
-    >>> document = iter_document_json_stream('./topik/tests/test-data-1.json', "text")
-    >>> next(document)
-    {'_id': 0,
-     '_source': {'filename': './topik/tests/data/test-data-3.json',
-      u'id': 1,
-      u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, 
-                  were all amazing. The plot is definitely one of the most original 
-                  I've seen in a while.",
-      u'topic': u'interstellar film review',
-      u'year': 1998}}
+    >>> documents = iter_document_json_stream('./tests/data/test-data_json-stream-2.json', "text", "year")
+    >>> next(documents) == {'_id': -7625602235157556658,
+    ...     '_source': {'filename': './tests/data/test-data_json-stream-2.json', u'id': 1,
+    ...                 u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
+    ...                          u"were all amazing. The plot is definitely one of the most original " +
+    ...                          u"I've seen in a while.",
+    ...                 u'topic': u'interstellar film review',
+    ...                 u'year': 1998}}
+    True
     """
 
     with open(filename, 'r') as f:
@@ -52,21 +55,56 @@ def iter_document_json_stream(filename, year_field, id_field):
             try:
                 dictionary = {}
                 dictionary = json.loads(line)
-                yield dict_to_es_doc(dictionary, year_field, id_field)
+                yield dict_to_es_doc(dictionary, content_field=content_field, year_field=year_field, addtl_fields=[('filename', filename)])
             except ValueError:
                 logging.warning("Unable to process line: %s" %
-                                str(line))
+                                 str(line))
 
-def iter_large_json(filename, year_field, id_field, item_prefix='item'):
-    """Iterate over all items and sub-items in a json object that match the specified prefix"""
+def iter_large_json(filename, content_field, year_field, item_prefix='item'):
+    """Iterate over all items and sub-items in a json object that match the specified prefix
+
+
+    Parameters
+    ----------
+    filename: string
+        The filename of the large json file
+
+    content_field: string
+        The name fo the field that contains the main text body of the document.
+
+    year_field: string
+        The field name (if any) that contains the year associated with the document
+
+    item_prefix: string
+        The string representation of the hierarchical prefix where the items of 
+        interest may be located within the larger json object.
+
+        Try the following script if you need help determining the desired prefix:
+        $   import ijson
+        $       with open('test-data_large-json-2.json', 'r') as f:
+        $           parser = ijson.parse(f)
+        $           for prefix, event, value in parser:
+        $               print("prefix = '%r' || event = '%r' || value = '%r'" %
+        $                     (prefix, event, value))
+
+    >>> documents = iter_large_json('./tests/data/test-data_large-json-2.json', 'text', 'year')
+    >>> next(documents) == {'_id': -7625602235157556658, '_source': {u'topic': u'interstellar film review', 
+    ...                     u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
+    ...                              u"were all amazing. The plot is definitely one of the most original I've " +
+    ...                              u"seen in a while.", 
+    ...                     u'id': 1, u'year': 1998,
+    ...                     'filename': './tests/data/test-data_large-json-2.json'}}
+    True
+
+    """
     with open(filename, 'r') as f:
         for item in items(f, item_prefix):
             if hasattr(item, 'keys'): # check if item is a dictionary
-                yield dict_to_es_doc(item, year_field=year_field, id_field=id_field)
+                yield dict_to_es_doc(item, content_field=content_field, year_field=year_field, addtl_fields=[('filename', filename)])
             elif isinstance(item, Iterable) and not isinstance(item, str): # check if item is both iterable and not a string
                 for sub_item in item:
                     if hasattr(sub_item, 'keys'): # check if sub_item is a dictionary
-                        yield dict_to_es_doc(sub_item, year_field=year_field, id_field=id_field)
+                        yield dict_to_es_doc(sub_item, content_field=content_field, year_field=year_field, addtl_fields=[('filename', filename)])
             else:
                 raise ValueError("'item' in json source is not a dict, and is either a string or not iterable: %r" % item)
 
@@ -79,11 +117,22 @@ def iter_documents_folder(folder, content_field='text', year_field='year'):
     folder: string
         The folder containing the files you want to analyze.
 
-    $ ls ./topik/tests/test-data-folder
+    content_field: string
+        The name fo the field that contains the main text body of the document.
+
+    year_field: string
+        The field name (if any) that contains the year associated with the document
+
+    $ ls ./topik/tests/data/test-data_folder-files
         doc1  doc2  doc3
-    >>> doc_text = iter_documents_folder('./topik/tests/test-data-1.json')
-    >>> fullpath, content = next(doc_text)
-    >>> content
+    >>> documents = iter_documents_folder('./tests/data/test-data_folder-files')
+    >>> next(documents) == {'_id': -7625602235157556658, '_source': {
+    ...     'text': u"'Interstellar' was incredible. The visuals, the score, " +
+    ...             u"the acting, were all amazing. The plot is definitely one " +
+    ...             u"of the most original I've seen in a while.", 
+    ...     'filename': './tests/data/test-data_folder-files/doc1', 'year': 'N/A'}}
+    True
+
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
     of the most original I've seen in a while."]
     """
@@ -95,50 +144,119 @@ def iter_documents_folder(folder, content_field='text', year_field='year'):
                 fullpath = os.path.join(directory, file)
                 with _open(fullpath, 'rb') as f:
                     dictionary = {}
-                    fields = [(content_field    , f.read().decode('utf-8')),
-                              ('filename'       , fullpath),
-                              (year_field       , 'N/A')]
-
-                    yield dict_to_es_doc(dictionary, addtl_fields=fields)
+                    dictionary[content_field] = f.read().decode('utf-8')
+                    fields = [('filename'       , fullpath)]
+                    yield dict_to_es_doc(dictionary, content_field=content_field, 
+                                         year_field=year_field, 
+                                         addtl_fields=fields)
             except (ValueError, UnicodeDecodeError) as err:
                 logging.warning("Unable to process file: %s" % fullpath)
 
 
-def iter_solr_query(solr_instance, field, query="*:*"):
-    """Iterate over all documents in the specified solr intance that match the specified query"""
+def iter_solr_query(solr_instance, content_field, year_field, query="*:*"):
+    """Iterate over all documents in the specified solr intance that match the specified query
+
+    Parameters
+    ----------
+    solr_instance: string
+        Address of the solr instance
+
+    content_field: string
+        The name fo the field that contains the main text body of the document.
+
+    year_field: string
+        The field name (if any) that contains the year associated with the document
+
+    query: string
+        The solr query string
+    """
     s = solr.SolrConnection(solr_instance)
     response = s.query(query)
     return batch_concat(response, field,  content_in_list=False)
 
 
-def iter_elastic_query(instance, index, query, year_field, id_field):
-    """Iterate over all documents in the specified elasticsearch intance and index that match the specified query"""
+def iter_elastic_query(instance, index, query, content_field, year_field):
+    """Iterate over all documents in the specified elasticsearch intance and index that match the specified query
+
+    Parameters
+    ----------
+    instance: string
+        Address of the elasticsearch instance
+
+    index: string
+        The name of the elasticsearch index to query
+
+    query: string
+        The solr query string
+
+    content_field: string
+        The name fo the field that contains the main text body of the document.
+
+    year_field: string
+        The field name (if any) that contains the year associated with the document
+    """
     es = Elasticsearch(instance)
 
     results = helpers.scan(client=es, index=index, scroll='5m', query=query)
 
     for result in results:
-        yield dict_to_es_doc(result['_source'], year_field, id_field)
+        yield dict_to_es_doc(result['_source'], content_field, year_field)
 
 """
 ===================================================================
 STEP 1.5: Conform dict to elasticsearch standard document structure
 ===================================================================
 """
-# TODO: generate the _id by hashing content field, always (take away the option for them to do it).  Also means content_field needs to be an input here.
-def dict_to_es_doc(dictionary, year_field, id_field, addtl_fields=None):
-    """Convert a dictionary to one that is formatted as a standard elasticsearch document"""
-    doc_dict = {}
-    doc_dict['_source'] = dictionary
+
+def dict_to_es_doc(dictionary, content_field, year_field, addtl_fields=None):
+    """Convert a dictionary to one that is formatted as a standard elasticsearch document
+
+    Parameters
+    ----------
+    dictionary: dict
+        The source document (in dict form) to be converted to a standard elasticsearch document dictionary
+
+    content_field: string
+        The name fo the field that contains the main text body of the document.
+
+    year_field: string
+        The field name (if any) that contains the year associated with the document
+
+    addtl_fields: list of tuple, where each tuple is a (key, value) pair
+        These are additional fields to be added to the es-formatted dict, whose values are known upon reading from source.
+    
+    >>> d = {u'id': 1,
+    ...      u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
+    ...               u"were all amazing. The plot is definitely one of the most original " +
+    ...               u"I've seen in a while.",
+    ...      u'topic': u'interstellar film review',
+    ...      u'year': '1998'}
+    >>> es_doc = dict_to_es_doc(d, 'text', 'year', [('filename', './tests/data/test-data_json-stream-2.json')])
+    >>> es_doc == {'_id': -7625602235157556658,
+    ...     '_source': {'filename': './tests/data/test-data_json-stream-2.json', u'id': 1,
+    ...                 u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
+    ...                          u"were all amazing. The plot is definitely one of the most original " +
+    ...                          u"I've seen in a while.",
+    ...                 u'topic': u'interstellar film review',
+    ...                 u'year': 1998}}
+    True
+    """
+    es_doc_dict = {}
+    es_doc_dict['_source'] = dictionary
     if year_field:
-        if year_field in dictionary.keys():
-            doc_dict['_source'][year_field] = int(doc_dict['_source'][year_field])
-    if id_field and id_field in dictionary.keys():
-        doc_dict['_id'] = dictionary[id_field]
+        try:
+            # TODO: replace 'int()' with some sort of 'extract_year()' to accept more formats
+            es_doc_dict['_source'][year_field] = int(es_doc_dict['_source'][year_field])
+        except (ValueError, KeyError) as err:
+            es_doc_dict['_source'][year_field] = 'N/A'
+    if content_field and content_field in dictionary.keys():
+        es_doc_dict['_id'] = hash(dictionary[content_field])
+    else:
+        raise ValueError("Invalid value for 'content_field'")
     if addtl_fields:
         for key, value in addtl_fields:
-            doc_dict['_source'][key] = value
-    return doc_dict
+            es_doc_dict['_source'][key] = value
+    return es_doc_dict
 
 """
 =============================================================

@@ -1,5 +1,5 @@
 # ldavis output
-topic_model/ldavis
+topic_model
 
 # output csv file
 output.csv

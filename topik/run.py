@@ -108,18 +108,18 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
 
     print("Beginning STEP 1: Reading documents from source")
 
-    if format == 'folder_files':
-        documents = iter_documents_folder(data, content_field, year_field)
-    elif format == 'json_stream' and content_field is not None:
-        documents = iter_document_json_stream(data, year_field, id_field)
+    if format == 'json_stream' and content_field is not None:
+        documents = iter_document_json_stream(data, content_field, year_field)
     elif format == 'large_json' and content_field is not None:
-        documents = iter_large_json(data, year_field, id_field, prefix_value)
+        documents = iter_large_json(data, content_field, year_field, prefix_value)
+    elif format == 'folder_files':
+        documents = iter_documents_folder(data, content_field, year_field)
     elif format == 'solr' and content_field is not None:
         id_documents = iter_solr_query(data, content_field, query=solr_query)
     elif format == 'elastic' and content_field is not None:
         documents = iter_elastic_query(data, es_index, query=es_query)
     else:
-        raise Exception("Invalid input, make sure your passing the appropriate arguments for the different formats")
+        raise Exception("Invalid input, make sure you're passing the appropriate arguments for the different formats")
 
 
     print("STEP 1 Complete")
