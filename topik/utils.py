@@ -191,10 +191,4 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
     df.to_csv(output_file, sep='\t', encoding='utf-8')
     return pd.DataFrame(documents)
 
-
-def batch_concat(resp):
-   while resp.results:
-       for item in resp.results:
-            yield item
-       print("ANOTHER BATCH++++++++++++++++++++++")
-       resp = resp.next_batch()
+    

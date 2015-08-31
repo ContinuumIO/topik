@@ -116,19 +116,10 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     elif format == 'solr' and content_field is not None:
         documents = iter_solr_query(data, content_field, year_field, query=solr_query)
     elif format == 'elastic' and content_field is not None:
+        instance
         documents = iter_elastic_query(data, es_index, query=es_query)
     else:
         raise Exception("Invalid input, make sure you're passing the appropriate arguments for the different formats")
-
-    #print(documents)
-    #print(type(documents))
-    for i, doc in enumerate(documents):
-        #print(str(i) + ':' + doc + ',')
-        print(i)
-        print(type(doc))
-        print(doc)
-
-    '''
 
     logging.info("STEP 1 Complete")
 
@@ -156,11 +147,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     filtered_documents = get_filtered_elastic_results(destination_es_instance,
                             destination_es_index, content_field,
                             year_field, start_year, stop_year)
-
-
-    #for i, doc in enumerate(filtered_documents):
-    #    print(str(i) + ':' + doc + ',')
-        
+      
     logging.info("STEP 3 Complete")
     
     """
@@ -188,12 +175,6 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
         shutil.rmtree(dir_path)
 
     os.makedirs(dir_path)
-    
-
-    #for i, c in enumerate(corpus):
-    #    print(i)
-    #    print(c)
-    
     
     logging.info("STEP 4 Complete")
 
@@ -253,7 +234,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
         webbrowser.open_new_tab('127.0.0.1:8000')
         time.sleep(30)
         sp.kill()
-    '''
+    
 
 
 

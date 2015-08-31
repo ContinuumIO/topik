@@ -12,9 +12,6 @@ from ijson import items
 import requests
 import solr
 
-
-from topik.utils import batch_concat
-
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 """
@@ -154,7 +151,7 @@ def iter_documents_folder(folder, content_field='text', year_field='year'):
             except (ValueError, UnicodeDecodeError) as err:
                 logging.warning("Unable to process file: %s" % fullpath)
 
-def iter_solr_query(solr_instance, content_field, year_field, query="*:*"):
+def iter_solr_query(solr_instance, content_field, year_field, query="*:*", content_in_list=True):
     """Iterate over all documents in the specified solr intance that match the specified query
 
     Parameters
@@ -170,11 +167,22 @@ def iter_solr_query(solr_instance, content_field, year_field, query="*:*"):
 
     query: string
         The solr query string
+
+    content_in_list: boolean
+        Whether the source fields are stored in single-element lists.  Used for unpacking.
     """
     s = solr.SolrConnection(solr_instance)
     results_per_batch = 100
     response = s.select(query, rows=results_per_batch)
-    return batch_concat(response)
+    while response.results:
+        for item in response.results:
+            if content_in_list:
+                if content_field in item.keys() and type(item[content_field]) == list:
+                    item[content_field] = item[content_field][0]
+                if year_field in item.keys() and type(item[year_field]) == list:
+                    item[year_field] = item[year_field][0]
+            yield item
+        response = response.next_batch()
 
 def iter_elastic_query(instance, index, query, content_field, year_field):
     """Iterate over all documents in the specified elasticsearch intance and index that match the specified query
