@@ -168,7 +168,7 @@ def iter_solr_query(solr_instance, content_field, year_field, query="*:*", conte
     query: string
         The solr query string
 
-    content_in_list: boolean
+    content_in_list: bool
         Whether the source fields are stored in single-element lists.  Used for unpacking.
     """
     s = solr.SolrConnection(solr_instance)
@@ -184,16 +184,13 @@ def iter_solr_query(solr_instance, content_field, year_field, query="*:*", conte
             yield item
         response = response.next_batch()
 
-def iter_elastic_query(instance, index, query, content_field, year_field):
+def iter_elastic_query(es_full_path, content_field, year_field, query):
     """Iterate over all documents in the specified elasticsearch intance and index that match the specified query
 
     Parameters
     ----------
     instance: string
-        Address of the elasticsearch instance
-
-    index: string
-        The name of the elasticsearch index to query
+        Address of the elasticsearch instance including index
 
     query: string
         The solr query string
@@ -204,6 +201,11 @@ def iter_elastic_query(instance, index, query, content_field, year_field):
     year_field: string
         The field name (if any) that contains the year associated with the document
     """
+
+    if es_full_path[-1] == '/':
+        es_full_path = es_full_path[:-1]
+    instance, index = es_full_path.rsplit('/',1)
+
     es = Elasticsearch(instance)
 
     results = helpers.scan(client=es, index=index, scroll='5m', query=query)

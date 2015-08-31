@@ -25,12 +25,12 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_topics=10, dir_path='./topic_model',
-                    model='lda_batch', termite_plot=True, output_file=False, r_ldavis=False,  
-                    prefix_value=None, event_value=None, content_field=None, year_field=None,
-                    start_year=None, stop_year=None, es_query=None, solr_query='*:*', subfield=None, seed=42,
-                    destination_es_instance=None, destination_es_index=None, id_field=None,
-                    clear_es_index=False):
+def run_model(data, format='json_stream', year_field=None, start_year=None, stop_year=None,
+                content_field=None,  es_query=None, solr_query='*:*', clear_es_index=False,
+                tokenizer='simple', n_topics=10, dir_path='./topic_model', model='lda_batch', 
+                termite_plot=True, output_file=False, r_ldavis=False, prefix_value=None, event_value=None,  
+                seed=42, destination_es_instance=None, destination_es_index=None):
+
     """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
@@ -41,6 +41,28 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     format: {'json_stream', 'folder_files', 'json_large', 'solr', 'elastic'}.
         The format of your data input. Currently available a json stream or a folder containing text files. 
         Default is 'json_stream'
+
+    year_field: string
+        The field name (if any) that contains the year associated with each document (for filtering).
+
+    start_year: int
+        For beginning of range filter on year_field values
+
+    stop_year: int
+        For beginning of range filter on year_field values
+
+    content_field: string
+        The primary text field to parse.
+
+    es_query: string
+        For 'elastic' format reader, an optional json query string. Default is None to retrieve all documents.
+
+    solr_query: string
+        For 'solr' format reader, an optional query. Default is '*:*' to retrieve all documents.
+
+    clear_es_index: bool
+        On true, delete and re-create destination elasticsearch index prior to loading in new documents.  Otherwise leave any previously
+        existing documents and just add/update with the new documents.
 
     tokenizer: {'simple', 'collocations', 'entities', 'mixed'}
         The type of tokenizer to use. Default is 'simple'.
@@ -69,34 +91,16 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     event_value: string
         For 'large json' format reader, the event value to parse.
 
-    content_field: string
-        For 'json_stream', 'solr' or 'elastic' format readers, the field to parse.
-
-    year_field: string
-        For 'json_stream', 'solr' or 'elastic' format readers, the field containing year of publicaiton (for filtering).
-
-    start_year: int
-        For beginning of range filter on year_field values
-
-    stop_year: int
-        For beginning of range filter on year_field values
+    seed: int
+        Set random number generator to seed, to be able to reproduce results. Default 42.
 
     destination_es_instance: string
         The address of the intermediate elasticsearch instance
 
     destination_es_index: string
         The index to use within the intermediate elasticsearch instance
-
-    solr_query: string
-        For 'solr' format reader, an optional query. Default is '*:*' to retrieve all documents.
-
-    es_query:
-        For 'elastic' format reader, an optional query. Default is None to retrieve all documents.
-    seed: int
-        Set random number generator to seed, to be able to reproduce results. Default 42.
-
-
     """
+
     np.random.seed(seed)
 
     """
@@ -116,8 +120,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     elif format == 'solr' and content_field is not None:
         documents = iter_solr_query(data, content_field, year_field, query=solr_query)
     elif format == 'elastic' and content_field is not None:
-        instance
-        documents = iter_elastic_query(data, es_index, query=es_query)
+        documents = iter_elastic_query(data, content_field, year_field, query=es_query)
     else:
         raise Exception("Invalid input, make sure you're passing the appropriate arguments for the different formats")
 
