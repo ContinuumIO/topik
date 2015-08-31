@@ -12,6 +12,7 @@ from ijson import items
 import requests
 import solr
 
+
 from topik.utils import batch_concat
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -39,9 +40,9 @@ def iter_document_json_stream(filename, content_field, year_field):
     $ head -n 2 ./tests/data/test-data-1
         {"id": 1, "topic": "interstellar film review", "text":"'Interstellar' was incredible. The visuals, the score..."}
         {"id": 2, "topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in..."}
-    >>> documents = iter_document_json_stream('./tests/data/test-data_json-stream-2.json', "text", "year")
+    >>> documents = iter_document_json_stream('./topik/tests/data/test-data_json-stream-2.json', "text", "year")
     >>> next(documents) == {'_id': -7625602235157556658,
-    ...     '_source': {'filename': './tests/data/test-data_json-stream-2.json', u'id': 1,
+    ...     '_source': {'filename': './topik/tests/data/test-data_json-stream-2.json', u'id': 1,
     ...                 u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
     ...                          u"were all amazing. The plot is definitely one of the most original " +
     ...                          u"I've seen in a while.",
@@ -87,13 +88,13 @@ def iter_large_json(filename, content_field, year_field, item_prefix='item'):
         $               print("prefix = '%r' || event = '%r' || value = '%r'" %
         $                     (prefix, event, value))
 
-    >>> documents = iter_large_json('./tests/data/test-data_large-json-2.json', 'text', 'year')
+    >>> documents = iter_large_json('./topik/tests/data/test-data_large-json-2.json', 'text', 'year')
     >>> next(documents) == {'_id': -7625602235157556658, '_source': {u'topic': u'interstellar film review', 
     ...                     u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
     ...                              u"were all amazing. The plot is definitely one of the most original I've " +
     ...                              u"seen in a while.", 
     ...                     u'id': 1, u'year': 1998,
-    ...                     'filename': './tests/data/test-data_large-json-2.json'}}
+    ...                     'filename': './topik/tests/data/test-data_large-json-2.json'}}
     True
 
     """
@@ -125,18 +126,19 @@ def iter_documents_folder(folder, content_field='text', year_field='year'):
 
     $ ls ./topik/tests/data/test-data_folder-files
         doc1  doc2  doc3
-    >>> documents = iter_documents_folder('./tests/data/test-data_folder-files')
+    >>> documents = iter_documents_folder('./topik/tests/data/test-data_folder-files')
     >>> next(documents) == {'_id': -7625602235157556658, '_source': {
     ...     'text': u"'Interstellar' was incredible. The visuals, the score, " +
     ...             u"the acting, were all amazing. The plot is definitely one " +
     ...             u"of the most original I've seen in a while.", 
-    ...     'filename': './tests/data/test-data_folder-files/doc1', 'year': 'N/A'}}
+    ...     'filename': './topik/tests/data/test-data_folder-files/doc1', 'year': -1}}
     True
 
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
     of the most original I've seen in a while."]
     """
-
+    if not os.path.exists(folder):
+        raise IOError("Folder not found!")
     for directory, subdirectories, files in os.walk(folder):
         for n, file in enumerate(files):
             _open = gzip.open if file.endswith('.gz') else open
@@ -151,7 +153,6 @@ def iter_documents_folder(folder, content_field='text', year_field='year'):
                                          addtl_fields=fields)
             except (ValueError, UnicodeDecodeError) as err:
                 logging.warning("Unable to process file: %s" % fullpath)
-
 
 def iter_solr_query(solr_instance, content_field, year_field, query="*:*"):
     """Iterate over all documents in the specified solr intance that match the specified query
@@ -171,9 +172,9 @@ def iter_solr_query(solr_instance, content_field, year_field, query="*:*"):
         The solr query string
     """
     s = solr.SolrConnection(solr_instance)
-    response = s.query(query)
-    return batch_concat(response, field,  content_in_list=False)
-
+    results_per_batch = 100
+    response = s.select(query, rows=results_per_batch)
+    return batch_concat(response)
 
 def iter_elastic_query(instance, index, query, content_field, year_field):
     """Iterate over all documents in the specified elasticsearch intance and index that match the specified query
@@ -248,7 +249,7 @@ def dict_to_es_doc(dictionary, content_field, year_field, addtl_fields=None):
             # TODO: replace 'int()' with some sort of 'extract_year()' to accept more formats
             es_doc_dict['_source'][year_field] = int(es_doc_dict['_source'][year_field])
         except (ValueError, KeyError) as err:
-            es_doc_dict['_source'][year_field] = 'N/A'
+            es_doc_dict['_source'][year_field] = -1
     if content_field and content_field in dictionary.keys():
         es_doc_dict['_id'] = hash(dictionary[content_field])
     else:
@@ -267,43 +268,27 @@ STEP 2: Load dicts from generator into elasticsearch instance
 def reader_to_elastic(instance, index, documents, clear_index, doc_type='document'):
     """Takes the generator yielded by the selected reader and iterates over it 
     to load the documents into elasticsearch"""
-
     es = Elasticsearch(instance)
     
     if clear_index:
         if es.indices.exists(index):
             logging.info("Index '%s' exists, so can be deleted..." % index)
-            
             es.indices.delete(index)
             logging.info("Index '%s' deleted." % index)
         else:
-            logging.warning("Index '%s' does not exist so cannot be deleted." % index)
-            
+            logging.warning("Index '%s' does not exist so cannot be deleted." % index)    
+    
     bulk_index = helpers.bulk(client=es, actions=documents, index=index, 
                               doc_type=doc_type)
-    
-    pre_clock = time.clock()
-    number_of_docs_pushed_to_bulk = bulk_index[0]
-    number_of_docs_in_index = es.count(index=index, doc_type=doc_type)['count']
-    
-    while number_of_docs_pushed_to_bulk != number_of_docs_in_index:
-        time.sleep(0.1)
+
+    number_of_docs_in_index = -1
+
+    while es.count(index=index, doc_type=doc_type)['count'] != number_of_docs_in_index:
         number_of_docs_in_index = es.count(index=index, doc_type=doc_type)['count']
-        logging.debug("Number of documents in the index '%s': %d" % (index, number_of_docs_in_index))
-        if (time.clock() - pre_clock) > 10:
-            break
+        time.sleep(1)
+        logging.info("Number of documents in the index '%s': %d" % (index, number_of_docs_in_index))
             
-    if number_of_docs_in_index == number_of_docs_pushed_to_bulk:
-        logging.debug("Time it took after displaying bulk results for ES to catch up: %d" % (time.clock() - pre_clock))
-        logging.info("All %d documents successfully indexed" % number_of_docs_in_index)
-    elif not clear_index:
-        if (number_of_docs_in_index > number_of_docs_pushed_to_bulk):
-            logging.warning("Timeout reached and the number of documents in the index does not match the number bulked. This may be due to previously existing documents in the index")
-            logging.info("All %r documents NOT successfully indexed" % number_of_docs_in_index)
-        else:
-            logging.warning("Number of documents in the index (%d) is less than the number pushed to bulk (%d)." % (number_of_docs_in_index, number_of_docs_pushed_to_bulk))
-    else:
-        logging.warning("Number of documents in the index (%d) is different than the number pushed to bulk (%d)." % (number_of_docs_in_index, number_of_docs_pushed_to_bulk))
+    logging.info("%d documents successfully indexed" % number_of_docs_in_index)
         
 """
 ===========================================================

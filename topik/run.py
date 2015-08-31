@@ -99,14 +99,13 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     """
     np.random.seed(seed)
 
-    # TODO: replace all prints with logging
     """
     ====================================================================
     STEP 1: Read all documents from source and yield full-featured dicts
     ====================================================================
     """
 
-    print("Beginning STEP 1: Reading documents from source")
+    logging.info("Beginning STEP 1: Reading documents from source")
 
     if format == 'json_stream' and content_field is not None:
         documents = iter_document_json_stream(data, content_field, year_field)
@@ -115,14 +114,23 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     elif format == 'folder_files':
         documents = iter_documents_folder(data, content_field, year_field)
     elif format == 'solr' and content_field is not None:
-        id_documents = iter_solr_query(data, content_field, query=solr_query)
+        documents = iter_solr_query(data, content_field, year_field, query=solr_query)
     elif format == 'elastic' and content_field is not None:
         documents = iter_elastic_query(data, es_index, query=es_query)
     else:
         raise Exception("Invalid input, make sure you're passing the appropriate arguments for the different formats")
 
+    #print(documents)
+    #print(type(documents))
+    for i, doc in enumerate(documents):
+        #print(str(i) + ':' + doc + ',')
+        print(i)
+        print(type(doc))
+        print(doc)
 
-    print("STEP 1 Complete")
+    '''
+
+    logging.info("STEP 1 Complete")
 
     """
     ====================================================================
@@ -130,12 +138,12 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     ====================================================================
     """
 
-    print("Beginning STEP 2: Loading documents into elasticsearch")
+    logging.info("Beginning STEP 2: Loading documents into elasticsearch")
     
     reader_to_elastic(destination_es_instance,
                    destination_es_index, documents, clear_es_index)
 
-    print("STEP 2 Complete")
+    logging.info("STEP 2 Complete")
 
     """
     ===========================================================
@@ -143,7 +151,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     ===========================================================
     """
 
-    print("Beginning STEP 3: fetching documents from elasticsearch")
+    logging.info("Beginning STEP 3: fetching documents from elasticsearch")
 
     filtered_documents = get_filtered_elastic_results(destination_es_instance,
                             destination_es_index, content_field,
@@ -153,7 +161,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     #for i, doc in enumerate(filtered_documents):
     #    print(str(i) + ':' + doc + ',')
         
-    print("STEP 3 Complete")
+    logging.info("STEP 3 Complete")
     
     """
     ===========================================================
@@ -162,7 +170,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     ===========================================================
     """
 
-    print("Beginning STEP 4: Tokenization")
+    logging.info("Beginning STEP 4: Tokenization")
 
     if tokenizer == 'simple':
         corpus = SimpleTokenizer(filtered_documents)
@@ -173,7 +181,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     elif tokenizer == 'mixed':
         corpus = MixedTokenizer(filtered_documents)
     else:
-        print("Processing value invalid, using simple")
+        logging.warning("Processing value invalid, using simple")
         corpus = SimpleTokenizer(filtered_documents)
 
     if os.path.isdir(dir_path):
@@ -187,7 +195,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     #    print(c)
     
     
-    print("STEP 4 Complete")
+    logging.info("STEP 4 Complete")
 
     """
     ===========================================================
@@ -196,7 +204,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
     ===========================================================
     """
 
-    print("Beginning STEP 5: Vectorization")
+    logging.info("Beginning STEP 5: Vectorization")
 
     # Create dictionary
     corpus_bow = CorpusBOW(corpus)
@@ -245,7 +253,7 @@ def run_model(data, es_index=None, format='json_stream', tokenizer='simple', n_t
         webbrowser.open_new_tab('127.0.0.1:8000')
         time.sleep(30)
         sp.kill()
-
+    '''
 
 
 

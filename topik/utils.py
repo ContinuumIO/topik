@@ -196,4 +196,5 @@ def batch_concat(resp):
    while resp.results:
        for item in resp.results:
             yield item
+       print("ANOTHER BATCH++++++++++++++++++++++")
        resp = resp.next_batch()
