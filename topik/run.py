@@ -111,7 +111,7 @@ def run_model(data, format='json_stream', year_field=None, start_year=None, stop
     if format == 'json_stream' and content_field is not None:
         documents = iter_document_json_stream(data, content_field, year_field)
     elif format == 'large_json' and content_field is not None:
-        documents = iter_large_json(data, content_field, year_field, prefix_value)
+        documents = iter_large_json(data, content_field, year_field, json_prefix)
     elif format == 'folder_files':
         documents = iter_documents_folder(data, content_field, year_field)
     elif format == 'solr' and content_field is not None:
