@@ -28,7 +28,7 @@ BASEDIR = os.path.abspath(os.path.dirname(__file__))
 def run_model(data, format='json_stream', year_field=None, start_year=None, stop_year=None,
                 content_field=None,  es_query=None, solr_query='*:*', clear_es_index=False,
                 tokenizer='simple', n_topics=10, dir_path='./topic_model', model='lda_batch', 
-                termite_plot=True, output_file=False, r_ldavis=False, prefix_value=None, event_value=None,  
+                termite_plot=True, output_file=False, r_ldavis=False, json_prefix=None,  
                 seed=42, destination_es_instance=None, destination_es_index=None):
 
     """Run your data through all topik functionality and save all results to a specified directory.
@@ -85,11 +85,8 @@ def run_model(data, format='json_stream', year_field=None, start_year=None, stop
     r_ldavis: bool
         Generate an interactive data visualization of your topics. Default is False.
 
-    prefix_value: string
+    json_prefix: string
         For 'large json' format reader, the prefix value to parse.
-
-    event_value: string
-        For 'large json' format reader, the event value to parse.
 
     seed: int
         Set random number generator to seed, to be able to reproduce results. Default 42.

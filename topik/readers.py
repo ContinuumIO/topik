@@ -34,6 +34,32 @@ def iter_document_json_stream(filename, content_field, year_field):
     year_field: string
         The field name (if any) that contains the year associated with the document.
 
+    $ head -n 2 ./tests/data/test_data_json_stream.json
+        {"doi": "http://dx.doi.org/10.1557/PROC-879-Z3.3", "filepath": "abstracts/879/http%3A%2F%2Fjournals.cambridge.org%2Faction%2FdisplayAbstract%3FfromPage%3Donline%26aid%3D8081671%26fulltextType%3DRA%26fileId%3DS1946427400119281.html", "url": "http://journals.cambridge.org/action/displayAbstract?fromPage=online&aid=8081671&fulltextType=RA&fileId=S1946427400119281.html", "abstract": "Transition metal oxides are being considered as the next generation materials in field such as electronics and advanced catalysts; between them is Tantalum (V) Oxide; however, there are few reports for the synthesis of this material at the nanometer size which could have unusual properties. Hence, in this work we present the synthesis of Ta2O5 nanorods by sol gel method using DNA as structure directing agent, the size of the nanorods was of the order of 40 to 100 nm in diameter and several microns in length; this easy method can be useful in the preparation of nanomaterials for electronics, biomedical applications as well as catalysts.", "title": "Sol Gel Preparation of Ta2O5 Nanorods Using DNA as Structure Directing Agent", "year": "1917", "filename": "http%3A%2F%2Fjournals.cambridge.org%2Faction%2FdisplayAbstract%3FfromPage%3Donline%26aid%3D8081671%26fulltextType%3DRA%26fileId%3DS1946427400119281.html", "vol": "879", "authors": ["Humberto A. Monreala", " Alberto M. Villafa\u00f1e", " Jos\u00e9 G. Chac\u00f3n", " Perla E. Garc\u00eda", "Carlos A. Mart\u00ednez"]}
+        {"doi": "http://dx.doi.org/10.1557/PROC-879-Z6.3", "filepath": "abstracts/879/http%3A%2F%2Fjournals.cambridge.org%2Faction%2FdisplayAbstract%3FfromPage%3Donline%26aid%3D8081993%26fulltextType%3DRA%26fileId%3DS1946427400119360.html", "url": "http://journals.cambridge.org/action/displayAbstract?fromPage=online&aid=8081993&fulltextType=RA&fileId=S1946427400119360.html", "abstract": "In this paper, we describe a simple and rapid solution-phase chemical reduction method with no inert gas protection, for preparing stable copper nanoparticle colloid with average particle size of 3.4 nm and narrow size distribution. In our synthesis route, ascorbic acid, natural vitamin C (VC), serves as both a reducing agent and an antioxidant to reduce copper salt precursor and effectively prevent the general oxidation process occurring to the newborn nanoparticles. XRD and UV/vis confirm the formation of pure face-centered cubic (fcc) copper nanoparticles and the excellent antioxidant ability of ascorbic acid.", "title": "Simple One-Step Synthesis of Uniform Disperse Copper Nanoparticles", "year": "1918", "filename": "http%3A%2F%2Fjournals.cambridge.org%2Faction%2FdisplayAbstract%3FfromPage%3Donline%26aid%3D8081993%26fulltextType%3DRA%26fileId%3DS1946427400119360.html", "vol": "879", "authors": ["Chunwei Wu", " Brian P. Mosher", "Taofang Zeng"]}
+    >>> documents = iter_document_json_stream('./topik/tests/data/test_data_json_stream.json', "abstract", "year")
+    >>> next(documents) == {'_id': 9073470775509107789, 
+    ...     '_source': {u'doi': u'http://dx.doi.org/10.1557/PROC-879-Z3.3',
+    ...                 u'title': u'Sol Gel Preparation of Ta2O5 Nanorods Using DNA as Structure Directing Agent', 
+    ...                 u'url': u'http://journals.cambridge.org/action/displayAbstract?fromPage=online&aid=8081671&fulltextType=RA&fileId=S1946427400119281.html', 
+    ...                 u'abstract': u'Transition metal oxides are being considered as the next generation ' +
+    ...                     u'materials in field such as electronics and advanced catalysts; between them is ' +
+    ...                     u'Tantalum (V) Oxide; however, there are few reports for the synthesis of this material ' +
+    ...                     u'at the nanometer size which could have unusual properties. Hence, in this work we ' +
+    ...                     u'present the synthesis of Ta2O5 nanorods by sol gel method using DNA as structure ' +
+    ...                     u'directing agent, the size of the nanorods was of the order of 40 to 100 nm in ' +
+    ...                     u'diameter and several microns in length; this easy method can be useful in the ' +
+    ...                     u'preparation of nanomaterials for electronics, biomedical applications as well as ' +
+    ...                     u'catalysts.', 
+    ...                 u'filepath': u'abstracts/879/http%3A%2F%2Fjournals.cambridge.org%2Faction%2FdisplayAbstract%3FfromPage%3Donline%26aid%3D8081671%26fulltextType%3DRA%26fileId%3DS1946427400119281.html', 
+    ...                 u'filename': './topik/tests/data/test_data_json_stream.json', 
+    ...                 u'vol': u'879', 
+    ...                 u'authors': [u'Humberto A. Monreala', u' Alberto M. Villafa\xf1e', 
+    ...                 u' Jos\xe9 G. Chac\xf3n', u' Perla E. Garc\xeda', u'Carlos A. Mart\xednez'], 
+    ...                 u'year': 1917}}
+    True
+
+
     $ head -n 2 ./tests/data/test_data_json_stream_2.json
         {"topic": "interstellar film review", "text": "'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one of the most original I've seen in a while.", "id": 1, "year": 1998}
         {"topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in industry and motivate technology shift to data centric architecture and operational models.", "id": 2, "year": 1999}
@@ -58,7 +84,7 @@ def iter_document_json_stream(filename, content_field, year_field):
                 logging.warning("Unable to process line: %s" %
                                  str(line))
 
-def iter_large_json(filename, content_field, year_field, item_prefix='item'):
+def iter_large_json(filename, content_field, year_field, json_prefix='item'):
     """Iterate over all items and sub-items in a json object that match the specified prefix
 
 
@@ -73,30 +99,47 @@ def iter_large_json(filename, content_field, year_field, item_prefix='item'):
     year_field: string
         The field name (if any) that contains the year associated with the document
 
-    item_prefix: string
+    json_prefix: string
         The string representation of the hierarchical prefix where the items of 
         interest may be located within the larger json object.
 
         Try the following script if you need help determining the desired prefix:
         $   import ijson
-        $       with open('test-data_large-json-2.json', 'r') as f:
+        $       with open('test_data_large_json_2.json', 'r') as f:
         $           parser = ijson.parse(f)
         $           for prefix, event, value in parser:
         $               print("prefix = '%r' || event = '%r' || value = '%r'" %
         $                     (prefix, event, value))
 
-    >>> documents = iter_large_json('./topik/tests/data/test_data_large_json_2.json', 'text', 'year')
-    >>> next(documents) == {'_id': -7625602235157556658, '_source': {u'topic': u'interstellar film review', 
-    ...                     u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
-    ...                              u"were all amazing. The plot is definitely one of the most original I've " +
-    ...                              u"seen in a while.", 
-    ...                     u'id': 1, u'year': 1998,
-    ...                     'filename': './topik/tests/data/test_data_large_json_2.json'}}
+    
+    >>> documents = iter_large_json('./topik/tests/data/test_data_large_json.json', 'text', 'datePublished', json_prefix='item._source.isAuthorOf')
+    >>> next(documents) == {'_id': -5611304340338230495, 
+    ...     '_source': {u'a': u'ScholarlyArticle', 
+    ...                 u'name': u'Path planning and formation control via potential function for UAV Quadrotor', 
+    ...                 u'author': [u'http://dig.isi.edu/autonomy/data/author/a.a.a.rizqi', 
+    ...                             u'http://dig.isi.edu/autonomy/data/author/t.b.adji', 
+    ...                             u'http://dig.isi.edu/autonomy/data/author/a.i.cahyadi'], 
+    ...                 u'text': u"Potential-function-based control strategy for path planning and formation " +
+    ...                          u"control of Quadrotors is proposed in this work. The potential function is " +
+    ...                          u"used to attract the Quadrotor to the goal location as well as avoiding the " +
+    ...                          u"obstacle. The algorithm to solve the so called local minima problem by utilizing " +
+    ...                          u"the wall-following behavior is also explained. The resulted path planning via " +
+    ...                          u"potential function strategy is then used to design formation control algorithm. " +
+    ...                          u"Using the hybrid virtual leader and behavioral approach schema, the formation " +
+    ...                          u"control strategy by means of potential function is proposed. The overall strategy " +
+    ...                          u"has been successfully applied to the Quadrotor's model of Parrot AR Drone 2.0 in " +
+    ...                          u"Gazebo simulator programmed using Robot Operating System.\\nAuthor(s) Rizqi, A.A.A. " +
+    ...                          u"Dept. of Electr. Eng. & Inf. Technol., Univ. Gadjah Mada, Yogyakarta, Indonesia " +
+    ...                          u"Cahyadi, A.I. ; Adji, T.B.\\nReferenced Items are not available for this document.\\n" +
+    ...                          u"No versions found for this document.\\nStandards Dictionary Terms are available to " +
+    ...                          u"subscribers only.", 
+    ...                 u'uri': u'http://dig.isi.edu/autonomy/data/article/6871517', 
+    ...                 u'datePublished': 2014, 
+    ...                 'filename': './topik/tests/data/test_data_large_json.json'}}
     True
-
     """
     with open(filename, 'r') as f:
-        for item in items(f, item_prefix):
+        for item in items(f, json_prefix):
             if hasattr(item, 'keys') and content_field in item: # check if item is a dictionary
                 yield dict_to_es_doc(item, content_field=content_field, year_field=year_field, addtl_fields=[('filename', filename)])
             elif isinstance(item, Iterable) and not isinstance(item, str): # check if item is both iterable and not a string
