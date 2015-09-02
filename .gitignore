@@ -1,6 +1,9 @@
 # ldavis output
 topic_model
 
+# profiling stats
+*.stats
+
 # output csv file
 output.csv
 

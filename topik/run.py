@@ -235,9 +235,9 @@ def run_model(data, format='json_stream', year_field=None, start_year=None, stop
         os.chdir(os.path.join(dir_path, 'ldavis', 'output'))
         sp = subprocess.Popen(['python', '-m', 'SimpleHTTPServer', '8000'])
         webbrowser.open_new_tab('127.0.0.1:8000')
-        time.sleep(30)
+        time.sleep(3)
         sp.kill()
-    
+    os.chdir(os.path.dirname(BASEDIR))
 
 
 

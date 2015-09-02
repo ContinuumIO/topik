@@ -34,12 +34,12 @@ def iter_document_json_stream(filename, content_field, year_field):
     year_field: string
         The field name (if any) that contains the year associated with the document.
 
-    $ head -n 2 ./tests/data/test-data-1
-        {"id": 1, "topic": "interstellar film review", "text":"'Interstellar' was incredible. The visuals, the score..."}
-        {"id": 2, "topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in..."}
-    >>> documents = iter_document_json_stream('./topik/tests/data/test-data_json-stream-2.json', "text", "year")
+    $ head -n 2 ./tests/data/test_data_json_stream_2.json
+        {"topic": "interstellar film review", "text": "'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one of the most original I've seen in a while.", "id": 1, "year": 1998}
+        {"topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in industry and motivate technology shift to data centric architecture and operational models.", "id": 2, "year": 1999}
+    >>> documents = iter_document_json_stream('./topik/tests/data/test_data_json_stream_2.json', "text", "year")
     >>> next(documents) == {'_id': -7625602235157556658,
-    ...     '_source': {'filename': './topik/tests/data/test-data_json-stream-2.json', u'id': 1,
+    ...     '_source': {'filename': './topik/tests/data/test_data_json_stream_2.json', u'id': 1,
     ...                 u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
     ...                          u"were all amazing. The plot is definitely one of the most original " +
     ...                          u"I've seen in a while.",
@@ -85,23 +85,23 @@ def iter_large_json(filename, content_field, year_field, item_prefix='item'):
         $               print("prefix = '%r' || event = '%r' || value = '%r'" %
         $                     (prefix, event, value))
 
-    >>> documents = iter_large_json('./topik/tests/data/test-data_large-json-2.json', 'text', 'year')
+    >>> documents = iter_large_json('./topik/tests/data/test_data_large_json_2.json', 'text', 'year')
     >>> next(documents) == {'_id': -7625602235157556658, '_source': {u'topic': u'interstellar film review', 
     ...                     u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
     ...                              u"were all amazing. The plot is definitely one of the most original I've " +
     ...                              u"seen in a while.", 
     ...                     u'id': 1, u'year': 1998,
-    ...                     'filename': './topik/tests/data/test-data_large-json-2.json'}}
+    ...                     'filename': './topik/tests/data/test_data_large_json_2.json'}}
     True
 
     """
     with open(filename, 'r') as f:
         for item in items(f, item_prefix):
-            if hasattr(item, 'keys'): # check if item is a dictionary
+            if hasattr(item, 'keys') and content_field in item: # check if item is a dictionary
                 yield dict_to_es_doc(item, content_field=content_field, year_field=year_field, addtl_fields=[('filename', filename)])
             elif isinstance(item, Iterable) and not isinstance(item, str): # check if item is both iterable and not a string
                 for sub_item in item:
-                    if hasattr(sub_item, 'keys'): # check if sub_item is a dictionary
+                    if hasattr(sub_item, 'keys') and content_field in sub_item: # check if sub_item is a dictionary
                         yield dict_to_es_doc(sub_item, content_field=content_field, year_field=year_field, addtl_fields=[('filename', filename)])
             else:
                 raise ValueError("'item' in json source is not a dict, and is either a string or not iterable: %r" % item)
@@ -121,14 +121,14 @@ def iter_documents_folder(folder, content_field='text', year_field='year'):
     year_field: string
         The field name (if any) that contains the year associated with the document
 
-    $ ls ./topik/tests/data/test-data_folder-files
+    $ ls ./topik/tests/data/test_data_folder_files
         doc1  doc2  doc3
-    >>> documents = iter_documents_folder('./topik/tests/data/test-data_folder-files')
+    >>> documents = iter_documents_folder('./topik/tests/data/test_data_folder_files')
     >>> next(documents) == {'_id': -7625602235157556658, '_source': {
     ...     'text': u"'Interstellar' was incredible. The visuals, the score, " +
     ...             u"the acting, were all amazing. The plot is definitely one " +
     ...             u"of the most original I've seen in a while.", 
-    ...     'filename': './topik/tests/data/test-data_folder-files/doc1', 'year': -1}}
+    ...     'filename': './topik/tests/data/test_data_folder_files/doc1', 'year': -1}}
     True
 
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
