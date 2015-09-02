@@ -58,20 +58,6 @@ def iter_document_json_stream(filename, content_field, year_field):
     ...                 u' Jos\xe9 G. Chac\xf3n', u' Perla E. Garc\xeda', u'Carlos A. Mart\xednez'], 
     ...                 u'year': 1917}}
     True
-
-
-    $ head -n 2 ./tests/data/test_data_json_stream_2.json
-        {"topic": "interstellar film review", "text": "'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one of the most original I've seen in a while.", "id": 1, "year": 1998}
-        {"topic": "big data", "text": "Big Data are becoming a new technology focus both in science and in industry and motivate technology shift to data centric architecture and operational models.", "id": 2, "year": 1999}
-    >>> documents = iter_document_json_stream('./topik/tests/data/test_data_json_stream_2.json', "text", "year")
-    >>> next(documents) == {'_id': -7625602235157556658,
-    ...     '_source': {'filename': './topik/tests/data/test_data_json_stream_2.json', u'id': 1,
-    ...                 u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
-    ...                          u"were all amazing. The plot is definitely one of the most original " +
-    ...                          u"I've seen in a while.",
-    ...                 u'topic': u'interstellar film review',
-    ...                 u'year': 1998}}
-    True
     """
 
     with open(filename, 'r') as f:
