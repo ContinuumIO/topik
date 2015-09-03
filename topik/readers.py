@@ -1,38 +1,25 @@
 from __future__ import absolute_import, print_function
 
-from collections import Iterable
-import gzip
-import json
-import logging
+
 import os
-import time
+import logging
 
-from elasticsearch import Elasticsearch, helpers
-from ijson import items
-import requests
-import solr
+from topik.intermediaries.raw_data import output_formats
 
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+# imports used only for doctests
+from topik.tests import test_data_path
 
-"""
-====================================================================
-STEP 1: Read all documents from source and yield full-featured dicts
-====================================================================
-"""
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
+                    level=logging.INFO)
 
-def iter_document_json_stream(filename, content_field, year_field):
+
+def _iter_document_json_stream(filename):
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters
     ----------
     filename: string
         The filename of the json stream.
-
-    content_field: string
-        The name fo the field that contains the main text body of the document.
-
-    year_field: string
-        The field name (if any) that contains the year associated with the document.
 
     $ head -n 2 ./tests/data/test_data_json_stream.json
         {"doi": "http://dx.doi.org/10.1557/PROC-879-Z3.3", "filepath": "abstracts/879/http%3A%2F%2Fjournals.cambridge.org%2Faction%2FdisplayAbstract%3FfromPage%3Donline%26aid%3D8081671%26fulltextType%3DRA%26fileId%3DS1946427400119281.html", "url": "http://journals.cambridge.org/action/displayAbstract?fromPage=online&aid=8081671&fulltextType=RA&fileId=S1946427400119281.html", "abstract": "Transition metal oxides are being considered as the next generation materials in field such as electronics and advanced catalysts; between them is Tantalum (V) Oxide; however, there are few reports for the synthesis of this material at the nanometer size which could have unusual properties. Hence, in this work we present the synthesis of Ta2O5 nanorods by sol gel method using DNA as structure directing agent, the size of the nanorods was of the order of 40 to 100 nm in diameter and several microns in length; this easy method can be useful in the preparation of nanomaterials for electronics, biomedical applications as well as catalysts.", "title": "Sol Gel Preparation of Ta2O5 Nanorods Using DNA as Structure Directing Agent", "year": "1917", "filename": "http%3A%2F%2Fjournals.cambridge.org%2Faction%2FdisplayAbstract%3FfromPage%3Donline%26aid%3D8081671%26fulltextType%3DRA%26fileId%3DS1946427400119281.html", "vol": "879", "authors": ["Humberto A. Monreala", " Alberto M. Villafa\u00f1e", " Jos\u00e9 G. Chac\u00f3n", " Perla E. Garc\u00eda", "Carlos A. Mart\u00ednez"]}
@@ -59,18 +46,29 @@ def iter_document_json_stream(filename, content_field, year_field):
     ...                 u'year': 1917}}
     True
     """
-
+    import json
     with open(filename, 'r') as f:
         for n, line in enumerate(f):
             try:
-                dictionary = {}
-                dictionary = json.loads(line)
-                yield dict_to_es_doc(dictionary, content_field=content_field, year_field=year_field, addtl_fields=[('filename', filename)])
-            except ValueError:
-                logging.warning("Unable to process line: %s" %
-                                 str(line))
+                output = json.loads(line)
+                output["filename"] = filename
+                yield output
+            except ValueError as e:
+                logging.warning("Unable to process line: {} (error was: {})".format(str(line), e))
 
-def iter_large_json(filename, content_field, year_field, json_prefix='item'):
+
+def __is_iterable(obj):
+    try:
+        iter(obj)
+    except TypeError, te:
+        return False
+    return True
+
+
+def _iter_large_json(filename, json_prefix='item'):
+    # TODO: add the script to automatically find the json_prefix based on a key
+    # Also should still have the option to manually specify a prefix for complex
+    # json structures.
     """Iterate over all items and sub-items in a json object that match the specified prefix
 
 
@@ -78,12 +76,6 @@ def iter_large_json(filename, content_field, year_field, json_prefix='item'):
     ----------
     filename: string
         The filename of the large json file
-
-    content_field: string
-        The name fo the field that contains the main text body of the document.
-
-    year_field: string
-        The field name (if any) that contains the year associated with the document
 
     json_prefix: string
         The string representation of the hierarchical prefix where the items of 
@@ -124,6 +116,7 @@ def iter_large_json(filename, content_field, year_field, json_prefix='item'):
     ...                 'filename': './topik/tests/data/test_data_large_json.json'}}
     True
     """
+    """
     with open(filename, 'r') as f:
         for item in items(f, json_prefix):
             if hasattr(item, 'keys') and content_field in item: # check if item is a dictionary
@@ -132,11 +125,23 @@ def iter_large_json(filename, content_field, year_field, json_prefix='item'):
                 for sub_item in item:
                     if hasattr(sub_item, 'keys') and content_field in sub_item: # check if sub_item is a dictionary
                         yield dict_to_es_doc(sub_item, content_field=content_field, year_field=year_field, addtl_fields=[('filename', filename)])
+    """
+    from ijson import items
+    with open(filename, 'r') as f:
+        for item in items(f, json_prefix):
+            if hasattr(item, 'keys'): # check if item is a dictionary
+                yield item
+            # check if item is both iterable and not a string
+            elif __is_iterable(item) and not isinstance(item, str):
+                for sub_item in item:
+                    # check if sub_item is a dictionary
+                    if hasattr(sub_item, 'keys'):
+                        sub_item
             else:
                 raise ValueError("'item' in json source is not a dict, and is either a string or not iterable: %r" % item)
 
 
-def iter_documents_folder(folder, content_field='text', year_field='year'):
+def _iter_documents_folder(folder, content_field='text', **kwargs):
     """Iterate over the files in a folder to retrieve the content to process and tokenize.
 
     Parameters
@@ -145,10 +150,10 @@ def iter_documents_folder(folder, content_field='text', year_field='year'):
         The folder containing the files you want to analyze.
 
     content_field: string
-        The name fo the field that contains the main text body of the document.
-
-    year_field: string
-        The field name (if any) that contains the year associated with the document
+        The usage of 'content_field' in this source is different from most other sources.  The 
+        assumption in this source is that each file contains raw text, NOT dictionaries of 
+        categorized data.  The content_field argument here specifies what key to store the raw
+        text under in the returned dictionary for each document.
 
     $ ls ./topik/tests/data/test_data_folder_files
         doc1  doc2  doc3
@@ -163,24 +168,29 @@ def iter_documents_folder(folder, content_field='text', year_field='year'):
     [u"'Interstellar' was incredible. The visuals, the score, the acting, were all amazing. The plot is definitely one
     of the most original I've seen in a while."]
     """
+
+    import gzip
+
     if not os.path.exists(folder):
         raise IOError("Folder not found!")
+
     for directory, subdirectories, files in os.walk(folder):
-        for n, file in enumerate(files):
+        for n, file in enumerate(sorted(files)):
             _open = gzip.open if file.endswith('.gz') else open
             try:
                 fullpath = os.path.join(directory, file)
                 with _open(fullpath, 'rb') as f:
-                    dictionary = {}
-                    dictionary[content_field] = f.read().decode('utf-8')
-                    fields = [('filename'       , fullpath)]
-                    yield dict_to_es_doc(dictionary, content_field=content_field, 
-                                         year_field=year_field, 
-                                         addtl_fields=fields)
+                    yield {content_field: f.read().decode('utf-8'),
+                           'filename': fullpath}
             except (ValueError, UnicodeDecodeError) as err:
-                logging.warning("Unable to process file: %s" % fullpath)
+                logging.warning("Unable to process file: {}, error: {}".format(fullpath, err))
 
-def iter_solr_query(solr_instance, content_field, year_field, query="*:*", content_in_list=True):
+
+def _iter_solr_query(solr_instance, content_field, year_field, query="*:*", content_in_list=True, **kwargs):
+    # TODO: should I be checking for presence of content_field and year_field?
+    # If not then we don't need them as params
+    # TODO: should I care at this level whether the content_in_list or only at
+    # the read_input level?  Is it being handled at that level currently?
     """Iterate over all documents in the specified solr intance that match the specified query
 
     Parameters
@@ -200,6 +210,9 @@ def iter_solr_query(solr_instance, content_field, year_field, query="*:*", conte
     content_in_list: bool
         Whether the source fields are stored in single-element lists.  Used for unpacking.
     """
+    import solr
+    from topik.utils import batch_concat
+
     s = solr.SolrConnection(solr_instance)
     results_per_batch = 100
     response = s.select(query, rows=results_per_batch)
@@ -213,12 +226,15 @@ def iter_solr_query(solr_instance, content_field, year_field, query="*:*", conte
             yield item
         response = response.next_batch()
 
-def iter_elastic_query(es_full_path, content_field, year_field, query):
+#def iter_elastic_query(es_full_path, content_field, year_field, query):
+
+def _iter_elastic_query(es_full_path, query=None,
+                        year_field=None, id_field=None, **kwargs):
     """Iterate over all documents in the specified elasticsearch intance and index that match the specified query
 
     Parameters
     ----------
-    instance: string
+    es_full_path: string
         Address of the elasticsearch instance including index
 
     query: string
@@ -231,6 +247,9 @@ def iter_elastic_query(es_full_path, content_field, year_field, query):
         The field name (if any) that contains the year associated with the document
     """
 
+    from elasticsearch import Elasticsearch, helpers
+
+    # split es_full_path into instance and index
     if es_full_path[-1] == '/':
         es_full_path = es_full_path[:-1]
     instance, index = es_full_path.rsplit('/',1)
@@ -240,125 +259,82 @@ def iter_elastic_query(es_full_path, content_field, year_field, query):
     results = helpers.scan(client=es, index=index, scroll='5m', query=query)
 
     for result in results:
-        yield dict_to_es_doc(result['_source'], content_field, year_field)
+        yield result['_source']
 
-"""
-===================================================================
-STEP 1.5: Conform dict to elasticsearch standard document structure
-===================================================================
-"""
 
-def dict_to_es_doc(dictionary, content_field, year_field, addtl_fields=None):
-    """Convert a dictionary to one that is formatted as a standard elasticsearch document
+def read_input(source, content_field, source_type="auto",
+               output_type="dictionary", output_args=None,
+               synchronous_wait=0, **kwargs):
+    """Read data from given source into Topik's internal data structures.
 
     Parameters
     ----------
-    dictionary: dict
-        The source document (in dict form) to be converted to a standard elasticsearch document dictionary
+    source: (string) input data.  Can be file path, directory, or server address.
+    content_field: (string) Which field contains your data to be analyzed.  Hash of this is used as id.
+    source_type: (string) "auto" tries to figure out data type of source.  Can be manually specified instead.
+        options for manual specification are:
+    output_type: (string) internal format for handling user data.  Current options are:
+        ["elasticsearch", "dictionary"].  default is "dictionary"
+    output_args: (dictionary) configuration to pass through to output
+    synchronous_wait: (integer) number of seconds to wait for data to finish uploading to output (this happens
+        asynchronously.)  Only relevant for some output types ("elasticsearch", not "dictionary")
+    kwargs: any other arguments to pass to input parsers
 
-    content_field: string
-        The name fo the field that contains the main text body of the document.
+    Returns
+    -------
+    iterable output object
 
-    year_field: string
-        The field name (if any) that contains the year associated with the document
+    >>> raw_data = read_input(
+                '{}/test-data-1.json',
+                content_field="text")
+    >>> id, text = next(iter(raw_data))
+    >>> text
+    "'Interstellar' was incredible.  The visuals, the score, the acting,
+    were all amazing.  The plot is definitely on of the most original I've
+    seen in a while."
 
-    addtl_fields: list of tuple, where each tuple is a (key, value) pair
-        These are additional fields to be added to the es-formatted dict, whose values are known upon reading from source.
-    
-    >>> d = {u'id': 1,
-    ...      u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
-    ...               u"were all amazing. The plot is definitely one of the most original " +
-    ...               u"I've seen in a while.",
-    ...      u'topic': u'interstellar film review',
-    ...      u'year': '1998'}
-    >>> es_doc = dict_to_es_doc(d, 'text', 'year', [('filename', './tests/data/test-data_json-stream-2.json')])
-    >>> es_doc == {'_id': -7625602235157556658,
-    ...     '_source': {'filename': './tests/data/test-data_json-stream-2.json', u'id': 1,
-    ...                 u'text': u"'Interstellar' was incredible. The visuals, the score, the acting, " +
-    ...                          u"were all amazing. The plot is definitely one of the most original " +
-    ...                          u"I've seen in a while.",
-    ...                 u'topic': u'interstellar film review',
-    ...                 u'year': 1998}}
-    True
-    """
-    es_doc_dict = {}
-    es_doc_dict['_source'] = dictionary
-    if year_field:
+    """.format(test_data_path)
+    import re
+    import time
+    json_extensions = [".js", ".json"]
+    ip_regex = "/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/"
+    web_regex = "^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/"
+    if output_args is None:
+        output_args = {}
+
+    ip_match = re.compile(ip_regex)
+    web_match = re.compile(web_regex)
+
+    # solr defaults to port 8983
+    if (source_type=="auto" and "8983" in source) or source_type == "solr":
+        data_iterator = _iter_solr_query(source, **kwargs)
+    # web addresses default to elasticsearch
+    elif (source_type == "auto" and (ip_match.search(source) or web_match.search(source))) or source_type == "elastic":
+        data_iterator = _iter_elastic_query(source, **kwargs)
+    # files must end in .json.  Try json parser first, try large_json parser next.  Fail otherwise.
+    elif (source_type == "auto" and os.path.splitext(source)[1] in json_extensions) or source_type == "json_stream":
         try:
-            # TODO: replace 'int()' with some sort of 'extract_year()' to accept more formats
-            es_doc_dict['_source'][year_field] = int(es_doc_dict['_source'][year_field])
-        except (ValueError, KeyError) as err:
-            es_doc_dict['_source'][year_field] = -1
-    if content_field and content_field in dictionary.keys():
-        es_doc_dict['_id'] = hash(dictionary[content_field])
+            data_iterator = _iter_document_json_stream(source, **kwargs)
+        except ValueError:
+            data_iterator = _iter_large_json(source, **kwargs)
+    elif source_type == "large_json":
+        data_iterator = _iter_large_json(source, **kwargs)
+    # folder paths are simple strings that don't end in an extension (.+3-4 characters), or end in a /
+    elif (source_type == "auto" and os.path.splitext(source)[1] == "") or source_type == "folder":
+        data_iterator = _iter_documents_folder(source, content_field=content_field)
     else:
-        raise ValueError("Invalid value for 'content_field'")
-    if addtl_fields:
-        for key, value in addtl_fields:
-            es_doc_dict['_source'][key] = value
-    return es_doc_dict
+        raise ValueError("Unrecognized source type: {}.  Please either manually specify the type, or convert your input"
+                         " to a supported type.".format(source))
+    if "content_field" not in output_args:
+        output_args["content_field"] = content_field
+    output = output_formats[output_type](iterable=data_iterator, **output_args)
 
-"""
-=============================================================
-STEP 2: Load dicts from generator into elasticsearch instance
-=============================================================
-"""
-
-def reader_to_elastic(instance, index, documents, clear_index, doc_type='document'):
-    """Takes the generator yielded by the selected reader and iterates over it 
-    to load the documents into elasticsearch"""
-    es = Elasticsearch(instance)
-    
-    if clear_index:
-        if es.indices.exists(index):
-            logging.info("Index '%s' exists, so can be deleted..." % index)
-            es.indices.delete(index)
-            logging.info("Index '%s' deleted." % index)
-        else:
-            logging.warning("Index '%s' does not exist so cannot be deleted." % index)    
-    
-    bulk_index = helpers.bulk(client=es, actions=documents, index=index, 
-                              doc_type=doc_type)
-
-    number_of_docs_in_index = -1
-
-    while es.count(index=index, doc_type=doc_type)['count'] != number_of_docs_in_index:
-        number_of_docs_in_index = es.count(index=index, doc_type=doc_type)['count']
+    if synchronous_wait > 0:
+        start = time.time()
+        items_stored = output.get_number_of_items_stored()
         time.sleep(1)
-        logging.info("Number of documents in the index '%s': %d" % (index, number_of_docs_in_index))
-            
-    logging.info("%d documents successfully indexed" % number_of_docs_in_index)
-        
-"""
-===========================================================
-STEP 3: Get year-filtered documents back from elasticsearch
-===========================================================
-"""
+        while items_stored != output.get_number_of_items_stored() and time.time() - start < synchronous_wait:
+            logging.debug("Number of documents added to the index: {}".format(output.get_number_of_items_stored()))
+            time.sleep(1)
 
-def get_filtered_elastic_results(instance, index, content_field, year_field,
-                                 start_year, stop_year):
-    """Queries elasticsearch for all documents within the specified year range
-    and returns a generator of the results"""
-    es = Elasticsearch(instance)
-
-    if year_field and (start_year or stop_year):
-
-        results = helpers.scan(client=es, index=index, scroll='5m',
-                        query={"query": 
-                                {"constant_score": 
-                                    {"filter":
-                                        {"range":
-                                            {year_field:
-                                                {"gte": start_year,
-                                                 "lte": stop_year}}}}}})
-
-    else:
-        results = helpers.scan(client=es, index=index, scroll='5m')
-
-    for result in results:
-        if content_field in result['_source'].keys():
-            yield result['_source'][content_field]
-
-
-
-
+    return output

@@ -9,37 +9,33 @@ import webbrowser
 
 import numpy as np
 
+from topik.readers import read_input
+from topik.preprocessing import preprocess
 from topik.models import LDA
-from topik.readers import iter_document_json_stream, iter_documents_folder,\
-        iter_large_json, iter_solr_query, iter_elastic_query,\
-        reader_to_elastic, get_filtered_elastic_results
-from topik.tokenizers import SimpleTokenizer, CollocationsTokenizer, EntitiesTokenizer, MixedTokenizer
-from topik.utils import to_r_ldavis, generate_csv_output_file, unzip
-from topik.vectorizers import CorpusBOW
 from topik.viz import Termite
+from topik.utils import to_r_ldavis, generate_csv_output_file
 
 
-
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
+                    level=logging.INFO)
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
-
-def run_model(data, format='json_stream', year_field=None, start_year=None, stop_year=None,
-                content_field=None,  es_query=None, solr_query='*:*', clear_es_index=False,
+def run_model(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
+                content_field=None, clear_es_index=False,
                 tokenizer='simple', n_topics=10, dir_path='./topic_model', model='lda_batch', 
                 termite_plot=True, output_file=False, r_ldavis=False, json_prefix=None,  
-                seed=42, destination_es_instance=None, destination_es_index=None):
+                seed=42, **kwargs):
 
     """Run your data through all topik functionality and save all results to a specified directory.
 
     Parameters
     ----------
-    data: string
+    data_source: string
         Input data (e.g. file or folder or solr/elasticsearch instance).
 
-    format: {'json_stream', 'folder_files', 'json_large', 'solr', 'elastic'}.
-        The format of your data input. Currently available a json stream or a folder containing text files. 
+    source_type: {'json_stream', 'folder_files', 'json_large', 'solr', 'elastic'}.
+        The format of your data input. Currently available a json stream or a folder containing text files.
         Default is 'json_stream'
 
     year_field: string
@@ -54,22 +50,16 @@ def run_model(data, format='json_stream', year_field=None, start_year=None, stop
     content_field: string
         The primary text field to parse.
 
-    es_query: string
-        For 'elastic' format reader, an optional json query string. Default is None to retrieve all documents.
-
-    solr_query: string
-        For 'solr' format reader, an optional query. Default is '*:*' to retrieve all documents.
-
     clear_es_index: bool
         On true, delete and re-create destination elasticsearch index prior to loading in new documents.  Otherwise leave any previously
         existing documents and just add/update with the new documents.
 
     tokenizer: {'simple', 'collocations', 'entities', 'mixed'}
         The type of tokenizer to use. Default is 'simple'.
-    
+
     n_topics: int
         Number of topics to find in your data
-        
+
     dir_path: string
         Directory path to store all topic modeling results files. Default is `./topic_model`.
 
@@ -90,143 +80,48 @@ def run_model(data, format='json_stream', year_field=None, start_year=None, stop
 
     seed: int
         Set random number generator to seed, to be able to reproduce results. Default 42.
-
-    destination_es_instance: string
-        The address of the intermediate elasticsearch instance
-
-    destination_es_index: string
-        The index to use within the intermediate elasticsearch instance
     """
 
     np.random.seed(seed)
 
-    """
-    ====================================================================
-    STEP 1: Read all documents from source and yield full-featured dicts
-    ====================================================================
-    """
 
-    logging.info("Beginning STEP 1: Reading documents from source")
+    raw_data = read_input(data_source, content_field=content_field,
+                          source_type=source_type, **kwargs)
+    processed_data = preprocess(raw_data, tokenizer_method=tokenizer, **kwargs)
 
-    if format == 'json_stream' and content_field is not None:
-        documents = iter_document_json_stream(data, content_field, year_field)
-    elif format == 'large_json' and content_field is not None:
-        documents = iter_large_json(data, content_field, year_field, json_prefix)
-    elif format == 'folder_files':
-        documents = iter_documents_folder(data, content_field, year_field)
-    elif format == 'solr' and content_field is not None:
-        documents = iter_solr_query(data, content_field, year_field, query=solr_query)
-    elif format == 'elastic' and content_field is not None:
-        documents = iter_elastic_query(data, content_field, year_field, query=es_query)
-    else:
-        raise Exception("Invalid input, make sure you're passing the appropriate arguments for the different formats")
-
-    logging.info("STEP 1 Complete")
-
-    """
-    ====================================================================
-    STEP 2: Load dicts from reader-generator into elasticsearch instance
-    ====================================================================
-    """
-
-    logging.info("Beginning STEP 2: Loading documents into elasticsearch")
-    
-    reader_to_elastic(destination_es_instance,
-                   destination_es_index, documents, clear_es_index)
-
-    logging.info("STEP 2 Complete")
-
-    """
-    ===========================================================
-    STEP 3: Get year-filtered documents back from elasticsearch
-    ===========================================================
-    """
-
-    logging.info("Beginning STEP 3: fetching documents from elasticsearch")
-
-    filtered_documents = get_filtered_elastic_results(destination_es_instance,
-                            destination_es_index, content_field,
-                            year_field, start_year, stop_year)
-      
-    logging.info("STEP 3 Complete")
-    
-    """
-    ===========================================================
-    STEP 4: For each document, Tokenize the raw text body into
-            a list of words
-    ===========================================================
-    """
-
-    logging.info("Beginning STEP 4: Tokenization")
-
-    if tokenizer == 'simple':
-        corpus = SimpleTokenizer(filtered_documents)
-    elif tokenizer == 'collocations' :
-        corpus = CollocationsTokenizer(filtered_documents)
-    elif tokenizer == 'entities':
-        corpus = EntitiesTokenizer(filtered_documents)
-    elif tokenizer == 'mixed':
-        corpus = MixedTokenizer(filtered_documents)
-    else:
-        logging.warning("Processing value invalid, using simple")
-        corpus = SimpleTokenizer(filtered_documents)
-
-    if os.path.isdir(dir_path):
-        shutil.rmtree(dir_path)
-
-    os.makedirs(dir_path)
-    
-    logging.info("STEP 4 Complete")
-
-    """
-    ===========================================================
-    STEP 5: For each document, Vectorize the list of words into
-            a Bag of Words (or N-grams?)
-    ===========================================================
-    """
-
-    logging.info("Beginning STEP 5: Vectorization")
-
-    # Create dictionary
-    corpus_bow = CorpusBOW(corpus)
-    corpus_dict = corpus_bow.save_dict(os.path.join(dir_path, 'corpus.dict'))
     # Serialize and store the corpus
-    corpus_file = corpus_bow.serialize(os.path.join(dir_path, 'corpus.mm'))
     # Create LDA model from corpus and dictionary
     if model == 'lda_batch':
         # To perform lda in batch mode set update_every=0 and passes=20)
         # https://radimrehurek.com/gensim/wiki.html#latent-dirichlet-allocation
-        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=0,
-                  passes=20)
+        lda = LDA(processed_data, n_topics, update_every=0, passes=20)
     elif model == 'lda_online':
-        # To perform lda in online mode set variables update_every, chuncksize and passes.
-        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=1,
+        # To perform lda in online mode set variables update_every, chunksize and passes.
+        lda = LDA(processed_data, n_topics, update_every=1,
                   chunksize=10000, passes=1)
     else:
         logging.warning('model provided not valid. Using lda_batch.')
-        lda = LDA(os.path.join(dir_path, 'corpus.mm'), os.path.join(dir_path,'corpus.dict'), n_topics, update_every=0,
-                  passes=20)
-    # Generate the input for the termite plot
-    lda.termite_data(os.path.join(dir_path,'termite.csv'))
+        lda = LDA(processed_data, n_topics, update_every=0, passes=20)
     # Get termite plot for this model
     if termite_plot:
-        termite = Termite(os.path.join(dir_path,'termite.csv'), "Termite Plot")
-        termite.plot(os.path.join(dir_path,'termite.html'))
-
+        # Generate the input for the termite plot
+        csv_path = os.path.join(dir_path, 'termite.csv')
+        lda.termite_data(csv_path)
+        termite = Termite(csv_path, "Termite Plot")
+        termite.plot(os.path.join(dir_path, 'termite.html'))
 
     if output_file:
-
-        filtered_documents = get_filtered_elastic_results(destination_es_instance,
-                        destination_es_index, content_field,
-                        year_field, start_year, stop_year)
-        df_results = generate_csv_output_file(filtered_documents, corpus, corpus_bow, lda.model)
-    
+        filtered_documents = get_filtered_elastic_results(
+            destination_es_instance, destination_es_index, content_field,
+            year_field, start_year, stop_year)
+        df_results = generate_csv_output_file(filtered_documents, raw_data,
+                                              processed_data, lda.model)
 
     if r_ldavis:
-        to_r_ldavis(corpus_bow, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
+        to_r_ldavis(processed_data, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
         os.environ["LDAVIS_DIR"] = os.path.join(dir_path, 'ldavis')
         try:
-            subprocess.call(['Rscript', os.path.join(BASEDIR,'R/runLDAvis.R')])
+            subprocess.call(['Rscript', os.path.join(BASEDIR, 'R/runLDAvis.R')])
         except ValueError:
             logging.warning("Unable to run runLDAvis.R")
         os.chdir(os.path.join(dir_path, 'ldavis', 'output'))
@@ -235,6 +130,4 @@ def run_model(data, format='json_stream', year_field=None, start_year=None, stop
         time.sleep(3)
         sp.kill()
     os.chdir(os.path.dirname(BASEDIR))
-
-
 
