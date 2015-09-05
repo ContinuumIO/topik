@@ -14,8 +14,7 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes
-  - conda install gensim
-  - conda install nltk
+  - conda install gensim nltk bokeh blaze pandas
   - python setup.py install
   
 
