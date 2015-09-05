@@ -1,0 +1,25 @@
+language: python
+python:
+  # We don't actually use the system Python but this keeps it organized.
+  - "2.7"
+  - "3.4"
+install:
+  # TODO: Use a "latest" url
+  - sudo apt-get update
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget http://repo.continuum.io/miniconda/Miniconda-3.0.0-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget http://repo.continuum.io/miniconda/Miniconda3-3.0.0-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes
+  - conda install gensim nltk
+  - python setup.py install
+  
+
+script: py.test
+
+notifications:
+    flowdock: 8736cc7601ed0761f6c9339ec747ded6
