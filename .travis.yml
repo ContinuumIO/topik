@@ -16,7 +16,7 @@ install:
   - conda config --set always_yes yes
   - conda install gensim nltk bokeh blaze pandas pytest
   - conda install -c https://conda.anaconda.org/memex solr
-  - conda install -c https://conda.anaconda.org/hargup pysolr
+  - conda install -c https://conda.anaconda.org/auto pysolr
   - pip install .
   
 
