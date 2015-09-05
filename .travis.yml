@@ -14,13 +14,18 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes
-  - conda install gensim nltk bokeh blaze pandas pytest
+  - conda install gensim nltk bokeh blaze pandas nose pip
   - conda install -c https://conda.anaconda.org/memex solr
   - conda install -c https://conda.anaconda.org/auto pysolr
+  - pip install coveralls
   - pip install .
   
 
-script: py.test
+script:
+  nosetests --with-coverage --with-doctest --cover-package=topik
 
 notifications:
     flowdock: 8736cc7601ed0761f6c9339ec747ded6
+
+after_success:
+  - coveralls --exclude tests
