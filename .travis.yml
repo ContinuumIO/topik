@@ -17,6 +17,7 @@ install:
   - conda install gensim nltk bokeh blaze pandas nose pip
   - conda install -c https://conda.anaconda.org/memex solr
   - pip install pysolr
+  - pip install click
   - pip install coveralls
   - pip install .
   

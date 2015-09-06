@@ -9,3 +9,5 @@ odo
 nltk
 pattern
 elasticsearch
+click
+pysolr
