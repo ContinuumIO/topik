@@ -10,7 +10,6 @@ import time
 from elasticsearch import Elasticsearch, helpers
 from ijson import items
 import requests
-import solr
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -200,7 +199,8 @@ def iter_solr_query(solr_instance, content_field, year_field, query="*:*", conte
     content_in_list: bool
         Whether the source fields are stored in single-element lists.  Used for unpacking.
     """
-    s = solr.SolrConnection(solr_instance)
+    import pysolr
+    s = pysolr.Solr(solr_instance)
     results_per_batch = 100
     response = s.select(query, rows=results_per_batch)
     while response.results:
