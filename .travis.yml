@@ -19,6 +19,7 @@ install:
   - pip install pysolr
   - pip install click
   - pip install coveralls
+  - pip install ijson
   - pip install .
   
 
