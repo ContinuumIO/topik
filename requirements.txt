@@ -11,3 +11,4 @@ pattern
 elasticsearch
 click
 pysolr
+beautifulsoup4
