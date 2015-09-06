@@ -1,0 +1,32 @@
+language: python
+python:
+  # We don't actually use the system Python but this keeps it organized.
+  - "2.7"
+  - "3.4"
+install:
+  # TODO: Use a "latest" url
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes
+  - conda install gensim nltk bokeh blaze pandas nose pip beautiful-soup
+  - conda install -c https://conda.anaconda.org/memex solr
+  - pip install pysolr
+  - pip install click
+  - pip install coveralls
+  - pip install .
+  
+
+script:
+    nosetests --with-coverage --with-doctest --cover-package=topik
+
+notifications:
+    flowdock: 8736cc7601ed0761f6c9339ec747ded6
+
+after_success:
+  - coveralls --exclude tests

@@ -9,3 +9,6 @@ odo
 nltk
 pattern
 elasticsearch
+click
+pysolr
+beautifulsoup4
