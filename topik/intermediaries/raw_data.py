@@ -88,7 +88,11 @@ class ElasticSearchCorpus(object):
     def get_data_by_year(self, start_year, end_year, year_field="year"):
         """Queries elasticsearch for all documents within the specified year range
         and returns a generator of the results"""
-        results = self.instance.scan(index=self.index, scroll='5m',
+        #if self.instance.get_field_mapping(field=year_field,
+        #                                   index=self.index) == 'test':
+        #    pass
+
+        results = helpers.scan(self.instance, index=self.index, scroll='5m',
                                      query={"query":
                                                 {"constant_score":
                                                     {"filter":
@@ -98,7 +102,7 @@ class ElasticSearchCorpus(object):
                                                                  "lte": end_year}}}}}})
 
         for result in results:
-            yield result['_source'][self.content_field]
+            yield result["_id"], result['_source'][self.content_field]
 
 
 class DictionaryCorpus(object):
@@ -125,7 +129,8 @@ class DictionaryCorpus(object):
         """Get a different field to iterate over, keeping all other details."""
         if not field:
             field = self.content_field
-        return DictionaryCorpus(content_field=field, iterable=self._documents, generate_id=False)
+        return DictionaryCorpus(content_field=field, iterable=self._documents,
+                                generate_id=False)
 
     def get_generator_without_id(self, field=None):
         if not field:
@@ -134,8 +139,7 @@ class DictionaryCorpus(object):
             yield doc["_source"][field]
 
     def import_from_iterable(self, iterable, content_field, generate_id=True):
-        """Load data into Elasticsearch from iterable.
-
+        """
         iterable: generally a list of dicts, but possibly a list of strings
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
@@ -153,8 +157,8 @@ class DictionaryCorpus(object):
     # TODO: validate input data to ensure that it has valid year data
     def get_data_by_year(self, start_year, end_year, year_field="year"):
         for result in self._documents:
-            if start_year <= result[year_field] <= end_year:
-                yield result["_source"][self.content_field]
+            if start_year <= int(result["_source"][year_field]) <= end_year:
+                yield result["_id"], result["_source"][self.content_field]
 
 
 # Collection of output formats: people put files, folders, etc in, and they can choose from these to be the output

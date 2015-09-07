@@ -13,8 +13,8 @@ class TestModels(unittest.TestCase):
 
     def setUp(self):
         raw_data = read_input(
-                source=os.path.join(module_path, 'data/test-data-1.json'),
-                content_field="text")
+                source=os.path.join(module_path, 'data/test_data_json_stream.json'),
+                content_field="abstract")
         self.digested_data = preprocess(raw_data)
 
     def tearDown(self):
