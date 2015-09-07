@@ -203,10 +203,10 @@ def _iter_solr_query(solr_instance, content_field, year_field, query="*:*", cont
     content_in_list: bool
         Whether the source fields are stored in single-element lists.  Used for unpacking.
     """
-    import solr
-    from topik.utils import batch_concat
 
-    s = solr.SolrConnection(solr_instance)
+    import pysolr
+
+    s = pysolr.Solr(solr_instance)
     results_per_batch = 100
     response = s.select(query, rows=results_per_batch)
     while response.results:
@@ -219,7 +219,6 @@ def _iter_solr_query(solr_instance, content_field, year_field, query="*:*", cont
             yield item
         response = response.next_batch()
 
-#def iter_elastic_query(es_full_path, content_field, year_field, query):
 
 def _iter_elastic_query(es_full_path, query=None,
                         year_field=None, id_field=None, **kwargs):
