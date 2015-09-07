@@ -15,6 +15,8 @@ install:
   - hash -r
   - conda config --set always_yes yes
   - conda install gensim nltk bokeh blaze pandas nose pip beautiful-soup
+  - pip install textblob
+  - python -m textblob.download_corpora
   - conda install -c https://conda.anaconda.org/memex solr
   - pip install pysolr
   - pip install click
