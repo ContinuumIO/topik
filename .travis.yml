@@ -23,7 +23,12 @@ install:
   - pip install coveralls
   - pip install ijson
   - pip install .
-  
+
+services:
+  - elasticsearch
+
+before_script:
+  - sleep 10
 
 script:
     nosetests --with-coverage --with-doctest --cover-package=topik
