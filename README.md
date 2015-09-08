@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/ContinuumIO/topik.svg?branch=master)](https://travis-ci.org/ContinuumIO/topik)
+[![Coverage Status](https://coveralls.io/repos/ContinuumIO/topik/badge.svg?branch=master&service=github)](https://coveralls.io/github/ContinuumIO/topik?branch=master)
+
 # Topik
 
 A Topic Modeling toolbox.
