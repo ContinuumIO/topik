@@ -308,7 +308,7 @@ def read_input(source, content_field, source_type="auto",
     web_match = re.compile(web_regex)
 
     # solr defaults to port 8983
-    if (source_type=="auto" and "8983" in source) or source_type == "solr":
+    if (source_type == "auto" and "8983" in source) or source_type == "solr":
         data_iterator = _iter_solr_query(source, **kwargs)
     # web addresses default to elasticsearch
     elif (source_type == "auto" and (ip_match.search(source) or web_match.search(source))) or source_type == "elastic":
@@ -334,12 +334,13 @@ def read_input(source, content_field, source_type="auto",
 
     if synchronous_wait > 0:
         start = time.time()
-        items_stored = output.get_number_of_items_stored()
+        items_stored = len(output)
         time.sleep(1)
-        while items_stored != output.get_number_of_items_stored() and time.time() - start < synchronous_wait:
-            logging.debug("Number of documents added to the index: {}".format(output.get_number_of_items_stored()))
+        # TODO: might get into trouble here if upload is actually empty!
+        while len(output) <= 0 or (items_stored != len(output) and time.time() - start < synchronous_wait):
+            logging.debug("Number of documents added to the index: {}".format(len(output)))
             time.sleep(1)
-            items_stored = output.get_number_of_items_stored()
+            items_stored = len(output)
         if time.time() - start > synchronous_wait:
             logging.warning("Number of documents had not stabilized by end of synchronous_wait, continuing anyway.")
     return output

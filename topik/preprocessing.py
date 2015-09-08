@@ -53,4 +53,4 @@ def preprocess(raw_data, tokenizer_method="simple", **kwargs):
                                      **kwargs)
         # TODO: would be nice to aggregate batches and append in bulk
         raw_data.append_to_record(record_id, token_path, tokenized_record)
-    return DigestedDocumentCollection(raw_data.get_generator_without_id(field=token_path))
+    return DigestedDocumentCollection(raw_data.get_field(field=token_path))
