@@ -24,7 +24,7 @@ class TestDictionaryCorpus(unittest.TestCase, BaseCorpus):
         self.test_raw_data = read_input('{}/test_data_json_stream.json'.format(
             test_data_path), content_field="abstract")
 
-'''class TestElasticSearchCorpus(unittest.TestCase, BaseCorpus):
+class TestElasticSearchCorpus(unittest.TestCase, BaseCorpus):
     def setUp(self):
         self.test_raw_data = read_input('{}/test_data_json_stream.json'.format(
             test_data_path), content_field="abstract",
@@ -36,4 +36,3 @@ class TestDictionaryCorpus(unittest.TestCase, BaseCorpus):
     def tearDown(self):
         instance=elasticsearch.Elasticsearch("localhost")
         instance.indices.delete("topik_unittest")
-'''
