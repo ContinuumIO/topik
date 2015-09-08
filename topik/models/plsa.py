@@ -28,13 +28,11 @@ def _rand_mat(sizex, sizey):
 class PLSA(object):
     def __init__(self, corpus=None, topics=2):
         self.topics = topics
-        if corpus:
+        if corpus is not None:
             self.corpus = corpus
             self.docs = len(corpus)
             self.each = map(sum, map(lambda x: x.values(), corpus))
-            logging.debug('self.each %r' % (self.each,))
             self.words = max(reduce(operator.add, map(lambda x: x.keys(), corpus)))+1
-            logging.debug('self.words %s' % (self.words,))
             self.likelihood = 0
             self.zw = _rand_mat(self.topics, self.words)
             self.dz = _rand_mat(self.docs, self.topics)

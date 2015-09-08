@@ -5,6 +5,8 @@ Elasticsearch.  The class(es) defined here are fed into the preprocessing step.
 
 import logging
 import time
+from abc import ABCMeta, abstractmethod
+from six import with_metaclass
 
 from elasticsearch import Elasticsearch, helpers
 
@@ -13,7 +15,30 @@ def _get_hash_identifier(input_data, id_field):
     return hash(input_data[id_field])
 
 
-class ElasticSearchCorpus(object):
+class CorpusInterface(with_metaclass(ABCMeta)):
+    @abstractmethod
+    def __iter__(self):
+        """This is expected to iterate over your data, returning tuples of (doc_id, <selected field>)"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def __len__(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_generator_without_id(self, field=None):
+        """Returns a generator that yields field content without doc_id associate"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def append_to_record(self, record_id, field_name, field_value):
+        """Used to store preprocessed output alongside input data.
+
+        Field name is destination.  Value is processed value."""
+        raise NotImplementedError
+
+
+class ElasticSearchCorpus(CorpusInterface):
     def __init__(self, host, index, content_field, port=9200, username=None,
                  password=None, doc_type=None, query=None, iterable=None):
         super(ElasticSearchCorpus, self).__init__()
@@ -36,6 +61,9 @@ class ElasticSearchCorpus(object):
                                query=self.query, doc_type=self.doc_type)
         for result in results:
             yield result["_id"], result['_source'][self.content_field]
+
+    def __len__(self):
+        return self.instance.count(index=self.index, doc_type=self.doc_type)["count"]
 
     def get_generator_without_id(self, field=None):
         if not field:
@@ -80,11 +108,6 @@ class ElasticSearchCorpus(object):
                 batch = []
         if batch:
             helpers.bulk(client=self.instance, actions=batch, index=self.index)
-        # TODO: is there a good way to do bulk without forcing in-memory of whole data?
-        # helpers.bulk(self.instance, )
-
-    def get_number_of_items_stored(self):
-        return self.instance.count(index=self.index, doc_type=self.doc_type)['count']
 
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
@@ -120,7 +143,7 @@ class ElasticSearchCorpus(object):
             yield result["_id"], result['_source'][self.content_field]
 
 
-class DictionaryCorpus(object):
+class DictionaryCorpus(CorpusInterface):
     def __init__(self, content_field, iterable=None, generate_id=True):
         super(DictionaryCorpus, self).__init__()
         self.content_field = content_field
@@ -132,6 +155,9 @@ class DictionaryCorpus(object):
     def __iter__(self):
         for doc in self._documents:
             yield doc["_id"], doc["_source"][self.content_field]
+
+    def __len__(self):
+        return len(self._documents)
 
     def append_to_record(self, record_id, field_name, field_value):
         for doc in self._documents:

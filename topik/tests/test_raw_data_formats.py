@@ -5,10 +5,10 @@ import elasticsearch
 from topik.readers import read_input
 from topik.tests import test_data_path
 
-
+INDEX = "topik_unittest"
 
 class BaseCorpus(object):
-    test_raw_data=None
+    test_raw_data = None
 
     def test_year_filtering(self):
         result_list = list(self.test_raw_data.get_data_by_year(start_year=1975,
@@ -30,9 +30,11 @@ class TestElasticSearchCorpus(unittest.TestCase, BaseCorpus):
             test_data_path), content_field="abstract",
             output_type="elasticsearch",
             output_args= {'host': 'localhost',
-                          'index': 'topik_unittest'},
+                          'index': INDEX},
                synchronous_wait=30)
 
     def tearDown(self):
         instance = elasticsearch.Elasticsearch("localhost")
-        instance.indices.delete("topik_unittest")
+        instance.indices.delete(INDEX)
+        if instance.indices.exists("{}_year_date".format(INDEX)):
+            instance.indices.delete("{}_year_date".format(INDEX))
