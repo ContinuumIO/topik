@@ -69,7 +69,7 @@ class ElasticSearchCorpus(object):
         batch = []
         for item in iterable:
             if isinstance(item, basestring):
-                item = {"text": item}
+                item = {id_field: item}
             id = _get_hash_identifier(item, id_field)
             batch.append({"_id": id, "_source": item, "_type": "continuum"})
             if len(batch) >= batch_size:
@@ -88,9 +88,14 @@ class ElasticSearchCorpus(object):
     def get_data_by_year(self, start_year, end_year, year_field="year"):
         """Queries elasticsearch for all documents within the specified year range
         and returns a generator of the results"""
-        #if self.instance.get_field_mapping(field=year_field,
-        #                                   index=self.index) == 'test':
-        #    pass
+        if self.instance.get_field_mapping(field=year_field,
+                                           index=self.index,
+                                           doc_type="continuum") != 'date':
+            mapping = self.instance.get_mapping(index=self.index,
+                                                doc_type="continuum")
+            mapping[year_field] = {"type": "date"}
+            self.instance.put_mapping(index=self.index, doc_type="continuum",
+                                      body=mapping)
 
         results = helpers.scan(self.instance, index=self.index, scroll='5m',
                                      query={"query":
