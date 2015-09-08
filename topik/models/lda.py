@@ -26,7 +26,7 @@ class LDA(TopicModelBase):
  
     """.format(test_data_path)
     def __init__(self, corpus_input, ntopics=10, **kwargs):
-        self.model = gensim.models.LdaModel(corpus_input, num_topics=ntopics,
+        self.model = gensim.models.LdaModel(list(iter(corpus_input)), num_topics=ntopics,
                                             id2word=corpus_input.get_id2word_dict(), **kwargs)
 
     def save(self, filename):

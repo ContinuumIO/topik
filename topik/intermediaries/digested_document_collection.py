@@ -35,3 +35,6 @@ class DigestedDocumentCollection(CorpusABC):
         """Each iteration gets a tokenized document from the corpus"""
         for tokens in self.corpus:
             yield self.dict.doc2bow(tokens)
+
+    def get_id2word_dict(self):
+        return self.dict

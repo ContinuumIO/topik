@@ -3,6 +3,9 @@ This file is concerned with providing a simple interface for data stored in
 Elasticsearch.  The class(es) defined here are fed into the preprocessing step.
 """
 
+import logging
+import time
+
 from elasticsearch import Elasticsearch, helpers
 
 
@@ -88,23 +91,30 @@ class ElasticSearchCorpus(object):
     def get_data_by_year(self, start_year, end_year, year_field="year"):
         """Queries elasticsearch for all documents within the specified year range
         and returns a generator of the results"""
-        if self.instance.get_field_mapping(field=year_field,
-                                           index=self.index,
+        index = self.index
+        if self.instance.indices.get_field_mapping(field=year_field,
+                                           index=index,
                                            doc_type="continuum") != 'date':
-            mapping = self.instance.get_mapping(index=self.index,
-                                                doc_type="continuum")
-            mapping[year_field] = {"type": "date"}
-            self.instance.put_mapping(index=self.index, doc_type="continuum",
-                                      body=mapping)
+            index = self.index+"_{}_date".format(year_field)
+            if not self.instance.indices.exists(index) or self.instance.indices.get_field_mapping(field=year_field,
+                                           index=index,
+                                           doc_type="continuum") != 'date':
+                mapping = self.instance.indices.get_mapping(index=self.index,
+                                                            doc_type="continuum")
+                mapping[self.index]["mappings"]["continuum"]["properties"][year_field] = {"type": "date"}
+                self.instance.indices.put_alias(index=self.index,
+                                                name=index,
+                                                body=mapping)
+                while self.instance.count(index=self.index) != self.instance.count(index=index):
+                    logging.info("Waiting for date indexed data to be indexed...")
+                    time.sleep(1)
 
-        results = helpers.scan(self.instance, index=self.index, scroll='5m',
+        results = helpers.scan(self.instance, index=index, scroll='5m',
                                      query={"query":
-                                                {"constant_score":
-                                                    {"filter":
-                                                        {"range":
-                                                            {year_field:
-                                                                {"gte": start_year,
-                                                                 "lte": end_year}}}}}})
+                                                {"range":
+                                                    {year_field:
+                                                        {"gte": start_year,
+                                                         "lte": end_year}}}})
 
         for result in results:
             yield result["_id"], result['_source'][self.content_field]

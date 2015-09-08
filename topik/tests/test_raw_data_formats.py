@@ -34,5 +34,5 @@ class TestElasticSearchCorpus(unittest.TestCase, BaseCorpus):
                synchronous_wait=30)
 
     def tearDown(self):
-        instance=elasticsearch.Elasticsearch("localhost")
+        instance = elasticsearch.Elasticsearch("localhost")
         instance.indices.delete("topik_unittest")
