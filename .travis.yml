@@ -2,7 +2,7 @@ language: python
 python:
   # We don't actually use the system Python but this keeps it organized.
   - "2.7"
-  - "3.4"
+  #- "3.4" # comment python 3 for now (a few upstream libs don't support it.)
 install:
   # TODO: Use a "latest" url
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
