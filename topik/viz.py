@@ -24,10 +24,11 @@ class Termite(object):
     title: string
         The title for your termite plot
 
-    >>> termite = Termite("{}/termite.csv", "My lda results")
+    >>> termite = Termite("{}/termite.csv".format(test_data_path),
+    ...                   "My lda results")
     >>> termite.plot('my_termite.html')
 
-    """.format(test_data_path)
+    """
     def __init__(self, input_file, title):
         self.input_file = input_file
         self.title = title

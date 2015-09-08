@@ -30,18 +30,34 @@ def tokenize_simple(text, stopwords=STOPWORDS):
     stopwords: words to ignore as noise
 
     >>> id_documents = read_input(
-                    '{}/test-data-1.json',
-                    content_field="text")
+    ...                 '{}/test_data_json_stream.json'.format(test_data_path),
+    ...                 content_field="abstract")
     >>> id, doc_text = next(iter(id_documents))
-    >>> doc_text
-    "'Interstellar' was incredible.  The visuals, the score, the acting,
-    were all amazing.  The plot is definitely on of the most original I've
-    seen in a while."
+    >>> doc_text == str(
+    ... 'Transition metal oxides are being considered as the next generation '
+    ... 'materials in field such as electronics and advanced catalysts; between'
+    ... ' them is Tantalum (V) Oxide; however, there are few reports for the '
+    ... 'synthesis of this material at the nanometer size which could have '
+    ... 'unusual properties. Hence, in this work we present the synthesis of '
+    ... 'Ta2O5 nanorods by sol gel method using DNA as structure directing '
+    ... 'agent, the size of the nanorods was of the order of 40 to 100 nm in '
+    ... 'diameter and several microns in length; this easy method can be useful'
+    ... ' in the preparation of nanomaterials for electronics, biomedical '
+    ... 'applications as well as catalysts.')
+    True
     >>> tokens = tokenize_simple(doc_text)
-    >>> head(simple_tokenizer)
-        [['interstellar', 'incredible', 'visuals', 'score', 'acting',
-          'amazing', 'plot', 'definitely', 'original', 've', 'seen']]
-    """.format(test_data_path)
+    >>> tokens == [
+    ... u'transition', u'metal', u'oxides', u'considered', u'generation',
+    ... u'materials', u'field', u'electronics', u'advanced', u'catalysts',
+    ... u'tantalum', u'v', u'oxide', u'reports', u'synthesis', u'material',
+    ... u'nanometer', u'size', u'unusual', u'properties', u'work', u'present',
+    ... u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel', u'method',
+    ... u'dna', u'structure', u'directing', u'agent', u'size', u'nanorods',
+    ... u'order', u'nm', u'diameter', u'microns', u'length', u'easy', u'method',
+    ... u'useful', u'preparation', u'nanomaterials', u'electronics',
+    ... u'biomedical', u'applications', u'catalysts']
+    True
+    """
     return [word for word in gensim.utils.tokenize(text, lower=True)
             if word not in stopwords]
 
@@ -62,14 +78,29 @@ def collect_bigrams_and_trigrams(collection, top_n = 10000, min_bigram_freq=50,
     stopwords: (iterable) collection of words to ignore in the corpus
 
     >>> raw_data = read_input(
-                    '{}/test-data-1.json',
-                    content_field="text")
+    ...                 '{}/test_data_json_stream.json'.format(test_data_path),
+    ...                 content_field="abstract")
     >>> bigrams, trigrams = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=5, min_trigram_freq=3)
-    >>> bigrams
-    ["steve"]
-    >>> trigrams
-    ["frank"]
-    """.format(test_data_path)
+    >>> bigrams.pattern == str(
+    ... '(free standing|centered cubic|spatial resolution|vapor deposition|wear'
+    ... ' resistance|plastic deformation|electrical conductivity|field magnets|'
+    ... 'transmission electron|ray diffraction|electron microscopy|room '
+    ... 'temperature|diffraction xrd|electron microscope|results indicate|'
+    ... 'scanning electron|doped zno|microscopy tem|polymer matrix|size '
+    ... 'distribution|mechanical properties|grain size|high spatial|particle '
+    ... 'size|high resolution|high field|high strength)')
+    True
+    >>> trigrams.pattern == str(
+    ... '(differential scanning calorimetry|face centered cubic|ray '
+    ... 'microanalysis analytical|physical vapor deposition|transmission '
+    ... 'electron microscopy|microanalysis analytical electron|chemical vapor '
+    ... 'deposition|high aspect ratio|analytical electron microscope|ray '
+    ... 'diffraction xrd|high spatial resolution|high field magnets|atomic '
+    ... 'force microscopy|electron microscopy tem|narrow size distribution|'
+    ... 'scanning electron microscopy|building high field|silicon oxide '
+    ... 'nanowires)')
+    True
+    """
     # generator of documents, turn each element to its list of words
     documents = (_split_words(text, stopwords) for text in collection.get_generator_without_id())
     # generator, concatenate (chain) all words into a single sequence, lazily
@@ -111,22 +142,22 @@ def tokenize_collocation(text, bigrams, trigrams, stopwords=STOPWORDS):
         Minimum frequency of a trigram in order to retrieve it. Default is 20.
 
 
-    >>> raw_data = read_input('{}/test-data-2.json', content_field="abstract")
-    >>> bigrams, trigrams = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=2, min_trigram_freq=2)
-    >>> tokenized_text = tokenize_collocation(next(iter(raw_data)), bigrams, trigrams)
-    ['paper', 'simple', 'rapid', 'solution', 'phase', 'chemical',
-     'reduction', 'method', 'inert', 'gas', 'protection',
-     'preparing', 'stable', 'copper', 'nanoparticle', 'colloid',
-     'average', 'particle', 'size', 'narrow', 'size_distribution',
-     'synthesis_route', 'ascorbic_acid', 'natural', 'vitamin',
-     'serves', 'reducing', 'agent', 'antioxidant', 'reduce',
-     'copper', 'salt', 'precursor', 'effectively', 'prevent',
-     'general', 'oxidation', 'process', 'occurring', 'newborn',
-     'nanoparticles', 'xrd', 'vis', 'confirm', 'formation', 'pure',
-     'face', 'centered', 'cubic', 'fcc', 'copper', 'nanoparticles',
-     'excellent', 'antioxidant', 'ability', 'ascorbic_acid']
-
-    """.format(test_data_path)
+    >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
+    >>> bigrams, trigrams = collect_bigrams_and_trigrams(id_documents, min_bigram_freq=2, min_trigram_freq=2)
+    >>> id, doc_text = next(iter(id_documents))
+    >>> tokenized_text = tokenize_collocation(doc_text, bigrams, trigrams)
+    >>> tokenized_text == [
+    ... u'transition_metal', u'oxides', u'considered', u'generation',
+    ... u'materials', u'field', u'electronics', u'advanced', u'catalysts',
+    ... u'tantalum', u'oxide', u'reports', u'synthesis', u'material',
+    ... u'nanometer_size', u'unusual', u'properties', u'work_present',
+    ... u'synthesis', u'nanorods', u'sol', u'gel', u'method', u'dna',
+    ... u'structure', u'directing', u'agent', u'size', u'nanorods', u'order',
+    ... u'diameter', u'microns', u'length', u'easy', u'method', u'useful',
+    ... u'preparation', u'nanomaterials', u'electronics', u'biomedical',
+    ... u'applications', u'catalysts']
+    True
+    """
     text = ' '.join(_split_words(text, stopwords))
     text = re.sub(trigrams, lambda match: match.group(0).replace(' ', '_'), text)
     text = re.sub(bigrams, lambda match: match.group(0).replace(' ', '_'), text)
@@ -156,21 +187,31 @@ def tokenize_entities(text, entities, stopwords=STOPWORDS):
         Maximum frequency of a noun phrase occurrences in order to retrieve it. Default is 10000.
 
 
-    >>> id_documents = iter_document_json_stream('{}/test-data-2.json', "abstract")
-    >>> ids, doc_text = unzip(id_documents)
-    >>> collocation_tokenizer = EntitiesTokenizer(doc_text, 1)
+    >> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
+    >> entities = find_entities(id_documents)
+    >> print('entities: %r' % entities)
+    >> len(entities)
+    >> i = iter(id_documents)
+    >> id, doc_text = next(i)
+    >> doc_text
+    >> tokenized_text = tokenize_entities(doc_text, entities)
+    >> tokenized_text
+    >> id, doc_text = next(i)
+    >> doc_text
+    >> tokenized_text = tokenize_entities(doc_text, entities)
+
         2015-02-04 17:18:55,618 : INFO : collecting entities from <generator object iter_document_json_stream at 0x10eaf0280>
         2015-02-04 17:18:55,618 : INFO : at document #0, considering 0 phrases: []...
         2015-02-04 17:18:57,363 : INFO : selected 563 entities: [u'simulation examples', u'comparison trials', u'vldb',
                                         u'intelligent optimization algorithm', u'study outcomes', u'ge', u'standard program modules',
                                         u'optimization activity', u'opposite context', u'direct victimization']...
-    >>> head(collocation_tokenizer)
+    >> tokenized_text
         [[u'rapid_solution_phase_chemical_reduction_method', u'inert_gas_protection', u'stable_copper_nanoparticle_colloid',
           u'average_particle_size', u'narrow_size_distribution', u'synthesis_route', u'ascorbic_acid', u'natural_vitamin_c',
           u'vc', u'copper_salt_precursor', u'general_oxidation_process', u'newborn_nanoparticles', u'xrd', u'uv_vis', u'copper_nanoparticles',
           u'excellent_antioxidant_ability', u'ascorbic_acid']]
 
-    """.format(test_data_path)
+    """
     result = []
     for np in TextBlob(text).noun_phrases:
         if np not in entities:
@@ -192,12 +233,12 @@ def tokenize_mixed(text, entities, stopwords=STOPWORDS):
     reader: generator
         A generator that yields each of the documents to tokenize. (e.g. topik.readers.iter_document_json_stream)
 
-    >>> raw_data = read_input('{}/test-data-2.json', content_field="abstract")
+    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
     >>> entities = find_entities(raw_data)
     >>> id, text = next(iter(raw_data))
     >>> tokenized_text = tokenize_mixed(text, entities)
 
-    """.format(test_data_path)
+    """
     result = []
     for np in TextBlob(text).noun_phrases:
         if ' ' in np and np not in entities:

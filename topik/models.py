@@ -22,12 +22,12 @@ class LDA(object):
         Location of the dictionary
 
     >>> raw_data = read_input(
-                    '{}/test-data-1.json',
-                    content_field="text")
+                    '{}/test_data_json_stream.json'.format(test_data_path),
+                    content_field="abstract")
     >>> processed_data = preprocess(raw_data)
     >>> my_lda = LDA(processed_data)
 
-    """.format(test_data_path)
+    """
     def __init__(self, corpus_file, dict_file, ntopics=10, **kwargs):
         self.corpus = gensim.corpora.MmCorpus(corpus_file)
         self.dictionary = gensim.corpora.Dictionary.load(dict_file)
@@ -48,13 +48,13 @@ class LDA(object):
         filename: string
             Desired name for the generated csv file
         >>> raw_data = read_input(
-                        '{}/test-data-1.json',
+                        '{}/test_data_json_stream.json'.format(test_data_path),
                         content_field="text")
         >>> processed_data = preprocess(raw_data)
         >>> my_lda = LDA(processed_data)
         >>> my_lda.termite_data('termite.csv', 15)
 
-        """.format(test_data_path)
+        """
         logging.info("generating termite plot input from %s " % self.corpus)
         top_words = self.get_top_words(topn_words)
         count = 1
