@@ -1,5 +1,8 @@
 import os
 import unittest
+from abc import ABCMeta, abstractmethod
+
+from six import with_metaclass
 
 from topik.readers import read_input
 from topik.preprocessing import preprocess
@@ -11,7 +14,7 @@ module_path = os.path.dirname(__file__)
 NTOPICS = 3
 
 
-class TestBase(object):
+class ModelBase(with_metaclass(ABCMeta)):
 
     def setUp(self):
         raw_data = read_input(
@@ -24,6 +27,7 @@ class TestBase(object):
         if os.path.exists(os.path.join(module_path, 'test.model')):
             os.remove(os.path.join(module_path, 'test.model'))
 
+    @abstractmethod
     def _train_model(self):
         raise NotImplementedError
 
@@ -41,12 +45,12 @@ class TestBase(object):
         self.assertTrue(os.path.isfile(os.path.join(module_path, 'test_termite.csv')))
 
 
-class TestLDA(TestBase, unittest.TestCase):
+class TestLDA(ModelBase, unittest.TestCase):
     def _train_model(self):
         return LDA(self.digested_data, ntopics=NTOPICS)
 
 """
-class TestPLSA(TestBase, unittest.TestCase):
+class TestPLSA(ModelBase, unittest.TestCase):
     def _train_model(self):
         return PLSA(self.digested_data, topics=NTOPICS)
 """
