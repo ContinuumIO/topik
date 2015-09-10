@@ -38,4 +38,4 @@ notifications:
     flowdock: 8736cc7601ed0761f6c9339ec747ded6
 
 after_success:
-  - coveralls --exclude tests
+  - coveralls
