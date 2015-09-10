@@ -1,85 +1,137 @@
+import os
 import unittest
 
-from topik.readers import iter_document_json_stream
-from topik.tokenizers import (SimpleTokenizer, CollocationsTokenizer, 
-                              EntitiesTokenizer, MixedTokenizer
+from topik.readers import read_input
+from topik.intermediaries.raw_data import ElasticSearchCorpus, _get_hash_identifier
+from topik.tokenizers import tokenizer_methods, find_entities, collect_bigrams_and_trigrams
+
+# sample data files are located in the same folder
+module_path = os.path.dirname(__file__)
 
 class TestTokenizers(unittest.TestCase):
     def setUp(self):
-	self.solution_simple_tokenizer_test_data_1 = [
-	    ['interstellar', 'incredible', 'visuals', 'score', 'acting',
-	     'amazing', 'plot', 'definitely', 'original', 've', 'seen']]
+        self.solution_simple_tokenizer_test_data_1 = [
+            'interstellar', 'incredible', 'visuals', 'score', 'acting',
+            'amazing', 'plot', 'definitely', 'original', 've', 'seen']
 
-	self.solution_collocations_tokenizer_test_data_2 = [
-	    ['paper', 'simple', 'rapid', 'solution', 'phase', 'chemical',
-	     'reduction', 'method', 'inert', 'gas', 'protection',
-	     'preparing', 'stable', 'copper', 'nanoparticle', 'colloid',
-	     'average', 'particle', 'size', 'narrow', 'size_distribution',
-	     'synthesis_route', 'ascorbic_acid', 'natural', 'vitamin',
-	     'serves', 'reducing', 'agent', 'antioxidant', 'reduce',
-	     'copper', 'salt', 'precursor', 'effectively', 'prevent',
-	     'general', 'oxidation', 'process', 'occurring', 'newborn',
-	     'nanoparticles', 'xrd', 'vis', 'confirm', 'formation', 'pure',
-	     'face', 'centered', 'cubic', 'fcc', 'copper', 'nanoparticles',
-	     'excellent', 'antioxidant', 'ability', 'ascorbic_acid']]
+        self.solution_simple_tokenizer_test_data_json_stream = [
+            u'transition', u'metal', u'oxides', u'considered', u'generation',
+            u'materials', u'field', u'electronics', u'advanced', u'catalysts',
+            u'tantalum', u'v', u'oxide', u'reports', u'synthesis', u'material',
+            u'nanometer', u'size', u'unusual', u'properties', u'work',
+            u'present', u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel',
+            u'method', u'dna', u'structure', u'directing', u'agent', u'size',
+            u'nanorods', u'order', u'nm', u'diameter', u'microns', u'length',
+            u'easy', u'method', u'useful', u'preparation', u'nanomaterials',
+            u'electronics', u'biomedical', u'applications', u'catalysts']
 
-	self.solution_entities_tokenizer_test_data_2 = [
-	    ['rapid_solution_phase_chemical_reduction_method',
-	     'inert_gas_protection', 'stable_copper_nanoparticle_colloid',
-	     'average_particle_size', 'narrow_size_distribution',
-	     'synthesis_route', 'ascorbic_acid', 'natural_vitamin_c', 'vc',
-	     'copper_salt_precursor', 'general_oxidation_process',
-	     'newborn_nanoparticles', 'xrd', 'uv_vis',
-	     'copper_nanoparticles', 'excellent_antioxidant_ability',
-	     'ascorbic_acid']]
+        self.solution_collocations_tokenizer_test_data_2 = [
+            'paper', 'simple', 'rapid', 'solution', 'phase', 'chemical',
+            'reduction', 'method', 'inert', 'gas', 'protection',
+            'preparing', 'stable', 'copper', 'nanoparticle', 'colloid',
+            'average', 'particle', 'size', 'narrow', 'size_distribution',
+            'synthesis_route', 'ascorbic_acid', 'natural', 'vitamin',
+            'serves', 'reducing', 'agent', 'antioxidant', 'reduce',
+            'copper', 'salt', 'precursor', 'effectively', 'prevent',
+            'general', 'oxidation', 'process', 'occurring', 'newborn',
+            'nanoparticles', 'xrd', 'vis', 'confirm', 'formation', 'pure',
+            'face', 'centered', 'cubic', 'fcc', 'copper', 'nanoparticles',
+            'excellent', 'antioxidant', 'ability', 'ascorbic_acid']
+
+        self.solution_collocations_tokenizer_test_data_json_stream = [
+            u'transition_metal', u'oxides', u'considered', u'generation',
+            u'materials', u'field', u'electronics', u'advanced', u'catalysts',
+            u'tantalum', u'oxide', u'reports', u'synthesis', u'material',
+            u'nanometer_size', u'unusual', u'properties', u'work_present',
+            u'synthesis', u'nanorods', u'sol', u'gel', u'method', u'dna',
+            u'structure', u'directing', u'agent', u'size', u'nanorods',
+            u'order', u'diameter', u'microns', u'length', u'easy', u'method',
+            u'useful', u'preparation', u'nanomaterials', u'electronics',
+            u'biomedical', u'applications', u'catalysts']
+
+        self.solution_entities_tokenizer_test_data_2 = [
+            'rapid_solution_phase_chemical_reduction_method',
+            'inert_gas_protection', 'stable_copper_nanoparticle_colloid',
+            'average_particle_size', 'narrow_size_distribution',
+            'synthesis_route', 'ascorbic_acid', 'natural_vitamin_c', 'vc',
+            'copper_salt_precursor', 'general_oxidation_process',
+            'newborn_nanoparticles', 'xrd', 'uv_vis',
+            'copper_nanoparticles', 'excellent_antioxidant_ability',
+            'ascorbic_acid']
+
+        self.solution_entities_tokenizer_test_data_json_stream = [
+            u'transition', u'metal_oxides', u'generation_materials',
+            u'tantalum', u'oxide', u'nanometer_size', u'unusual_properties',
+            u'ta_o', u'sol_gel_method', u'dna', u'easy_method',
+            u'biomedical_applications']
 
         self.solution_mixed_tokenizer_test_data_2 = [
-	    ['rapid', 'solution', 'phase', 'chemical', 'reduction',
-	     'method', 'inert', 'gas', 'protection', 'stable', 'copper',
-	     'nanoparticle', 'colloid', 'average', 'particle', 'size',
-	     'narrow', 'size', 'distribution', 'synthesis_route',
-	     'ascorbic_acid', 'natural', 'vitamin', 'c', 'copper', 'salt',
-	     'precursor', 'general', 'oxidation', 'process', 'newborn',
-	     'nanoparticles', 'xrd', 'vis', 'copper', 'nanoparticles',
-	     'excellent', 'antioxidant', 'ability', 'ascorbic_acid']]
+            'rapid', 'solution', 'phase', 'chemical', 'reduction',
+            'method', 'inert', 'gas', 'protection', 'stable', 'copper',
+            'nanoparticle', 'colloid', 'average', 'particle', 'size',
+            'narrow', 'size', 'distribution', 'synthesis_route',
+            'ascorbic_acid', 'natural', 'vitamin', 'c', 'copper', 'salt',
+            'precursor', 'general', 'oxidation', 'process', 'newborn',
+            'nanoparticles', 'xrd', 'vis', 'copper', 'nanoparticles',
+            'excellent', 'antioxidant', 'ability', 'ascorbic_acid']
+
+        self.solution_mixed_tokenizer_test_data_json_stream = [
+            u'transition', u'metal', u'oxides', u'generation', u'materials',
+            u'tantalum', u'oxide', u'nanometer', u'size', u'unusual',
+            u'properties', u'sol', u'gel', u'method', u'dna', u'easy',
+            u'method', u'biomedical', u'applications']
+
+        self.data_json_stream_path = os.path.join(module_path,
+                                            'data/test_data_json_stream.json')
+        self.data_large_json_path = os.path.join(module_path,
+                                            'data/test_data_large_json.json')
+        assert os.path.exists(self.data_json_stream_path)
+        assert os.path.exists(self.data_large_json_path)
 
     def test_simple_tokenizer(self):
-        id_documents = iter_document_json_stream(
-            './topik/tests/data/test-data-1', "text")
-        ids, doc_text = unzip(id_documents)
-        simple_tokenizer = SimpleTokenizer(doc_text)
-        doc_tokens = next(iter(simple_tokenizer))
-        self.assertEqual(doc_tokens, 
-                         self.solution_simple_tokenizer_test_data_1)
-
+        raw_data = read_input(
+                source=self.data_json_stream_path,
+                content_field="abstract",
+                output_type="dictionary")
+        id, text = next(iter(raw_data))
+        doc_tokens = tokenizer_methods["simple"](text)
+        self.assertEqual(doc_tokens,
+                         self.solution_simple_tokenizer_test_data_json_stream)
 
     def test_collocations_tokenizer(self):
-        id_documents = iter_document_json_stream(
-            './topik/tests/data/test-data-2', "text")
-        ids, doc_text = unzip(id_documents)
-        collocations_tokenizer = CollocationsTokenizer(doc_text, 
-                                  min_bigram_freq=2, min_trigram_freq=2)
-        doc_tokens = next(iter(collocations_tokenizer))
-        self.assertEqual(doc_tokens, 
-                         self.solution_collocations_tokenizer_test_data_2)
+        raw_data = read_input(
+                source=self.data_json_stream_path,
+                content_field="abstract",
+                output_type="dictionary")
+        bigrams, trigrams = collect_bigrams_and_trigrams(raw_data,
+                                                         min_bigram_freq=2,
+                                                         min_trigram_freq=2)
+        id, text = next(iter(raw_data))
+        doc_tokens = tokenizer_methods["collocation"](text, bigrams, trigrams)
+        self.assertEqual(doc_tokens,
+                     self.solution_collocations_tokenizer_test_data_json_stream)
 
-    def test_entities_tokenizer(self):
-        id_documents = iter_document_json_stream(
-            './topik/tests/data/test-data-2', "text")
-        ids, doc_text = unzip(id_documents)
-        entities_tokenizer = EntitiesTokenizer(doc_text, 1)
-        doc_tokens = next(iter(entities_tokenizer))
-        self.assertEqual(doc_tokens, 
-                         self.solution_entities_tokenizer_test_data_2)
+    def test_entities_tokenizer_json_stream(self):
+        raw_data = read_input(
+                source=self.data_json_stream_path,
+                content_field="abstract",
+                output_type="dictionary")
+        entities = find_entities(raw_data, freq_min=1)
+        id, text = next(iter(raw_data))
+        doc_tokens = tokenizer_methods["entities"](text, entities)
+        self.assertEqual(doc_tokens,
+                         self.solution_entities_tokenizer_test_data_json_stream)
 
     def test_mixed_tokenizer(self):
-        id_documents = iter_document_json_stream(
-            './topid/tests/data/test-data-2', "text")
-        ids, doc_text = unzip(id_documents)
-        mixed_tokenizer = MixedTokenizer(doc_text)
-        doc_tokens = next(iter(mixed_tokenizer))
-        self.assertEqual(doc_tokens, 
-                         self.solution_mixed_tokenizer_test_data_2)
+        raw_data = read_input(
+                source=self.data_json_stream_path,
+                content_field="abstract",
+                output_type="dictionary")
+        entities = find_entities(raw_data)
+        id, text = next(iter(raw_data))
+        doc_tokens = tokenizer_methods["mixed"](text, entities)
+        self.assertEqual(doc_tokens,
+                         self.solution_mixed_tokenizer_test_data_json_stream)
 
 
 if __name__ == '__main__':

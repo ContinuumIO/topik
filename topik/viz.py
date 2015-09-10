@@ -11,6 +11,8 @@ import pandas as pd
 import bokeh.plotting as plt
 from bokeh.models.sources import ColumnDataSource
 
+from topik.tests import test_data_path
+
 
 class Termite(object):
     """A Bokeh Termite Visualization for LDA results analysis.
@@ -22,7 +24,8 @@ class Termite(object):
     title: string
         The title for your termite plot
 
-    >>> termite = Termite("topik/tests/data/lda.csv", "My lda results")
+    >>> termite = Termite("{}/termite.csv".format(test_data_path),
+    ...                   "My lda results")
     >>> termite.plot('my_termite.html')
 
     """

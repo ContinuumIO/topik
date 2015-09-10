@@ -2,7 +2,7 @@ language: python
 python:
   # We don't actually use the system Python but this keeps it organized.
   - "2.7"
-  - "3.4"
+  #- "3.4" # comment python 3 for now (a few upstream libs don't support it.)
 install:
   # TODO: Use a "latest" url
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
@@ -14,14 +14,22 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes
-  - conda install gensim nltk bokeh blaze pandas nose pip beautiful-soup
+  - conda install nltk bokeh blaze pandas nose pip beautiful-soup numpy scipy
+  - pip install textblob
+  - python -m textblob.download_corpora
   - conda install -c https://conda.anaconda.org/memex solr
   - pip install pysolr
   - pip install click
   - pip install coveralls
   - pip install ijson
+  - pip install gensim
   - pip install .
-  
+
+services:
+  - elasticsearch
+
+before_script:
+  - sleep 10
 
 script:
     nosetests --with-coverage --with-doctest --cover-package=topik

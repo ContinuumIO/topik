@@ -1,22 +1,18 @@
-import logging
-import re
-import os
-import json
 from itertools import tee
+import json
+import logging
+import os
+import re
 
-from textblob import TextBlob
+import bs4
+import gensim
 from nltk.collocations import TrigramCollocationFinder
 from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
 import numpy as np
 import pandas as pd
-import gensim
-import bs4
+from textblob import TextBlob
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-
-def unzip(pairs):
-    a, b = tee(pairs)
-    return (_[0] for _ in a), (_[1] for _ in b)
 
 def html2text(html):
     soup = bs4.BeautifulSoup(html)
@@ -74,16 +70,18 @@ def entities(document_stream, freq_min=2, freq_max=10000):
 
     """
     np_counts_total = {}
-    for docno, doc in enumerate(document_stream):
-        if docno % 1000 == 0:
+    docs_examined = 0
+    for id, doc in document_stream:
+        if docs_examined > 0 and docs_examined % 1000 == 0:
             sorted_phrases = sorted(np_counts_total.items(), 
                                     key=lambda item: -item[1])
             np_counts_total = dict(sorted_phrases)
             logging.info("at document #%i, considering %i phrases: %s..." %
-                         (docno, len(np_counts_total), sorted_phrases[0]))
+                         (docs_examined, len(np_counts_total), sorted_phrases[0]))
 
         for np in TextBlob(doc).noun_phrases:
             np_counts_total[np] = np_counts_total.get(np, 0) + 1
+        docs_examined += 1
 
     # Remove noun phrases in the list that have higher frequencies than 'freq_max' or lower frequencies than 'freq_min'
     np_counts = {}
@@ -173,7 +171,7 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
     documents = []
 
     with open(output_file, 'w') as wfile:
-        #for fullpath, content in reader:
+        #for fullpath, content in reader:3
         for content in reader:
             document = {}
             document['text'] = content
@@ -191,12 +189,7 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
     df.to_csv(output_file, sep='\t', encoding='utf-8')
     return pd.DataFrame(documents)
 
+def _iter_corpus(corpus):
+    for document in corpus:
+        yield document
 
-def batch_concat(resp, field, content_in_list=True):
-   while resp.results:
-       for item in resp.results:
-           if content_in_list:
-               yield field, item[field][0]
-           else:
-               yield field, item[field]
-       resp = resp.next_batch()
