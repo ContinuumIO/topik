@@ -1,83 +1,91 @@
 # -*- coding: utf-8 -*-
 
+import gzip
+import logging
+import marshal
 import math
 import operator
 import random
-import gzip
 import sys
-import marshal
-import logging
+
+import numpy as np
+
+from .model_base import TopicModelBase
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
 
 
-def _rand_mat(sizex, sizey):
-    ret = []
-    for i in xrange(sizex):
-        ret.append([])
-        for _ in xrange(sizey):
-            ret[-1].append(random.random())
-        norm = sum(ret[-1])
-        for j in xrange(sizey):
-            ret[-1][j] /= norm
-    return ret
+# def _rand_mat(sizex, sizey):
+#     ret = []
+#     for i in xrange(sizex):
+#         ret.append([])
+#         for _ in xrange(sizey):
+#             ret[-1].append(random.random())
+#         norm = sum(ret[-1])
+#         for j in xrange(sizey):
+#             ret[-1][j] /= norm
+#     return ret
+
+def _rand_mat(cols, rows):
+    out = np.random.random((rows, cols))
+    for row in out:
+        row /= row.sum()
+    return out
 
 
-class PLSA(object):
-    def __init__(self, corpus=None, topics=2):
+class PLSA(TopicModelBase):
+    def __init__(self, corpus=None, topics=2, fname=None):
+        # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
+        #     tuple contains (id, count) of words in that document.
         self.topics = topics
         if corpus is not None:
+            # iterable, each entry is tuple of (word_id, count)
             self.corpus = corpus
             self.docs = len(corpus)
-            self.each = map(sum, map(lambda x: x.values(), corpus))
-            self.words = max(reduce(operator.add, map(lambda x: x.keys(), corpus)))+1
+            # total number of identified words for each given document (document length normalization factor?)
+            self.each = map(sum, map(lambda x: x[1], corpus))
+            # Maximum identified word (number of identified words in corpus)
+            # TODO: seems like this could be tracked better during the tokenization step and fed in.
+            self.words = max(reduce(operator.add, map(lambda x: x[0], corpus)))+1
             self.likelihood = 0
+            # topic-word matrix
             self.zw = _rand_mat(self.topics, self.words)
+            # document-topic matrix
             self.dz = _rand_mat(self.docs, self.topics)
 
             logging.debug('init self.zw %r self.dz %r' % (self.zw, self.dz))
             self.dw_z = None
             self.p_dw = []
             self.beta = 0.8
+        elif fname is not None:
+            self.load(fname)
         else:
             pass  # is just being used for inference
 
-    def save(self, fname, iszip=True):
-        d = {}
-        for k, v in self.__dict__.items():
-            if hasattr(v, '__dict__'):
-                d[k] = v.__dict__
-            else:
-                d[k] = v
-        if sys.version_info[0] == 3:
-            fname = fname + '.3'
-        if not iszip:
-            marshal.dump(d, open(fname, 'wb'))
-        else:
-            f = gzip.open(fname, 'wb')
-            f.write(marshal.dumps(d))
-            f.close()
+    def save(self, fname):
+        np.savez_compressed(fname,
+                            zw=self.zw,
+                            dz=self.dz,
+                            dw_z=self.dw_z,
+                            p_dw=self.p_dw,
+                            beta_likelihood=np.array([self.beta, self.likelihood]))
+        self.corpus.save(fname)
 
-    def load(self, fname, iszip=True):
-        if sys.version_info[0] == 3:
-            fname = fname + '.3'
-        if not iszip:
-            d = marshal.load(open(fname, 'rb'))
-        else:
-            try:
-                f = gzip.open(fname, 'rb')
-                d = marshal.loads(f.read())
-            except IOError:
-                f = open(fname, 'rb')
-                d = marshal.loads(f.read())
-            f.close()
-        for k, v in d.items():
-            if hasattr(self.__dict__[k], '__dict__'):
-                self.__dict__[k].__dict__ = v
-            else:
-                self.__dict__[k] = v
+    def load(self, fname):
+        self.corpus = load_corpus(fname)
+        # total number of identified words for each given document (document length normalization factor?)
+        self.each = map(sum, map(lambda x: x[1], self.corpus))
+        # Maximum identified word (number of identified words in corpus)
+        # TODO: seems like this could be tracked better during the tokenization step and fed in.
+        self.words = max(reduce(operator.add, map(lambda x: x[0], self.corpus)))+1
+        arrays = np.load(fname)
+        self.zw = arrays['zw']
+        self.dz = arrays['dz']
+        self.dw_z = arrays['dw_z']
+        self.p_dw = arrays['p_dw']
+        self.beta, self.likelihood = arrays["beta_likelihood"]
 
     def _cal_p_dw(self):
         self.p_dw = []
@@ -190,3 +198,12 @@ class PLSA(object):
                 tmp += self.zw[z][w]*q[z]
             sim += docd[w]*math.log(tmp)
         return sim
+
+    def get_top_words(self, topn):
+        top_words = []
+        # each "topic" is a row of the dz matrix
+        for topic in self.dz:
+            word_ids = np.argpartition(topic, -topn)[-topn:]
+            top_words.append([(topic[word_id], self.corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
+        return top_words
+

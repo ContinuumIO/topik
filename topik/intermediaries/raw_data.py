@@ -191,9 +191,6 @@ class DictionaryCorpus(CorpusInterface):
         else:
             self._documents = [item for item in iterable]
 
-    def get_number_of_items_stored(self):
-        return len(self._documents)
-
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
     def get_data_by_year(self, start_year, end_year, year_field="year"):

@@ -14,6 +14,12 @@ class TopicModelBase(with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_top_words(self, topn):
+        """Method should collect top n words per topic, translate indices/ids to words.
+
+        Return a list of lists of tuples:
+        - outer list: topics
+        - inner lists: length topn collection of (weight, word) tuples
+        """
         pass
 
     def termite_data(self, filename="termite.csv", topn_words=15):
@@ -25,12 +31,12 @@ class TopicModelBase(with_metaclass(ABCMeta)):
             Desired name for the generated csv file
 
         >>> raw_data = read_input(
-            '{}/test-data-1.json', "text")
+            '{}/test-data-1.json'.format(test_data_path), "text")
         >>> processed_data = preprocess(raw_data)  # preprocess returns a DigestedDocumentCollection
         >>> model = LDA(processed_data, ntopics=3)
         >>> model.termite_data('termite.csv', 15)
         
-        """.format(test_data_path)
+        """
         count = 1
         for topic in self.get_top_words(topn_words):
             if count == 1:

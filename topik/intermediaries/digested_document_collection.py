@@ -19,7 +19,7 @@ class DigestedDocumentCollection(CorpusABC):
         Each document is a list of tokens, tokenized and normalized strings
         (either utf8 or unicode) (e.g. output of topik.SimpleTokenizer)
 
-    Readers iterate over tuples (id, content)
+    Readers iterate over tuples (id, content), but discard id in return (for compatibility with Gensim.)
 
     """
     def __init__(self, tokenized_corpus):

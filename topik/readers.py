@@ -54,7 +54,7 @@ def _iter_document_json_stream(filename, json_prefix=None):
 def __is_iterable(obj):
     try:
         iter(obj)
-    except TypeError, te:
+    except TypeError as te:
         return False
     return True
 
