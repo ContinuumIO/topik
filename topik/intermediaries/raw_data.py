@@ -177,13 +177,23 @@ class ElasticSearchCorpus(CorpusInterface):
 
 
 class DictionaryCorpus(CorpusInterface):
-    def __init__(self, content_field, iterable=None, generate_id=True):
+    def __init__(self, content_field, iterable=None, generate_id=True, reference_field=None):
         super(DictionaryCorpus, self).__init__()
         self.content_field = content_field
         self._documents = []
         self.idx = 0
+        active_field = None
+        if reference_field:
+            self.reference_field = reference_field
+            active_field = content_field
+            content_field = reference_field
+        else:
+            self.reference_field = content_field
         if iterable:
             self.import_from_iterable(iterable, content_field, generate_id)
+        if active_field:
+            self.content_field = active_field
+
 
     @classmethod
     def class_key(cls):
@@ -208,7 +218,7 @@ class DictionaryCorpus(CorpusInterface):
         if not field:
             field = self.content_field
         return DictionaryCorpus(content_field=field, iterable=self._documents,
-                                generate_id=False)
+                                generate_id=False, reference_field=self.content_field)
 
     def get_generator_without_id(self, field=None):
         if not field:
@@ -225,6 +235,7 @@ class DictionaryCorpus(CorpusInterface):
         if generate_id:
             self._documents = [{"_id": hash(doc[content_field]),
                                 "_source": doc} for doc in iterable]
+            self.reference_field = content_field
         else:
             self._documents = [item for item in iterable]
 
@@ -237,7 +248,8 @@ class DictionaryCorpus(CorpusInterface):
 
     def save(self, filename, saved_data=None):
         if saved_data is None:
-            saved_data = {"content_field": self.content_field, "iterable": [doc["_source"] for doc in self._documents]}
+            saved_data = {"reference_field": self.reference_field, "content_field": self.content_field,
+                          "iterable": [doc["_source"] for doc in self._documents]}
         return super(DictionaryCorpus, self).save(filename, saved_data)
 
 # Collection of output formats: people put files, folders, etc in, and they can choose from these to be the output
