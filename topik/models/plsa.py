@@ -36,11 +36,11 @@ def _rand_mat(cols, rows):
 
 
 class PLSA(TopicModelBase):
-    def __init__(self, corpus=None, topics=2, fname=None):
+    def __init__(self, corpus=None, topics=2, load_filename=None):
         # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
         #     tuple contains (id, count) of words in that document.
         self.topics = topics
-        if corpus is not None:
+        if corpus:
             # iterable, each entry is tuple of (word_id, count)
             self.corpus = corpus
             self.docs = len(corpus)
@@ -59,33 +59,35 @@ class PLSA(TopicModelBase):
             self.dw_z = None
             self.p_dw = []
             self.beta = 0.8
-        elif fname is not None:
-            self.load(fname)
+        elif load_filename:
+            from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
+            self.corpus = DigestedDocumentCollection.load(load_filename)
+            # total number of identified words for each given document (document length normalization factor?)
+            self.each = map(sum, map(lambda x: x[1], self.corpus))
+            # Maximum identified word (number of identified words in corpus)
+            # TODO: seems like this could be tracked better during the tokenization step and fed in.
+            self.words = max(reduce(operator.add, map(lambda x: x[0], self.corpus)))+1
+            arrays = np.load(load_filename)
+            self.zw = arrays['zw']
+            self.dz = arrays['dz']
+            self.dw_z = arrays['dw_z']
+            self.p_dw = arrays['p_dw']
+            self.beta, self.likelihood = arrays["beta_likelihood"]
         else:
             pass  # is just being used for inference
 
     def save(self, fname):
+        import os
         np.savez_compressed(fname,
                             zw=self.zw,
                             dz=self.dz,
                             dw_z=self.dw_z,
                             p_dw=self.p_dw,
                             beta_likelihood=np.array([self.beta, self.likelihood]))
+        # A little bit silly here: we test that a filename with the correct name has been saved, but numpy adds its
+        #    own extension.  Make this transparent to the test.
+        os.rename(fname+".npz", fname)
         self.corpus.save(fname)
-
-    def load(self, fname):
-        self.corpus = load_corpus(fname)
-        # total number of identified words for each given document (document length normalization factor?)
-        self.each = map(sum, map(lambda x: x[1], self.corpus))
-        # Maximum identified word (number of identified words in corpus)
-        # TODO: seems like this could be tracked better during the tokenization step and fed in.
-        self.words = max(reduce(operator.add, map(lambda x: x[0], self.corpus)))+1
-        arrays = np.load(fname)
-        self.zw = arrays['zw']
-        self.dz = arrays['dz']
-        self.dw_z = arrays['dw_z']
-        self.p_dw = arrays['p_dw']
-        self.beta, self.likelihood = arrays["beta_likelihood"]
 
     def _cal_p_dw(self):
         self.p_dw = []

@@ -61,7 +61,7 @@ class TestLDA(ModelBase, unittest.TestCase):
         return LDA(self.digested_data, ntopics=NTOPICS)
 
     def _load_saved_model(self, filename):
-        return LDA(fname=filename)
+        return LDA(load_filename=filename)
 
 
 class TestPLSA(ModelBase, unittest.TestCase):
@@ -69,7 +69,7 @@ class TestPLSA(ModelBase, unittest.TestCase):
         return PLSA(self.digested_data, topics=NTOPICS)
 
     def _load_saved_model(self, filename):
-        return PLSA(fname=filename)
+        return PLSA(load_filename=filename)
 
 
 if __name__ == '__main__':

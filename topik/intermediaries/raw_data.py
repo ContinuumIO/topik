@@ -8,6 +8,7 @@ import time
 from abc import ABCMeta, abstractmethod
 from six import with_metaclass
 
+import json
 from elasticsearch import Elasticsearch, helpers
 
 
@@ -16,6 +17,12 @@ def _get_hash_identifier(input_data, id_field):
 
 
 class CorpusInterface(with_metaclass(ABCMeta)):
+    @classmethod
+    @abstractmethod
+    def class_key(cls):
+        """Implement this method to return the string ID with which to store your class."""
+        raise NotImplementedError
+
     @abstractmethod
     def __iter__(self):
         """This is expected to iterate over your data, returning tuples of (doc_id, <selected field>)"""
@@ -37,6 +44,21 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         Field name is destination.  Value is processed value."""
         raise NotImplementedError
 
+    def save(self, filename, saved_data=None):
+        """Persist this object to disk somehow.
+
+        You can save your data in any number of files in any format, but at a minimum, you need one json file that
+        describes enough to bootstrap the loading prcess.  Namely, you must have a key called 'class' so that upon
+        loading the output, the correct class can be instantiated and used to load any other data.  You don't have
+        to implement anything for saved_data, but it is stored as a key next to 'class'.
+
+        The base method implementation might be enough for you without extension: give it a try.
+
+        """
+        with open(filename+"_CORPUS", "w") as output:
+            json.dump({"class": self.__class__.class_key(),
+                       "saved_data": saved_data}, output)
+
 
 class ElasticSearchCorpus(CorpusInterface):
     def __init__(self, host, index, content_field, port=9200, username=None,
@@ -55,6 +77,10 @@ class ElasticSearchCorpus(CorpusInterface):
         self.query = query
         if iterable:
             self.import_from_iterable(iterable, content_field)
+
+    @classmethod
+    def class_key(cls):
+        return "elastic"
 
     def __iter__(self):
         results = helpers.scan(self.instance, index=self.index,
@@ -142,6 +168,13 @@ class ElasticSearchCorpus(CorpusInterface):
         for result in results:
             yield result["_id"], result['_source'][self.content_field]
 
+    def save(self, filename, saved_data=None):
+        if saved_data is None:
+            saved_data = {"host": self.host, "port": self.port, "index": self.index,
+                          "content_field": self.content_field, "username": self.username,
+                          "password": self.password, "doc_type":self.doc_type, "query": self.query}
+        return super(ElasticSearchCorpus, self).save(filename, saved_data)
+
 
 class DictionaryCorpus(CorpusInterface):
     def __init__(self, content_field, iterable=None, generate_id=True):
@@ -151,6 +184,10 @@ class DictionaryCorpus(CorpusInterface):
         self.idx = 0
         if iterable:
             self.import_from_iterable(iterable, content_field, generate_id)
+
+    @classmethod
+    def class_key(cls):
+        return "dictionary"
 
     def __iter__(self):
         for doc in self._documents:
@@ -198,9 +235,17 @@ class DictionaryCorpus(CorpusInterface):
             if start_year <= int(result["_source"][year_field]) <= end_year:
                 yield result["_id"], result["_source"][self.content_field]
 
+    def save(self, filename, saved_data=None):
+        if saved_data is None:
+            saved_data = {"content_field": self.content_field, "iterable": [doc["_source"] for doc in self._documents]}
+        return super(DictionaryCorpus, self).save(filename, saved_data)
 
 # Collection of output formats: people put files, folders, etc in, and they can choose from these to be the output
 # These consume the iterable collection of dictionaries produced by the various iter_ functions.
-output_formats = {"elasticsearch": ElasticSearchCorpus,
-                  "dictionary": DictionaryCorpus,
-                  }
+output_formats = {cls.class_key(): cls for cls in [ElasticSearchCorpus, DictionaryCorpus]}
+
+
+def load_persisted_corpus(filename):
+    with open(filename+"_CORPUS") as f:
+        data_dict = json.load(f)
+    return output_formats[data_dict['class']](**data_dict["saved_data"])

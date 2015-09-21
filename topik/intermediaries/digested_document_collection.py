@@ -3,6 +3,8 @@ from itertools import tee
 from gensim.interfaces import CorpusABC
 from gensim.corpora.dictionary import Dictionary
 
+from .raw_data import load_persisted_corpus
+
 
 # Doctest-only imports
 
@@ -37,3 +39,10 @@ class DigestedDocumentCollection(CorpusABC):
 
     def get_id2word_dict(self):
         return self.dict
+
+    def save(self, filename):
+        self.corpus.save(filename)
+
+    @classmethod
+    def load(cls, filename):
+        return cls(load_persisted_corpus(filename))

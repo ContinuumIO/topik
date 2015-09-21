@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import os
 import logging
 
-from topik.intermediaries.raw_data import output_formats
+from topik.intermediaries.raw_data import output_formats, DictionaryCorpus
 
 # imports used only for doctests
 from topik.tests import test_data_path
@@ -255,7 +255,7 @@ def _iter_elastic_query(es_full_path, query=None,
 
 
 def read_input(source, content_field, source_type="auto",
-               output_type="dictionary", output_args=None,
+               output_type=DictionaryCorpus.class_key(), output_args=None,
                synchronous_wait=0, **kwargs):
     """
     Read data from given source into Topik's internal data structures.

@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import gensim
 
+from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
 from .model_base import TopicModelBase
 
 # Doctest imports
@@ -25,12 +26,18 @@ class LDA(TopicModelBase):
     >>> model = LDA(processed_data, ntopics=3)
  
     """.format(test_data_path)
-    def __init__(self, corpus_input, ntopics=10, **kwargs):
-        self.model = gensim.models.LdaModel(list(iter(corpus_input)), num_topics=ntopics,
-                                            id2word=corpus_input.get_id2word_dict(), **kwargs)
+    def __init__(self, corpus_input=None, ntopics=10, load_filename=None, **kwargs):
+        if corpus_input is not None:
+            self.model = gensim.models.LdaModel(list(iter(corpus_input)), num_topics=ntopics,
+                                                id2word=corpus_input.get_id2word_dict(), **kwargs)
+            self.corpus = corpus_input
+        elif load_filename is not None:
+            self.model = gensim.models.LdaModel.load(load_filename)
+            self.corpus = DigestedDocumentCollection.load(load_filename)
 
     def save(self, filename):
         self.model.save(filename)
+        self.corpus.save(filename)
 
     def get_top_words(self, topn):
         top_words = [self.model.show_topic(topicno, topn) for topicno in range(self.model.num_topics)]

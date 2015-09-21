@@ -22,6 +22,10 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         """
         pass
 
+    @abstractmethod
+    def save(self, filename):
+        raise NotImplementedError
+
     def termite_data(self, filename="termite.csv", topn_words=15):
         """Generate the csv file input for the termite plot.
 
