@@ -10,7 +10,7 @@ import sys
 
 import numpy as np
 
-from .model_base import TopicModelBase
+from .model_base import TopicModelBase, register_model
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
@@ -35,6 +35,7 @@ def _rand_mat(cols, rows):
     return out
 
 
+@register_model
 class PLSA(TopicModelBase):
     def __init__(self, corpus=None, topics=2, load_filename=None):
         # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
@@ -67,7 +68,7 @@ class PLSA(TopicModelBase):
             # Maximum identified word (number of identified words in corpus)
             # TODO: seems like this could be tracked better during the tokenization step and fed in.
             self.words = max(reduce(operator.add, map(lambda x: x[0], self.corpus)))+1
-            arrays = np.load(load_filename)
+            arrays = np.load(load_filename+".npz")
             self.zw = arrays['zw']
             self.dz = arrays['dz']
             self.dw_z = arrays['dw_z']
@@ -76,18 +77,15 @@ class PLSA(TopicModelBase):
         else:
             pass  # is just being used for inference
 
-    def save(self, fname):
-        import os
-        np.savez_compressed(fname,
+    def save(self, filename):
+        np.savez_compressed(filename+".npz",
                             zw=self.zw,
                             dz=self.dz,
                             dw_z=self.dw_z,
                             p_dw=self.p_dw,
                             beta_likelihood=np.array([self.beta, self.likelihood]))
-        # A little bit silly here: we test that a filename with the correct name has been saved, but numpy adds its
-        #    own extension.  Make this transparent to the test.
-        os.rename(fname+".npz", fname)
-        self.corpus.save(fname)
+        saved_data = {"load_filename": filename}
+        super(PLSA, self).save(filename, saved_data=saved_data)
 
     def _cal_p_dw(self):
         self.p_dw = []

@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import logging
 
+import json
 import pandas as pd
 from six import with_metaclass
 
@@ -10,7 +11,17 @@ from topik.readers import read_input
 from topik.tests import test_data_path
 
 
+registered_models = {}
+
+def register_model(cls):
+    global registered_models
+    if cls.__name__ not in registered_models:
+        registered_models[cls.__name__] = cls
+    return cls
+
+
 class TopicModelBase(with_metaclass(ABCMeta)):
+    corpus = None
 
     @abstractmethod
     def get_top_words(self, topn):
@@ -23,8 +34,11 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def save(self, filename):
-        raise NotImplementedError
+    def save(self, filename, saved_data):
+        with open(filename+"_MODEL", "w") as output:
+            json.dump({"class": self.__class__.__name__,
+                       "saved_data": saved_data}, output)
+        self.corpus.save(filename)
 
     def termite_data(self, filename="termite.csv", topn_words=15):
         """Generate the csv file input for the termite plot.
@@ -55,3 +69,12 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         logging.info("saving termite plot input csv file to %s " % filename)
         df.to_csv(filename, index=False, encoding='utf-8')
         return df
+
+
+def load_model(filename):
+    """Loads a JSON file containing instructions on how to load model data.
+
+    Returns a TopicModelBase-derived object."""
+    with open(filename+"_MODEL") as f:
+        data_dict = json.load(f)
+    return registered_models[data_dict['class']](**data_dict["saved_data"])

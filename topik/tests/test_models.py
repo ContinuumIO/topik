@@ -6,7 +6,7 @@ from six import with_metaclass
 
 from topik.readers import read_input
 from topik.preprocessing import preprocess
-from topik.models import LDA, PLSA
+from topik.models import registered_models, load_model
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
@@ -32,18 +32,14 @@ class ModelBase(with_metaclass(ABCMeta)):
     def _train_model(self):
         raise NotImplementedError
 
-    @abstractmethod
-    def _load_saved_model(self, filename):
-        raise NotImplementedError
-
     def test_save_data(self):
         self.model.save(os.path.join(module_path, MODEL_SAVE_FILENAME))
-        self.assertTrue(os.path.isfile(os.path.join(module_path, MODEL_SAVE_FILENAME)))
+        self.assertTrue(os.path.isfile(os.path.join(module_path, MODEL_SAVE_FILENAME+"_MODEL")))
 
     def test_load_data(self):
         """NOTE: This test depends on save data succeeding!  May want to have static known-good data instead."""
         self.model.save(os.path.join(module_path, MODEL_SAVE_FILENAME))
-        model = self._load_saved_model(MODEL_LOAD_FILENAME)
+        model = load_model(MODEL_LOAD_FILENAME)
         self.assertGreater(model.get_top_words(5), 0)
 
     def test_top_words(self):
@@ -58,18 +54,12 @@ class ModelBase(with_metaclass(ABCMeta)):
 
 class TestLDA(ModelBase, unittest.TestCase):
     def _train_model(self):
-        return LDA(self.digested_data, ntopics=NTOPICS)
-
-    def _load_saved_model(self, filename):
-        return LDA(load_filename=filename)
+        return registered_models["LDA"](self.digested_data, ntopics=NTOPICS)
 
 
 class TestPLSA(ModelBase, unittest.TestCase):
     def _train_model(self):
-        return PLSA(self.digested_data, topics=NTOPICS)
-
-    def _load_saved_model(self, filename):
-        return PLSA(load_filename=filename)
+        return registered_models["PLSA"](self.digested_data, topics=NTOPICS)
 
 
 if __name__ == '__main__':
