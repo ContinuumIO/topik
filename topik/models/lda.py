@@ -21,8 +21,7 @@ class LDA(TopicModelBase):
         object fulfilling basic Corpus interface (preprocessed, tokenized text).
         see topik.intermediaries.tokenized_corpus for more info.
 
-    >>> raw_data = read_input(
-            '{}/test-data-1.json'.format(test_data_path), "text")
+    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
     >>> processed_data = preprocess(raw_data)  # preprocess returns a DigestedDocumentCollection
     >>> model = LDA(processed_data, ntopics=3)
  

@@ -40,7 +40,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
                        "saved_data": saved_data}, output)
         self.corpus.save(filename)
 
-    def termite_data(self, filename="termite.csv", topn_words=15):
+    def termite_data(self, filename=None, topn_words=15):
         """Generate the csv file input for the termite plot.
 
         Parameters
@@ -48,10 +48,9 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         filename: string
             Desired name for the generated csv file
 
-        >>> raw_data = read_input(
-            '{}/test-data-1.json'.format(test_data_path), "text")
+        >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
         >>> processed_data = preprocess(raw_data)  # preprocess returns a DigestedDocumentCollection
-        >>> model = LDA(processed_data, ntopics=3)
+        >>> model = registered_models["LDA"](processed_data, ntopics=3)
         >>> model.termite_data('termite.csv', 15)
         
         """
@@ -66,8 +65,10 @@ class TopicModelBase(with_metaclass(ABCMeta)):
                 df_temp['topic'] = pd.Series(count, index=df_temp.index)
                 df = df.append(df_temp, ignore_index=True)
             count += 1
-        logging.info("saving termite plot input csv file to %s " % filename)
-        df.to_csv(filename, index=False, encoding='utf-8')
+        if filename:
+            logging.info("saving termite plot input csv file to %s " % filename)
+            df.to_csv(filename, index=False, encoding='utf-8')
+            return
         return df
 
 
