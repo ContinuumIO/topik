@@ -220,8 +220,7 @@ def _iter_solr_query(solr_instance, content_field, year_field, query="*:*", cont
         response = response.next_batch()
 
 
-def _iter_elastic_query(es_full_path, query=None,
-                        year_field=None, id_field=None, **kwargs):
+def _iter_elastic_query(es_full_path, query=None):
     """Iterate over all documents in the specified elasticsearch intance and index that match the specified query
 
     Parameters
@@ -230,7 +229,7 @@ def _iter_elastic_query(es_full_path, query=None,
         Address of the elasticsearch instance including index
 
     query: string
-        The solr query string
+        The elastic query string
 
     content_field: string
         The name fo the field that contains the main text body of the document.
@@ -244,7 +243,7 @@ def _iter_elastic_query(es_full_path, query=None,
     # split es_full_path into instance and index
     if es_full_path[-1] == '/':
         es_full_path = es_full_path[:-1]
-    instance, index = es_full_path.rsplit('/',1)
+    instance, index = es_full_path.rsplit('/', 1)
 
     es = Elasticsearch(instance)
 
@@ -311,7 +310,7 @@ def read_input(source, content_field, source_type="auto",
     if (source_type == "auto" and "8983" in source) or source_type == "solr":
         data_iterator = _iter_solr_query(source, **kwargs)
     # web addresses default to elasticsearch
-    elif (source_type == "auto" and (ip_match.search(source) or web_match.search(source))) or source_type == "elastic":
+    elif (source_type == "auto" and "9200" in source) or source_type == "elastic":
         data_iterator = _iter_elastic_query(source, **kwargs)
     # files must end in .json.  Try json parser first, try large_json parser next.  Fail otherwise.
     elif (source_type == "auto" and os.path.splitext(source)[1] in json_extensions) or source_type == "json_stream":
