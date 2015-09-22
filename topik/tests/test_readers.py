@@ -1,4 +1,5 @@
 import unittest
+from functools import partial
 
 import nose.tools as nt
 import elasticsearch
@@ -57,8 +58,8 @@ class TestReader(unittest.TestCase):
 
     def tearDown(self):
         instance = elasticsearch.Elasticsearch("localhost")
-        if instance.indices.exists("test_elastic"):
-            instance.indices.delete("test_elastic")
+        if instance.indices.exists(INDEX):
+            instance.indices.delete(INDEX)
 
     def test_read_document_json_stream(self):
         iterable_data = read_input('{}/test_data_json_stream.json'.format(
@@ -88,7 +89,7 @@ class TestReader(unittest.TestCase):
 
     def test_elastic_import(self):
         output_args = {'host': 'localhost',
-                       'index': "test_elastic"}
+                       'index': INDEX}
         # import data from file into known elastic server
         read_input('{}/test_data_json_stream.json'.format(
                    test_data_path), content_field="abstract",
@@ -97,8 +98,10 @@ class TestReader(unittest.TestCase):
         iterable_data = read_input("localhost:9200/"+INDEX, content_field="abstract")
         self.assertEquals(len(iterable_data), 100)
 
+
 def test_bad_folder():
-    nt.assert_raises(IOError, readers._iter_documents_folder, "Frank")
+    nt.assert_raises(IOError, next, readers._iter_documents_folder("Frank"))
+
 
 if __name__ == '__main__':
     unittest.main()

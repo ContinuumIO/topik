@@ -295,16 +295,10 @@ def read_input(source, content_field, source_type="auto",
     True
     """
 
-    import re
     import time
     json_extensions = [".js", ".json"]
-    ip_regex = "/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/"
-    web_regex = "^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/"
     if output_args is None:
         output_args = {}
-
-    ip_match = re.compile(ip_regex)
-    web_match = re.compile(web_regex)
 
     # solr defaults to port 8983
     if (source_type == "auto" and "8983" in source) or source_type == "solr":
