@@ -135,7 +135,6 @@ class ElasticSearchCorpus(CorpusInterface):
         if batch:
             helpers.bulk(client=self.instance, actions=batch, index=self.index)
 
-    # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
     def get_data_by_year(self, start_year, end_year, year_field="year"):
         """Queries elasticsearch for all documents within the specified year range

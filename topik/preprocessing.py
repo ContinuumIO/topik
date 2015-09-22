@@ -7,14 +7,9 @@ Generally, methods to process text operate on single documents at a time.  This
 is done to facilitate parallelization over collections.
 """
 
-import itertools
-
-import gensim
-
 # this is our output from whatever preprocessing we do.  It is input to modeling step.
 from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
 from topik.tokenizers import tokenizer_methods
-from topik.utils import _iter_corpus
 
 
 def _get_parameter_string(**kwargs):

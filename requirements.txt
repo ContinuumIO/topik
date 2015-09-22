@@ -11,5 +11,4 @@ pattern
 elasticsearch
 click
 pysolr
-beautifulsoup4
 ijson

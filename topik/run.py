@@ -2,7 +2,6 @@ from __future__ import absolute_import, print_function
 
 import logging
 import os
-import shutil
 import subprocess
 import time
 import webbrowser
@@ -111,9 +110,7 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         termite.plot(os.path.join(dir_path, 'termite.html'))
 
     if output_file:
-        filtered_documents = get_filtered_elastic_results(
-            destination_es_instance, destination_es_index, content_field,
-            year_field, start_year, stop_year)
+        filtered_documents = raw_data.get_data_by_year(start_year, stop_year, year_field)
         df_results = generate_csv_output_file(filtered_documents, raw_data,
                                               processed_data, lda.model)
 
