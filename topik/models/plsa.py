@@ -37,10 +37,10 @@ def _rand_mat(cols, rows):
 
 @register_model
 class PLSA(TopicModelBase):
-    def __init__(self, corpus=None, topics=2, load_filename=None):
+    def __init__(self, corpus=None, ntopics=2, load_filename=None):
         # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
         #     tuple contains (id, count) of words in that document.
-        self.topics = topics
+        self.topics = ntopics
         if corpus:
             # iterable, each entry is tuple of (word_id, count)
             self.corpus = corpus
@@ -86,6 +86,9 @@ class PLSA(TopicModelBase):
                             beta_likelihood=np.array([self.beta, self.likelihood]))
         saved_data = {"load_filename": filename}
         super(PLSA, self).save(filename, saved_data=saved_data)
+
+    def get_model_name_with_parameters(self):
+        return "PLSA_{}_topics{}".format(self.topics, self.corpus.filter_string)
 
     def _cal_p_dw(self):
         self.p_dw = []

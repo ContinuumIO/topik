@@ -9,7 +9,7 @@ from six import with_metaclass
 from topik.preprocessing import preprocess
 from topik.readers import read_input
 from topik.tests import test_data_path
-
+from topik.intermediaries.persistence import Persistor
 
 registered_models = {}
 
@@ -35,10 +35,14 @@ class TopicModelBase(with_metaclass(ABCMeta)):
 
     @abstractmethod
     def save(self, filename, saved_data):
-        with open(filename+"_MODEL", "w") as output:
-            json.dump({"class": self.__class__.__name__,
-                       "saved_data": saved_data}, output)
+        self.persistor.store_model(self.get_model_name_with_parameters(),
+                                          {"class": self.__class__.__name__,
+                                           "saved_data": saved_data})
         self.corpus.save(filename)
+
+    @abstractmethod
+    def get_model_name_with_parameters(self):
+        raise NotImplementedError
 
     def termite_data(self, filename=None, topn_words=15):
         """Generate the csv file input for the termite plot.
@@ -71,11 +75,19 @@ class TopicModelBase(with_metaclass(ABCMeta)):
             return
         return df
 
+    @property
+    def persistor(self):
+        return self.corpus.persistor
 
-def load_model(filename):
+
+def load_model(filename, model_name):
     """Loads a JSON file containing instructions on how to load model data.
 
     Returns a TopicModelBase-derived object."""
-    with open(filename+"_MODEL") as f:
-        data_dict = json.load(f)
-    return registered_models[data_dict['class']](**data_dict["saved_data"])
+    p = Persistor(filename)
+    if model_name in p.list_available_models():
+        data_dict = p.get_model_details(model_name)
+        model = registered_models[data_dict['class']](**data_dict["saved_data"])
+    else:
+        raise NameError("Model name {} has not yet been created.".format(model_name))
+    return model

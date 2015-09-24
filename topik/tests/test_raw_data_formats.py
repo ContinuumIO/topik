@@ -10,15 +10,14 @@ from topik.tests import test_data_path
 
 INDEX = "topik_unittest"
 SAVE_FILENAME = "test_save"
-SAVED_FILENAME = SAVE_FILENAME + "_CORPUS"
 
 class BaseCorpus(object):
     test_raw_data = None
 
     def test_year_filtering(self):
-        result_list = list(self.test_raw_data.get_data_by_year(start_year=1975,
-                                                               end_year=1999,
-                                                               year_field="year"))
+        result_list = list(self.test_raw_data.get_date_filtered_data(start=1975,
+                                                                     end=1999,
+                                                                     field="year"))
 
         self.assertEqual(len(result_list), 25)
         self.assertTrue(-1611117933394825767 in [int(item[0]) for item in
@@ -26,7 +25,7 @@ class BaseCorpus(object):
 
     def test_save_file(self):
         self.test_raw_data.save(SAVE_FILENAME)
-        self.assertTrue(os.path.exists(SAVED_FILENAME))
+        self.assertTrue(os.path.exists(SAVE_FILENAME))
 
     def test_load_file(self):
         self.test_raw_data.save(SAVE_FILENAME)

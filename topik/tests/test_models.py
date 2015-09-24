@@ -7,13 +7,13 @@ from six import with_metaclass
 from topik.readers import read_input
 from topik.preprocessing import preprocess
 from topik.models import registered_models, load_model
+from topik.intermediaries.persistence import Persistor
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
 
 NTOPICS = 3
-MODEL_SAVE_FILENAME = 'test.model'
-MODEL_LOAD_FILENAME = 'test.model'  # This one is harder: may be different for each model, but should be static and known good
+MODEL_SAVE_FILENAME = os.path.join(module_path, 'test.model')
 
 
 class _ModelBase(with_metaclass(ABCMeta)):
@@ -22,24 +22,22 @@ class _ModelBase(with_metaclass(ABCMeta)):
                 source=os.path.join(module_path, 'data/test_data_json_stream.json'),
                 content_field="abstract")
         self.digested_data = preprocess(raw_data)
-        self.model = self._train_model()
+        self.model = registered_models[self.model_name](self.digested_data, ntopics=NTOPICS)
 
     def tearDown(self):
-        if os.path.exists(os.path.join(module_path, MODEL_SAVE_FILENAME+"_MODEL")):
-            os.remove(os.path.join(module_path, MODEL_SAVE_FILENAME+"_MODEL"))
-
-    @abstractmethod
-    def _train_model(self):
-        raise NotImplementedError
+        import glob
+        for f in glob.glob(MODEL_SAVE_FILENAME+"*"):
+            os.remove(f)
 
     def test_save_data(self):
-        self.model.save(os.path.join(module_path, MODEL_SAVE_FILENAME))
-        self.assertTrue(os.path.isfile(os.path.join(module_path, MODEL_SAVE_FILENAME+"_MODEL")))
+        self.model.save(MODEL_SAVE_FILENAME)
+        self.assertTrue(os.path.isfile(MODEL_SAVE_FILENAME))
+        self.assertTrue("class" in Persistor(MODEL_SAVE_FILENAME).get_corpus_dict())
 
     def test_load_data(self):
         """NOTE: This test depends on save data succeeding!  May want to have static known-good data instead."""
-        self.model.save(os.path.join(module_path, MODEL_SAVE_FILENAME))
-        model = load_model(os.path.join(module_path, MODEL_LOAD_FILENAME))
+        self.model.save(MODEL_SAVE_FILENAME)
+        model = load_model(MODEL_SAVE_FILENAME, self.model.get_model_name_with_parameters())
         self.assertGreater(model.get_top_words(5), 0)
 
     def test_top_words(self):
@@ -53,13 +51,11 @@ class _ModelBase(with_metaclass(ABCMeta)):
 
 
 class TestLDA(_ModelBase, unittest.TestCase):
-    def _train_model(self):
-        return registered_models["LDA"](self.digested_data, ntopics=NTOPICS)
+    model_name = "LDA"
 
 
 class TestPLSA(_ModelBase, unittest.TestCase):
-    def _train_model(self):
-        return registered_models["PLSA"](self.digested_data, topics=NTOPICS)
+    model_name = "PLSA"
 
 
 if __name__ == '__main__':

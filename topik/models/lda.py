@@ -32,14 +32,18 @@ class LDA(TopicModelBase):
                                                 id2word=corpus_input.get_id2word_dict(), **kwargs)
             self.corpus = corpus_input
         elif load_filename is not None:
-            self.model = gensim.models.LdaModel.load(load_filename)
+            self.model = gensim.models.LdaModel.load(load_filename+"_GENSIM")
             self.corpus = DigestedDocumentCollection.load(load_filename)
 
     def save(self, filename):
-        self.model.save(filename)
-        saved_data = {"class": "LDA", "load_filename": filename}
+        gensim_filename = filename + "_GENSIM"  # this is so we don't overlap with the JSON meta-file
+        self.model.save(gensim_filename)
+        saved_data = {"load_filename": filename}
         return super(LDA, self).save(filename, saved_data)
 
     def get_top_words(self, topn):
         top_words = [self.model.show_topic(topicno, topn) for topicno in range(self.model.num_topics)]
         return top_words
+
+    def get_model_name_with_parameters(self):
+        return "LDA_{}_topics{}".format(self.model.num_topics, self.corpus.filter_string)

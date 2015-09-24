@@ -46,3 +46,11 @@ class DigestedDocumentCollection(CorpusABC):
     @classmethod
     def load(cls, filename):
         return cls(load_persisted_corpus(filename))
+
+    @property
+    def persistor(self):
+        return self.corpus.persistor
+
+    @property
+    def filter_string(self):
+        return self.corpus.filter_string
