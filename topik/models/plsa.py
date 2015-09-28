@@ -1,139 +1,139 @@
 # -*- coding: utf-8 -*-
 
+import gzip
+import logging
+import marshal
 import math
 import operator
 import random
-import gzip
 import sys
-import marshal
-import logging
+
+import numpy as np
+
+from .model_base import TopicModelBase, register_model
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
 
 
-def _rand_mat(sizex, sizey):
-    ret = []
-    for i in xrange(sizex):
-        ret.append([])
-        for _ in xrange(sizey):
-            ret[-1].append(random.random())
-        norm = sum(ret[-1])
-        for j in xrange(sizey):
-            ret[-1][j] /= norm
-    return ret
+# def _rand_mat(sizex, sizey):
+#     ret = []
+#     for i in xrange(sizex):
+#         ret.append([])
+#         for _ in xrange(sizey):
+#             ret[-1].append(random.random())
+#         norm = sum(ret[-1])
+#         for j in xrange(sizey):
+#             ret[-1][j] /= norm
+#     return ret
+
+def _rand_mat(cols, rows):
+    out = np.random.random((rows, cols))
+    for row in out:
+        row /= row.sum()
+    return out
 
 
-class PLSA(object):
-    def __init__(self, corpus=None, topics=2):
-        self.topics = topics
-        if corpus is not None:
+@register_model
+class PLSA(TopicModelBase):
+    def __init__(self, corpus=None, ntopics=2, load_filename=None, binary_filename=None):
+        # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
+        #     tuple contains (id, count) of words in that document.
+        self.topics = ntopics
+        self.topic_array = np.arange(ntopics, dtype=np.int32)
+        if corpus:
+            # iterable, each entry is tuple of (word_id, count)
             self.corpus = corpus
-            self.docs = len(corpus)
-            self.each = map(sum, map(lambda x: x.values(), corpus))
-            self.words = max(reduce(operator.add, map(lambda x: x.keys(), corpus)))+1
+            # total number of identified words for each given document (document length normalization factor?)
+            self.each = map(sum, map(lambda x: x[1], corpus))
+            # Maximum identified word (number of identified words in corpus)
+            # TODO: seems like this could be tracked better during the tokenization step and fed in.
+            self.words = len(self.corpus.dict.token2id)
             self.likelihood = 0
-            self.zw = _rand_mat(self.topics, self.words)
-            self.dz = _rand_mat(self.docs, self.topics)
-
-            logging.debug('init self.zw %r self.dz %r' % (self.zw, self.dz))
-            self.dw_z = None
-            self.p_dw = []
+            # topic-word matrix
+            self.zw = _rand_mat(self.words, self.topics)
+            # document-topic matrix
+            self.dz = _rand_mat(self.topics, len(self.corpus))
+            self.dw_z = [{}, ] * len(self.corpus)
+            self.p_dw = [{}, ] * len(self.corpus)
             self.beta = 0.8
+        elif load_filename and binary_filename:
+            from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
+            self.corpus = DigestedDocumentCollection.load(load_filename)
+            # total number of identified words for each given document (document length normalization factor?)
+            self.each = map(sum, map(lambda x: x[1], self.corpus))
+            # Maximum identified word (number of identified words in corpus)
+            # TODO: seems like this could be tracked better during the tokenization step and fed in.
+            self.words = max(reduce(operator.add, map(lambda x: x[0], self.corpus)))+1
+            arrays = np.load(binary_filename)
+            self.zw = arrays['zw']
+            self.dz = arrays['dz']
+            self.dw_z = arrays['dw_z']
+            self.p_dw = arrays['p_dw']
+            self.beta, self.likelihood = arrays["beta_likelihood"]
         else:
             pass  # is just being used for inference
 
-    def save(self, fname, iszip=True):
-        d = {}
-        for k, v in self.__dict__.items():
-            if hasattr(v, '__dict__'):
-                d[k] = v.__dict__
-            else:
-                d[k] = v
-        if sys.version_info[0] == 3:
-            fname = fname + '.3'
-        if not iszip:
-            marshal.dump(d, open(fname, 'wb'))
-        else:
-            f = gzip.open(fname, 'wb')
-            f.write(marshal.dumps(d))
-            f.close()
+    def save(self, filename):
+        np.savez_compressed(self.get_model_name_with_parameters(),
+                            zw=self.zw,
+                            dz=self.dz,
+                            dw_z=self.dw_z,
+                            p_dw=self.p_dw,
+                            beta_likelihood=np.array([self.beta, self.likelihood]))
+        saved_data = {"load_filename": filename, "binary_filename": self.get_model_name_with_parameters()+".npz"}
+        super(PLSA, self).save(filename, saved_data=saved_data)
 
-    def load(self, fname, iszip=True):
-        if sys.version_info[0] == 3:
-            fname = fname + '.3'
-        if not iszip:
-            d = marshal.load(open(fname, 'rb'))
-        else:
-            try:
-                f = gzip.open(fname, 'rb')
-                d = marshal.loads(f.read())
-            except IOError:
-                f = open(fname, 'rb')
-                d = marshal.loads(f.read())
-            f.close()
-        for k, v in d.items():
-            if hasattr(self.__dict__[k], '__dict__'):
-                self.__dict__[k].__dict__ = v
-            else:
-                self.__dict__[k] = v
+    def get_model_name_with_parameters(self):
+        return "PLSA_{}_topics{}".format(self.topics, self.corpus.filter_string)
 
     def _cal_p_dw(self):
-        self.p_dw = []
-        for d in xrange(self.docs):
-            self.p_dw.append({})
-            for w in self.corpus[d]:
+        for d, doc in enumerate(self.corpus):
+            for word_id, word_ct in doc:
                 tmp = 0
-                for _ in range(self.corpus[d][w]):
-                    for z in xrange(self.topics):
-                        tmp += (self.zw[z][w]*self.dz[d][z])**self.beta
-                self.p_dw[-1][w] = tmp
-        logging.debug('self.p_dw %r' % (self.p_dw,))
+                for _ in range(word_ct):
+                    for z in self.topic_array:
+                        tmp += (self.zw[z][word_id]*self.dz[d][z])**self.beta
+                self.p_dw[-1][word_id] = tmp
 
     def _e_step(self):
         self._cal_p_dw()
-        self.dw_z = []
-        for d in xrange(self.docs):
-            self.dw_z.append({})
-            for w in self.corpus[d]:
-                self.dw_z[-1][w] = []
-                for z in xrange(self.topics):
-                    self.dw_z[-1][w].append(((self.zw[z][w]*self.dz[d][z])**self.beta)/self.p_dw[d][w])
-        logging.debug('_e_step self.dw_z %r' % (self.dw_z,))
+        for d, doc in enumerate(self.corpus):
+            for word_id, word_ct in doc:
+                self.dw_z[-1][word_id] = []
+                for z in self.topic_array:
+                    self.dw_z[-1][word_id].append(((self.zw[z][word_id]*self.dz[d][z])**self.beta)/self.p_dw[d][word_id])
 
     def _m_step(self):
-        for z in xrange(self.topics):
+        for z in self.topic_array:
             self.zw[z] = [0]*self.words
-            for d in xrange(self.docs):
-                for w in self.corpus[d]:
-                    self.zw[z][w] += self.corpus[d][w]*self.dw_z[d][w][z]
+            for d, doc in enumerate(self.corpus):
+                for word_id, word_ct in doc:
+                    self.zw[z][word_id] += word_ct*self.dw_z[d][word_id][z]
             norm = sum(self.zw[z])
-            logging.debug('_m_step normalizers %r' % (norm,))
             for w in xrange(self.words):
                 self.zw[z][w] /= norm
-        for d in xrange(self.docs):
-            self.dz[d] = [0]*self.topics
-            for z in xrange(self.topics):
-                for w in self.corpus[d]:
-                    self.dz[d][z] += self.corpus[d][w]*self.dw_z[d][w][z]
-            for z in xrange(self.topics):
+        for d, doc in enumerate(self.corpus):
+            self.dz[d] = 0
+            for z in self.topic_array:
+                for word_id, word_ct in doc:
+                    self.dz[d][z] += word_ct * self.dw_z[d][word_id][z]
+            for z in self.topic_array:
                 self.dz[d][z] /= self.each[d]
-        logging.debug('_m_step zw %r dz %r' % (self.zw, self.dz))
 
     def _cal_likelihood(self):
         self.likelihood = 0
-        for d in xrange(self.docs):
-            for w in self.corpus[d]:
-                self.likelihood += self.corpus[d][w]*math.log(self.p_dw[d][w])
+        for d, doc in enumerate(self.corpus):
+            for word_id, word_ct in doc:
+                self.likelihood += word_ct*math.log(self.p_dw[d][word_id])
 
     def train(self, max_iter=100):
         cur = 0
         for i in xrange(max_iter):
-            print '%d iter' % i
+            logging.info('%d iter' % i)
             self._e_step()
             self._m_step()
-            logging.debug('post _m_step zw %r dz %r' % (self.zw, self.dz))
             self._cal_likelihood()
             logging.info('likelihood %f ' % self.likelihood)
             if cur != 0 and abs((self.likelihood-cur)/cur) < 1e-8:
@@ -157,7 +157,6 @@ class PLSA(object):
                 for _ in range(doc[w]):
                     for z in xrange(self.topics):
                         p_dw[w] += (ret[z]*self.zw[z][w])**self.beta
-            logging.debug('inference p_dw %r' % (p_dw))
             # e setp
             dw_z = {}
             for w in doc:
@@ -190,3 +189,12 @@ class PLSA(object):
                 tmp += self.zw[z][w]*q[z]
             sim += docd[w]*math.log(tmp)
         return sim
+
+    def get_top_words(self, topn):
+        top_words = []
+        # each "topic" is a row of the dz matrix
+        for topic in self.dz.T:
+            word_ids = np.argpartition(topic, -topn)[-topn:]
+            top_words.append([(topic[word_id], self.corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
+        return top_words
+

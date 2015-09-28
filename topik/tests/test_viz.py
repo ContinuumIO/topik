@@ -5,6 +5,7 @@ from topik.viz import Termite
 
 module_path = os.path.dirname(__file__)
 
+
 class TestTokenizers(unittest.TestCase):
 
     def test_termite(self):

@@ -1,14 +1,14 @@
 from __future__ import absolute_import, print_function
 
-import logging
 import itertools
+import logging
 import re
 
-from textblob import TextBlob
 import gensim
 from gensim.parsing.preprocessing import STOPWORDS
-
-from topik.utils import collocations, entities
+from nltk.collocations import TrigramCollocationFinder
+from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
+from textblob import TextBlob
 
 # imports used only for doctests
 from topik.tests import test_data_path
@@ -61,6 +61,39 @@ def tokenize_simple(text, stopwords=STOPWORDS):
     return [word for word in gensim.utils.tokenize(text, lower=True)
             if word not in stopwords]
 
+def collocations(stream, top_n=10000, min_bigram_freq=50, min_trigram_freq=20):
+    """Extract text collocations (bigrams and trigrams), from a stream of words.
+
+    Parameters
+    ----------
+    stream: iterable object
+        An iterable of words
+
+    top_n: int
+        Number of collocations to retrieve from the stream of words (order by decreasing frequency). Default is 10000
+
+    min_bigram_freq: int
+        Minimum frequency of a bigram in order to retrieve it. Default is 50.
+
+    min_trigram_freq: int
+        Minimum frequency of a trigram in order to retrieve it. Default is 20.
+
+    """
+    tcf = TrigramCollocationFinder.from_words(stream)
+
+    tcf.apply_freq_filter(min_trigram_freq)
+    trigrams = [' '.join(w) for w in tcf.nbest(TrigramAssocMeasures.chi_sq, top_n)]
+    logging.info("%i trigrams found: %s..." % (len(trigrams), trigrams[:20]))
+
+    bcf = tcf.bigram_finder()
+    bcf.apply_freq_filter(min_bigram_freq)
+    bigrams = [' '.join(w) for w in bcf.nbest(BigramAssocMeasures.pmi, top_n)]
+    logging.info("%i bigrams found: %s..." % (len(bigrams), bigrams[:20]))
+
+    bigrams_patterns = re.compile('(%s)' % '|'.join(bigrams), re.UNICODE)
+    trigrams_patterns = re.compile('(%s)' % '|'.join(trigrams), re.UNICODE)
+
+    return bigrams_patterns, trigrams_patterns
 
 
 def collect_bigrams_and_trigrams(collection, top_n = 10000, min_bigram_freq=50,
@@ -164,8 +197,42 @@ def tokenize_collocation(text, bigrams, trigrams, stopwords=STOPWORDS):
     return text.split()
 
 
-def find_entities(collection, freq_min=2, freq_max=10000):
-        return entities(collection, freq_max=freq_max, freq_min=freq_min)
+def find_entities(document_stream, freq_min=2, freq_max=10000):
+    """Return noun phrases from stream of documents.
+
+    Parameters
+    ----------
+    document_stream: iterable object
+
+    freq_min: int
+        Minimum frequency of a noun phrase occurrences in order to retrieve it. Default is 2.
+
+    freq_max: int
+        Maximum frequency of a noun phrase occurrences in order to retrieve it. Default is 10000.
+
+    """
+    np_counts_total = {}
+    docs_examined = 0
+    for id, doc in document_stream:
+        if docs_examined > 0 and docs_examined % 1000 == 0:
+            sorted_phrases = sorted(np_counts_total.items(),
+                                    key=lambda item: -item[1])
+            np_counts_total = dict(sorted_phrases)
+            logging.info("at document #%i, considering %i phrases: %s..." %
+                         (docs_examined, len(np_counts_total), sorted_phrases[0]))
+
+        for np in TextBlob(doc).noun_phrases:
+            np_counts_total[np] = np_counts_total.get(np, 0) + 1
+        docs_examined += 1
+
+    # Remove noun phrases in the list that have higher frequencies than 'freq_max' or lower frequencies than 'freq_min'
+    np_counts = {}
+    for np, count in np_counts_total.items():
+        if freq_max >= count >= freq_min:
+            np_counts[np] = count
+
+    return set(np_counts)
+
 
 def tokenize_entities(text, entities, stopwords=STOPWORDS):
     """A tokenizer that extracts noun phrases from text.

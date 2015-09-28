@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import os
 import logging
 
-from topik.intermediaries.raw_data import output_formats
+from topik.intermediaries.raw_data import output_formats, DictionaryCorpus
 
 # imports used only for doctests
 from topik.tests import test_data_path
@@ -54,7 +54,7 @@ def _iter_document_json_stream(filename, json_prefix=None):
 def __is_iterable(obj):
     try:
         iter(obj)
-    except TypeError, te:
+    except TypeError as te:
         return False
     return True
 
@@ -220,8 +220,7 @@ def _iter_solr_query(solr_instance, content_field, year_field, query="*:*", cont
         response = response.next_batch()
 
 
-def _iter_elastic_query(es_full_path, query=None,
-                        year_field=None, id_field=None, **kwargs):
+def _iter_elastic_query(es_full_path, query=None):
     """Iterate over all documents in the specified elasticsearch intance and index that match the specified query
 
     Parameters
@@ -230,7 +229,7 @@ def _iter_elastic_query(es_full_path, query=None,
         Address of the elasticsearch instance including index
 
     query: string
-        The solr query string
+        The elastic query string
 
     content_field: string
         The name fo the field that contains the main text body of the document.
@@ -244,7 +243,7 @@ def _iter_elastic_query(es_full_path, query=None,
     # split es_full_path into instance and index
     if es_full_path[-1] == '/':
         es_full_path = es_full_path[:-1]
-    instance, index = es_full_path.rsplit('/',1)
+    instance, index = es_full_path.rsplit('/', 1)
 
     es = Elasticsearch(instance)
 
@@ -255,7 +254,7 @@ def _iter_elastic_query(es_full_path, query=None,
 
 
 def read_input(source, content_field, source_type="auto",
-               output_type="dictionary", output_args=None,
+               output_type=DictionaryCorpus.class_key(), output_args=None,
                synchronous_wait=0, **kwargs):
     """
     Read data from given source into Topik's internal data structures.
@@ -296,22 +295,16 @@ def read_input(source, content_field, source_type="auto",
     True
     """
 
-    import re
     import time
     json_extensions = [".js", ".json"]
-    ip_regex = "/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/"
-    web_regex = "^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/"
     if output_args is None:
         output_args = {}
-
-    ip_match = re.compile(ip_regex)
-    web_match = re.compile(web_regex)
 
     # solr defaults to port 8983
     if (source_type == "auto" and "8983" in source) or source_type == "solr":
         data_iterator = _iter_solr_query(source, **kwargs)
     # web addresses default to elasticsearch
-    elif (source_type == "auto" and (ip_match.search(source) or web_match.search(source))) or source_type == "elastic":
+    elif (source_type == "auto" and "9200" in source) or source_type == "elastic":
         data_iterator = _iter_elastic_query(source, **kwargs)
     # files must end in .json.  Try json parser first, try large_json parser next.  Fail otherwise.
     elif (source_type == "auto" and os.path.splitext(source)[1] in json_extensions) or source_type == "json_stream":

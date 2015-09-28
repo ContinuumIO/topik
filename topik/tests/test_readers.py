@@ -1,8 +1,14 @@
-import os
 import unittest
 
+import nose.tools as nt
+import elasticsearch
+
 from topik.readers import read_input
+import topik.readers as readers
+from topik.intermediaries.raw_data import ElasticSearchCorpus
 from topik.tests import test_data_path
+
+INDEX = "test_elastic"
 
 class TestReader(unittest.TestCase):
 
@@ -49,10 +55,14 @@ class TestReader(unittest.TestCase):
                                 u"microns in length; this easy method can be useful in the preparation of nanomaterials "
                                 u"for electronics, biomedical applications as well as catalysts.")'''
 
+    def tearDown(self):
+        instance = elasticsearch.Elasticsearch("localhost")
+        if instance.indices.exists(INDEX):
+            instance.indices.delete(INDEX)
+
     def test_read_document_json_stream(self):
         iterable_data = read_input('{}/test_data_json_stream.json'.format(
-            test_data_path),
-                                   content_field="abstract")
+                                   test_data_path), content_field="abstract")
         id, first_text = next(iter(iterable_data))
         self.assertEqual(first_text, self.solution_4)
 
@@ -75,6 +85,22 @@ class TestReader(unittest.TestCase):
                                    content_field="text", json_prefix='item._source.isAuthorOf')
         id, first_text = next(iter(iterable_data))
         self.assertEqual(first_text, self.solution_3)
+
+    def test_elastic_import(self):
+        output_args = {'host': 'localhost',
+                       'index': INDEX}
+        # import data from file into known elastic server
+        read_input('{}/test_data_json_stream.json'.format(
+                   test_data_path), content_field="abstract",
+                   output_type=ElasticSearchCorpus.class_key(),
+                   output_args=output_args, synchronous_wait=30)
+        iterable_data = read_input("localhost:9200/"+INDEX, content_field="abstract")
+        self.assertEquals(len(iterable_data), 100)
+
+
+def test_bad_folder():
+    nt.assert_raises(IOError, next, readers._iter_documents_folder("Frank"))
+
 
 if __name__ == '__main__':
     unittest.main()

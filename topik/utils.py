@@ -1,109 +1,14 @@
-from itertools import tee
 import json
 import logging
 import os
-import re
 
-import bs4
 import gensim
-from nltk.collocations import TrigramCollocationFinder
-from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
+
 import numpy as np
 import pandas as pd
-from textblob import TextBlob
+
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-
-def html2text(html):
-    soup = bs4.BeautifulSoup(html)
-    for s in soup('script'):
-        s.extract()
-    return soup.text
-
-def collocations(stream, top_n=10000, min_bigram_freq=50, min_trigram_freq=20):
-    """Extract text collocations (bigrams and trigrams), from a stream of words.
-
-    Parameters
-    ----------
-    stream: iterable object
-        An iterable of words
-
-    top_n: int
-        Number of collocations to retrieve from the stream of words (order by decreasing frequency). Default is 10000
-
-    min_bigram_freq: int
-        Minimum frequency of a bigram in order to retrieve it. Default is 50.
-
-    min_trigram_freq: int
-        Minimum frequency of a trigram in order to retrieve it. Default is 20.
-
-    """
-    tcf = TrigramCollocationFinder.from_words(stream)
-
-    tcf.apply_freq_filter(min_trigram_freq)
-    trigrams = [' '.join(w) for w in tcf.nbest(TrigramAssocMeasures.chi_sq, top_n)]
-    logging.info("%i trigrams found: %s..." % (len(trigrams), trigrams[:20]))
-
-    bcf = tcf.bigram_finder()
-    bcf.apply_freq_filter(min_bigram_freq)
-    bigrams = [' '.join(w) for w in bcf.nbest(BigramAssocMeasures.pmi, top_n)]
-    logging.info("%i bigrams found: %s..." % (len(bigrams), bigrams[:20]))
-
-    bigrams_patterns = re.compile('(%s)' % '|'.join(bigrams), re.UNICODE)
-    trigrams_patterns = re.compile('(%s)' % '|'.join(trigrams), re.UNICODE)
-
-    return bigrams_patterns, trigrams_patterns
-
-
-def entities(document_stream, freq_min=2, freq_max=10000):
-    """Return noun phrases from stream of documents.
-
-    Parameters
-    ----------
-    document_stream: iterable object
-
-    freq_min: int
-        Minimum frequency of a noun phrase occurrences in order to retrieve it. Default is 2.
-
-    freq_max: int
-        Maximum frequency of a noun phrase occurrences in order to retrieve it. Default is 10000.
-
-    """
-    np_counts_total = {}
-    docs_examined = 0
-    for id, doc in document_stream:
-        if docs_examined > 0 and docs_examined % 1000 == 0:
-            sorted_phrases = sorted(np_counts_total.items(), 
-                                    key=lambda item: -item[1])
-            np_counts_total = dict(sorted_phrases)
-            logging.info("at document #%i, considering %i phrases: %s..." %
-                         (docs_examined, len(np_counts_total), sorted_phrases[0]))
-
-        for np in TextBlob(doc).noun_phrases:
-            np_counts_total[np] = np_counts_total.get(np, 0) + 1
-        docs_examined += 1
-
-    # Remove noun phrases in the list that have higher frequencies than 'freq_max' or lower frequencies than 'freq_min'
-    np_counts = {}
-    for np, count in np_counts_total.items():
-        if freq_max >= count >= freq_min:
-            np_counts[np] = count
-
-    return set(np_counts)
-
-
-def get_document_length(corpus_bow, folder):
-    corpus_file = corpus_bow.filename
-    corpus = gensim.corpora.MmCorpus(corpus_file)
-    doc_length = []
-    with open(os.path.join(folder, 'doc_length'), 'w') as f:
-        for document in corpus:
-            n_tokens = len(document)
-            doc_length.append(n_tokens)
-            f.write("%s\n" % n_tokens)
-
-    return doc_length
-
 
 def to_r_ldavis(corpus_bow, lda, dir_name):
     """Generate the input that the R package LDAvis needs.
@@ -120,28 +25,24 @@ def to_r_ldavis(corpus_bow, lda, dir_name):
         Directory name where to store the files required in R package LDAvis.
 
     """
-    if os.path.isfile(dir_name):
-        pass
-    else:
+    if not os.path.isfile(dir_name):
         os.makedirs(dir_name)
-    doc_length = get_document_length(corpus_bow, dir_name)
 
-    corpus_dict = corpus_bow.dict
-    corpus_dict.save_as_text(os.path.join(dir_name,'dictionary'), sort_by_word=False)
+    corpus_bow.dict.save_as_text(os.path.join(dir_name, 'dictionary'), sort_by_word=False)
 
-    df = pd.read_csv(os.path.join(dir_name,'dictionary'), sep='\t', index_col=0, header=None)
+    df = pd.read_csv(os.path.join(dir_name, 'dictionary'), sep='\t', index_col=0, header=None)
     df = df.sort_index()
 
-    df[2].to_csv(os.path.join(dir_name,'term_frequency'), index=False)
-    df[1].to_csv(os.path.join(dir_name,'vocab'), index=False, header=False)
+    df[1].to_csv(os.path.join(dir_name, 'vocab'), index=False, header=False)
+    df[2].to_csv(os.path.join(dir_name, 'term_frequency'), index=False)
 
     tt_dist = np.array(lda.model.expElogbeta)
-    np.savetxt(os.path.join(dir_name,'topicTermDist'), tt_dist, delimiter=',', newline='\n',)
+    np.savetxt(os.path.join(dir_name, 'topicTermDist'), tt_dist, delimiter=',', newline='\n',)
 
     corpus_file = corpus_bow.filename
     corpus = gensim.corpora.MmCorpus(corpus_file)
     docTopicProbMat = lda.model[corpus]
-    gensim.corpora.MmCorpus.serialize(os.path.join(dir_name,'docTopicProbMat.mm'), docTopicProbMat)
+    gensim.corpora.MmCorpus.serialize(os.path.join(dir_name, 'docTopicProbMat.mm'), docTopicProbMat)
 
 
 def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_file='output.csv'):
@@ -188,8 +89,3 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
     logging.info("writing dataframe to output file %s " %output_file)
     df.to_csv(output_file, sep='\t', encoding='utf-8')
     return pd.DataFrame(documents)
-
-def _iter_corpus(corpus):
-    for document in corpus:
-        yield document
-

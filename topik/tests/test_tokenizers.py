@@ -2,11 +2,11 @@ import os
 import unittest
 
 from topik.readers import read_input
-from topik.intermediaries.raw_data import ElasticSearchCorpus, _get_hash_identifier
 from topik.tokenizers import tokenizer_methods, find_entities, collect_bigrams_and_trigrams
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
+
 
 class TestTokenizers(unittest.TestCase):
     def setUp(self):
@@ -81,10 +81,8 @@ class TestTokenizers(unittest.TestCase):
             u'properties', u'sol', u'gel', u'method', u'dna', u'easy',
             u'method', u'biomedical', u'applications']
 
-        self.data_json_stream_path = os.path.join(module_path,
-                                            'data/test_data_json_stream.json')
-        self.data_large_json_path = os.path.join(module_path,
-                                            'data/test_data_large_json.json')
+        self.data_json_stream_path = os.path.join(module_path, 'data/test_data_json_stream.json')
+        self.data_large_json_path = os.path.join(module_path, 'data/test_data_large_json.json')
         assert os.path.exists(self.data_json_stream_path)
         assert os.path.exists(self.data_large_json_path)
 
@@ -93,10 +91,9 @@ class TestTokenizers(unittest.TestCase):
                 source=self.data_json_stream_path,
                 content_field="abstract",
                 output_type="dictionary")
-        id, text = next(iter(raw_data))
+        _, text = next(iter(raw_data))
         doc_tokens = tokenizer_methods["simple"](text)
-        self.assertEqual(doc_tokens,
-                         self.solution_simple_tokenizer_test_data_json_stream)
+        self.assertEqual(doc_tokens, self.solution_simple_tokenizer_test_data_json_stream)
 
     def test_collocations_tokenizer(self):
         raw_data = read_input(
@@ -106,10 +103,9 @@ class TestTokenizers(unittest.TestCase):
         bigrams, trigrams = collect_bigrams_and_trigrams(raw_data,
                                                          min_bigram_freq=2,
                                                          min_trigram_freq=2)
-        id, text = next(iter(raw_data))
+        _, text = next(iter(raw_data))
         doc_tokens = tokenizer_methods["collocation"](text, bigrams, trigrams)
-        self.assertEqual(doc_tokens,
-                     self.solution_collocations_tokenizer_test_data_json_stream)
+        self.assertEqual(doc_tokens, self.solution_collocations_tokenizer_test_data_json_stream)
 
     def test_entities_tokenizer_json_stream(self):
         raw_data = read_input(
@@ -117,10 +113,9 @@ class TestTokenizers(unittest.TestCase):
                 content_field="abstract",
                 output_type="dictionary")
         entities = find_entities(raw_data, freq_min=1)
-        id, text = next(iter(raw_data))
+        _, text = next(iter(raw_data))
         doc_tokens = tokenizer_methods["entities"](text, entities)
-        self.assertEqual(doc_tokens,
-                         self.solution_entities_tokenizer_test_data_json_stream)
+        self.assertEqual(doc_tokens, self.solution_entities_tokenizer_test_data_json_stream)
 
     def test_mixed_tokenizer(self):
         raw_data = read_input(
@@ -130,8 +125,7 @@ class TestTokenizers(unittest.TestCase):
         entities = find_entities(raw_data)
         id, text = next(iter(raw_data))
         doc_tokens = tokenizer_methods["mixed"](text, entities)
-        self.assertEqual(doc_tokens,
-                         self.solution_mixed_tokenizer_test_data_json_stream)
+        self.assertEqual(doc_tokens, self.solution_mixed_tokenizer_test_data_json_stream)
 
 
 if __name__ == '__main__':
