@@ -37,7 +37,7 @@ def _rand_mat(cols, rows):
 
 @register_model
 class PLSA(TopicModelBase):
-    def __init__(self, corpus=None, ntopics=2, load_filename=None):
+    def __init__(self, corpus=None, ntopics=2, load_filename=None, binary_filename=None):
         # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
         #     tuple contains (id, count) of words in that document.
         self.topics = ntopics
@@ -60,7 +60,7 @@ class PLSA(TopicModelBase):
             self.dw_z = None
             self.p_dw = []
             self.beta = 0.8
-        elif load_filename:
+        elif load_filename and binary_filename:
             from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
             self.corpus = DigestedDocumentCollection.load(load_filename)
             # total number of identified words for each given document (document length normalization factor?)
@@ -68,7 +68,7 @@ class PLSA(TopicModelBase):
             # Maximum identified word (number of identified words in corpus)
             # TODO: seems like this could be tracked better during the tokenization step and fed in.
             self.words = max(reduce(operator.add, map(lambda x: x[0], self.corpus)))+1
-            arrays = np.load(load_filename+".npz")
+            arrays = np.load(binary_filename)
             self.zw = arrays['zw']
             self.dz = arrays['dz']
             self.dw_z = arrays['dw_z']
@@ -78,13 +78,13 @@ class PLSA(TopicModelBase):
             pass  # is just being used for inference
 
     def save(self, filename):
-        np.savez_compressed(filename+".npz",
+        np.savez_compressed(self.get_model_name_with_parameters(),
                             zw=self.zw,
                             dz=self.dz,
                             dw_z=self.dw_z,
                             p_dw=self.p_dw,
                             beta_likelihood=np.array([self.beta, self.likelihood]))
-        saved_data = {"load_filename": filename}
+        saved_data = {"load_filename": filename, "binary_filename": self.get_model_name_with_parameters()+".npz"}
         super(PLSA, self).save(filename, saved_data=saved_data)
 
     def get_model_name_with_parameters(self):
