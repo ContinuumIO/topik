@@ -169,11 +169,12 @@ class ElasticSearchCorpus(CorpusInterface):
                 while self.instance.count(index=self.index) != self.instance.count(index=index):
                     logging.info("Waiting for date indexed data to be indexed...")
                     time.sleep(1)
+        return index
 
     # TODO: validate input data to ensure that it has valid year data
     def get_date_filtered_data(self, start, end, field="date"):
-        self.convert_date_field_and_reindex(field=field)
-        return ElasticSearchCorpus(self.host, self.index, self.content_field, self.port,
+        converted_index = self.convert_date_field_and_reindex(field=field)
+        return ElasticSearchCorpus(self.host, converted_index, self.content_field, self.port,
                                    self.username, self.password, self.doc_type,
                                    query={"query":
                                           {"range":
@@ -208,7 +209,6 @@ class DictionaryCorpus(CorpusInterface):
         if active_field:
             self.content_field = active_field
         self.content_filter = content_filter
-
 
     @classmethod
     def class_key(cls):
