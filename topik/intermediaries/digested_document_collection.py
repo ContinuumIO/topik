@@ -1,7 +1,5 @@
-from itertools import tee
-
-from gensim.interfaces import CorpusABC
 from gensim.corpora.dictionary import Dictionary
+from gensim.interfaces import CorpusABC
 
 from .raw_data import load_persisted_corpus
 

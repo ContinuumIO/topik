@@ -1,5 +1,4 @@
 import unittest
-from functools import partial
 
 import nose.tools as nt
 import elasticsearch

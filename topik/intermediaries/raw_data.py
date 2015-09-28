@@ -3,12 +3,12 @@ This file is concerned with providing a simple interface for data stored in
 Elasticsearch.  The class(es) defined here are fed into the preprocessing step.
 """
 
+from abc import ABCMeta, abstractmethod, abstractproperty
 import logging
 import time
-from abc import ABCMeta, abstractmethod, abstractproperty
 
-from six import with_metaclass
 from elasticsearch import Elasticsearch, helpers
+from six import with_metaclass
 
 from topik.intermediaries.persistence import Persistor
 

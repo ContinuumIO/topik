@@ -1,14 +1,14 @@
 from __future__ import absolute_import, print_function
 
-import logging
 import itertools
+import logging
 import re
 
+import gensim
+from gensim.parsing.preprocessing import STOPWORDS
 from nltk.collocations import TrigramCollocationFinder
 from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
 from textblob import TextBlob
-import gensim
-from gensim.parsing.preprocessing import STOPWORDS
 
 # imports used only for doctests
 from topik.tests import test_data_path

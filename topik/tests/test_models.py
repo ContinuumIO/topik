@@ -1,8 +1,5 @@
 import os
 import unittest
-from abc import ABCMeta, abstractmethod
-
-from six import with_metaclass
 
 from topik.readers import read_input
 from topik.preprocessing import preprocess
@@ -16,7 +13,7 @@ NTOPICS = 3
 MODEL_SAVE_FILENAME = os.path.join(module_path, 'test.model')
 
 
-class _ModelBase(with_metaclass(ABCMeta)):
+class _ModelBase(object):
     def setUp(self):
         raw_data = read_input(
                 source=os.path.join(module_path, 'data/test_data_json_stream.json'),
