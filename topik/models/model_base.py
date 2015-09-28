@@ -36,8 +36,8 @@ class TopicModelBase(with_metaclass(ABCMeta)):
     @abstractmethod
     def save(self, filename, saved_data):
         self.persistor.store_model(self.get_model_name_with_parameters(),
-                                          {"class": self.__class__.__name__,
-                                           "saved_data": saved_data})
+                                   {"class": self.__class__.__name__,
+                                    "saved_data": saved_data})
         self.corpus.save(filename)
 
     @abstractmethod

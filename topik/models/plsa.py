@@ -41,24 +41,22 @@ class PLSA(TopicModelBase):
         # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
         #     tuple contains (id, count) of words in that document.
         self.topics = ntopics
+        self.topic_array = np.arange(ntopics, dtype=np.int32)
         if corpus:
             # iterable, each entry is tuple of (word_id, count)
             self.corpus = corpus
-            self.docs = len(corpus)
             # total number of identified words for each given document (document length normalization factor?)
             self.each = map(sum, map(lambda x: x[1], corpus))
             # Maximum identified word (number of identified words in corpus)
             # TODO: seems like this could be tracked better during the tokenization step and fed in.
-            self.words = max(reduce(operator.add, map(lambda x: x[0], corpus)))+1
+            self.words = len(self.corpus.dict.token2id)
             self.likelihood = 0
             # topic-word matrix
-            self.zw = _rand_mat(self.topics, self.words)
+            self.zw = _rand_mat(self.words, self.topics)
             # document-topic matrix
-            self.dz = _rand_mat(self.docs, self.topics)
-
-            logging.debug('init self.zw %r self.dz %r' % (self.zw, self.dz))
-            self.dw_z = None
-            self.p_dw = []
+            self.dz = _rand_mat(self.topics, len(self.corpus))
+            self.dw_z = [{}, ] * len(self.corpus)
+            self.p_dw = [{}, ] * len(self.corpus)
             self.beta = 0.8
         elif load_filename and binary_filename:
             from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
@@ -91,60 +89,51 @@ class PLSA(TopicModelBase):
         return "PLSA_{}_topics{}".format(self.topics, self.corpus.filter_string)
 
     def _cal_p_dw(self):
-        self.p_dw = []
-        for d in xrange(self.docs):
-            self.p_dw.append({})
-            for w in self.corpus[d]:
+        for d, doc in enumerate(self.corpus):
+            for word_id, word_ct in doc:
                 tmp = 0
-                for _ in range(self.corpus[d][w]):
-                    for z in xrange(self.topics):
-                        tmp += (self.zw[z][w]*self.dz[d][z])**self.beta
-                self.p_dw[-1][w] = tmp
-        logging.debug('self.p_dw %r' % (self.p_dw,))
+                for _ in range(word_ct):
+                    for z in self.topic_array:
+                        tmp += (self.zw[z][word_id]*self.dz[d][z])**self.beta
+                self.p_dw[-1][word_id] = tmp
 
     def _e_step(self):
         self._cal_p_dw()
-        self.dw_z = []
-        for d in xrange(self.docs):
-            self.dw_z.append({})
-            for w in self.corpus[d]:
-                self.dw_z[-1][w] = []
-                for z in xrange(self.topics):
-                    self.dw_z[-1][w].append(((self.zw[z][w]*self.dz[d][z])**self.beta)/self.p_dw[d][w])
-        logging.debug('_e_step self.dw_z %r' % (self.dw_z,))
+        for d, doc in enumerate(self.corpus):
+            for word_id, word_ct in doc:
+                self.dw_z[-1][word_id] = []
+                for z in self.topic_array:
+                    self.dw_z[-1][word_id].append(((self.zw[z][word_id]*self.dz[d][z])**self.beta)/self.p_dw[d][word_id])
 
     def _m_step(self):
-        for z in xrange(self.topics):
+        for z in self.topic_array:
             self.zw[z] = [0]*self.words
-            for d in xrange(self.docs):
-                for w in self.corpus[d]:
-                    self.zw[z][w] += self.corpus[d][w]*self.dw_z[d][w][z]
+            for d, doc in enumerate(self.corpus):
+                for word_id, word_ct in doc:
+                    self.zw[z][word_id] += word_ct*self.dw_z[d][word_id][z]
             norm = sum(self.zw[z])
-            logging.debug('_m_step normalizers %r' % (norm,))
             for w in xrange(self.words):
                 self.zw[z][w] /= norm
-        for d in xrange(self.docs):
-            self.dz[d] = [0]*self.topics
-            for z in xrange(self.topics):
-                for w in self.corpus[d]:
-                    self.dz[d][z] += self.corpus[d][w]*self.dw_z[d][w][z]
-            for z in xrange(self.topics):
+        for d, doc in enumerate(self.corpus):
+            self.dz[d] = 0
+            for z in self.topic_array:
+                for word_id, word_ct in doc:
+                    self.dz[d][z] += word_ct * self.dw_z[d][word_id][z]
+            for z in self.topic_array:
                 self.dz[d][z] /= self.each[d]
-        logging.debug('_m_step zw %r dz %r' % (self.zw, self.dz))
 
     def _cal_likelihood(self):
         self.likelihood = 0
-        for d in xrange(self.docs):
-            for w in self.corpus[d]:
-                self.likelihood += self.corpus[d][w]*math.log(self.p_dw[d][w])
+        for d, doc in enumerate(self.corpus):
+            for word_id, word_ct in doc:
+                self.likelihood += word_ct*math.log(self.p_dw[d][word_id])
 
     def train(self, max_iter=100):
         cur = 0
         for i in xrange(max_iter):
-            print '%d iter' % i
+            logging.info('%d iter' % i)
             self._e_step()
             self._m_step()
-            logging.debug('post _m_step zw %r dz %r' % (self.zw, self.dz))
             self._cal_likelihood()
             logging.info('likelihood %f ' % self.likelihood)
             if cur != 0 and abs((self.likelihood-cur)/cur) < 1e-8:
@@ -168,7 +157,6 @@ class PLSA(TopicModelBase):
                 for _ in range(doc[w]):
                     for z in xrange(self.topics):
                         p_dw[w] += (ret[z]*self.zw[z][w])**self.beta
-            logging.debug('inference p_dw %r' % (p_dw))
             # e setp
             dw_z = {}
             for w in doc:

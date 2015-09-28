@@ -1,6 +1,8 @@
 import os
 import unittest
 
+from nose.tools import assert_raises
+
 from topik.readers import read_input
 from topik.preprocessing import preprocess
 from topik.models import registered_models, load_model
@@ -46,6 +48,13 @@ class _ModelBase(object):
         self.model.termite_data(os.path.join(module_path, 'test_termite.csv'))
         self.assertTrue(os.path.isfile(os.path.join(module_path, 'test_termite.csv')))
 
+    def test_termite_pandas_output(self):
+        topn_words = 15
+        data = self.model.termite_data(topn_words=topn_words)
+        self.assertFalse(data.empty)
+        self.assertEqual(len(data.columns), 3)
+        self.assertEqual(len(data), topn_words * 3)
+
 
 class TestLDA(_ModelBase, unittest.TestCase):
     model_name = "LDA"
@@ -53,6 +62,13 @@ class TestLDA(_ModelBase, unittest.TestCase):
 
 class TestPLSA(_ModelBase, unittest.TestCase):
     model_name = "PLSA"
+
+
+def test_invalid_source_load():
+    raw_data = read_input(source=os.path.join(module_path, 'data/test_data_json_stream.json'),
+                          content_field="abstract")
+    raw_data.save("test_file")
+    assert_raises(NameError, load_model, "test_file", "Steve")  # attempt to load a model that we know does not exist
 
 
 if __name__ == '__main__':
