@@ -12,7 +12,10 @@ setup(name='topik',
       license='BSD',
       keywords='topic modeling lda nltk gensim pattern',
       packages=find_packages(),
-      package_data={'topik': ['R/runLDAvis.R']},
+      package_data={'topik': ['R/runLDAvis.R'],
+                    "topik.tests": ["data/*.json", "data/test_data_folder_files/*",
+                                    "data/test_data_folder_files_gz/*",
+                                    "data/test_data_solr/*"]},
       install_requires=list(open('requirements.txt').read().strip().split('\n')),
       entry_points= {
           'console_scripts': ['topik = topik.cli:run']
