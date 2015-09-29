@@ -43,6 +43,8 @@ class _ModelBase(object):
         top_words = self.model.get_top_words(15)
         self.assertEqual(len(top_words), 3)
         self.assertEqual(len(top_words[1]), 15)
+        self.assertLess(top_words[0][1][0], top_words[0][0][0])
+        self.assertLess(top_words[0][-1][0], top_words[0][-2][0])
 
     def test_termite_output(self):
         self.model.termite_data(os.path.join(module_path, 'test_termite.csv'))
