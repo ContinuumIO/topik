@@ -50,7 +50,7 @@ class TimeSuite:
         load_persisted_corpus("test_raw_corpus_dict")
 
     def time_save_ES(self):
-        self.raw_dict_and_es.save("test_raw_corpus_es")
+        self.raw_data_ES.save("test_raw_corpus_es")
 
     def time_load_ES(self):
         load_persisted_corpus("test_raw_corpus_es")
