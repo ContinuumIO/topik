@@ -22,9 +22,14 @@ easy exploratory analysis of your text data sets. The motivation of writing `top
 
 
 ## Installation
+From Conda
 
 ```
 conda install -c chdoig topik
+```
+From source
+```
+python setup.py install
 ```
 
 ## Use
