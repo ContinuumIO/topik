@@ -67,3 +67,11 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# benchmark stuff
+benchmarks/env/*
+benchmarks/results/*
+benchmarks/topik/*
+benchmarks/log.txt
+benchmarks/test*
+benchmark/*termite*
