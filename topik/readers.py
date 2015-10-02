@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import os
 import logging
 
-from topik.intermediaries.raw_data import output_formats, DictionaryCorpus
+from topik.intermediaries.raw_data import registered_outputs, DictionaryCorpus
 
 # imports used only for doctests
 from topik.tests import test_data_path
@@ -60,6 +60,8 @@ def __is_iterable(obj):
 
 
 def _test_json_input(filename):
+    """This is here to test the first item of the JSON stream, so that we raise an exception with
+    the _iter_json_stream reader and fall back to _iter_large_json."""
     return next(_iter_document_json_stream(filename))
 
 
@@ -179,7 +181,7 @@ def _iter_documents_folder(folder, content_field='text'):
                 logging.warning("Unable to process file: {}, error: {}".format(fullpath, err))
 
 
-def _iter_solr_query(solr_instance, content_field, year_field, query="*:*", content_in_list=True, **kwargs):
+def _iter_solr_query(solr_instance, content_field, query="*:*", content_in_list=True, **kwargs):
     # TODO: should I be checking for presence of content_field and year_field?
     # If not then we don't need them as params
     # TODO: should I care at this level whether the content_in_list or only at
@@ -193,9 +195,6 @@ def _iter_solr_query(solr_instance, content_field, year_field, query="*:*", cont
 
     content_field: string
         The name fo the field that contains the main text body of the document.
-
-    year_field: string
-        The field name (if any) that contains the year associated with the document
 
     query: string
         The solr query string
@@ -214,41 +213,34 @@ def _iter_solr_query(solr_instance, content_field, year_field, query="*:*", cont
             if content_in_list:
                 if content_field in item.keys() and type(item[content_field]) == list:
                     item[content_field] = item[content_field][0]
-                if year_field in item.keys() and type(item[year_field]) == list:
-                    item[year_field] = item[year_field][0]
             yield item
         response = response.next_batch()
 
 
-def _iter_elastic_query(es_full_path, query=None):
-    """Iterate over all documents in the specified elasticsearch intance and index that match the specified query
+def _iter_elastic_query(hosts, **kwargs):
+    """Iterate over all documents in the specified elasticsearch intance and index that match the specified query.
+
+    kwargs are passed to Elasticsearch class instantiation, and can be used to pass any additional options
+    described at https://elasticsearch-py.readthedocs.org/en/master/
 
     Parameters
     ----------
-    es_full_path: string
-        Address of the elasticsearch instance including index
-
-    query: string
-        The elastic query string
+    es_full_path: string or list
+        Address of the elasticsearch instance any index.  May include port, username and password.
+        See https://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch for all options.
 
     content_field: string
         The name fo the field that contains the main text body of the document.
 
-    year_field: string
-        The field name (if any) that contains the year associated with the document
+    **kwargs: additional keyword arguments to be passed to Elasticsearch client instance and to scan query.
+              See
+              https://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch for all client options.
+              https://elasticsearch-py.readthedocs.org/en/master/helpers.html#elasticsearch.helpers.scan for all scan options.
     """
 
     from elasticsearch import Elasticsearch, helpers
-
-    # split es_full_path into instance and index
-    if es_full_path[-1] == '/':
-        es_full_path = es_full_path[:-1]
-    instance, index = es_full_path.rsplit('/', 1)
-
-    es = Elasticsearch(instance)
-
-    results = helpers.scan(client=es, index=index, scroll='5m', query=query)
-
+    es = Elasticsearch(hosts, **kwargs)
+    results = helpers.scan(es, **kwargs)
     for result in results:
         yield result['_source']
 
@@ -265,8 +257,8 @@ def read_input(source, content_field, source_type="auto",
     content_field: (string) Which field contains your data to be analyzed.  Hash of this is used as id.
     source_type: (string) "auto" tries to figure out data type of source.  Can be manually specified instead.
         options for manual specification are:
-    output_type: (string) internal format for handling user data.  Current options are:
-        ["elasticsearch", "dictionary"].  default is "dictionary"
+    output_type: (string) internal format for handling user data.  Current options are in the registered_outputs dictionary.
+        Default is DictionaryCorpus class.  Specify alternatives using string key from dictionary.
     output_args: (dictionary) configuration to pass through to output
     synchronous_wait: (integer) number of seconds to wait for data to finish uploading to output (this happens
         asynchronously.)  Only relevant for some output types ("elasticsearch", not "dictionary")
@@ -323,7 +315,7 @@ def read_input(source, content_field, source_type="auto",
                          " to a supported type.".format(source))
     if "content_field" not in output_args:
         output_args["content_field"] = content_field
-    output = output_formats[output_type](iterable=data_iterator, **output_args)
+    output = registered_outputs[output_type](iterable=data_iterator, **output_args)
 
     if synchronous_wait > 0:
         start = time.time()
