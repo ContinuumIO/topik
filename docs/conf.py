@@ -13,6 +13,18 @@
 # serve to show the default.
 
 import sys
+try:
+    from unittest.mock import MagicMock  # Python 3.3+
+except ImportError:
+    from mock import Mock as MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+MOCK_MODULES = ['numpy', 'pandas', 'scipy', 'gensim', 'blaze', 'textblob', 'nltk',]
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -272,16 +284,3 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-import sys
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import Mock as MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
-
-MOCK_MODULES = ['numpy', 'pandas', 'scipy', 'gensim', 'blaze', 'textblob', 'nltk',]
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
