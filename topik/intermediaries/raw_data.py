@@ -77,7 +77,7 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         self.persistor.store_corpus({"class": self.__class__.class_key(), "saved_data": saved_data})
         self.persistor.persist_data(filename)
 
-    def synchronize(self, max_wait):
+    def synchronize(self, max_wait, field, expected_count):
         """By default, operations are synchronous and no additional wait is
         necessary.  Data sources that are asynchronous (ElasticSearch) may
         use this function to wait for "eventual consistency" """
@@ -102,7 +102,7 @@ class CorpusInterface(with_metaclass(ABCMeta)):
                                          **kwargs)
             # TODO: would be nice to aggregate batches and append in bulk
             self.append_to_record(record_id, token_path, tokenized_record)
-        self.synchronize(synchronous_wait)
+        self.synchronize(max_wait=synchronous_wait, field=token_path)
         return DigestedDocumentCollection(self.get_field(field=token_path))
 
 
@@ -226,9 +226,21 @@ class ElasticSearchCorpus(CorpusInterface):
                           "password": self.password, "doc_type": self.doc_type, "query": self.query}
         return super(ElasticSearchCorpus, self).save(filename, saved_data)
 
-    def synchronize(self, max_wait):
-        # TODO: convert to synchronous wait
-        time.sleep(1)
+    def synchronize(self, max_wait, field):
+        # TODO: change this to a more general condition for wider use?
+        # could just pass in a string condition and then 'while not eval(condition)'
+        count_not_yet_updated = -1
+        while count_not_yet_updated != 0:
+            count_not_yet_updated = self.instance.count(index=self.index,
+                                             doc_type=self.doc_type,
+                                             body={"query": {
+                                                        "constant_score" : {
+                                                            "filter" : {
+                                                                "missing" : {
+                                                                    "field" : field}}}}})['count']
+            logging.debug("Count not yet updated: {}".format(count_not_yet_updated))
+            time.sleep(0.01)
+        pass
 
 class DictionaryCorpus(CorpusInterface):
     def __init__(self, content_field, iterable=None, generate_id=True, reference_field=None, content_filter=None):
