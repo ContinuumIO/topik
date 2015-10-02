@@ -150,15 +150,15 @@ this requires that you manually specify the 'elastic' source_type:
     >>> corpus = read_input(source=["https://server1", "https://server2"], content_field="text")
 
 
-For more information on server options, please refer to 'Elasticsearch's
-documentation<https://elasticsearch-py.readthedocs.org/en/master/>'_.
+For more information on server options, please refer to `Elasticsearch's
+documentation <https://elasticsearch-py.readthedocs.org/en/master/>`_.
 
 Extra keyword arguments are also passed to the scroll helper that returns
 results. Of special note here, an additional ``query`` keyword argument can be
 passed to limit the records imported from the server. This query must follow the
 Elasticsearch query of filter DSL. For more information on Elasticsearch query
-DSL, please refer to 'Elasticsearch's DSL
-docs<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html>'_.
+DSL, please refer to `Elasticsearch's DSL
+docs <https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html>`_.
 
 .. code-block:: python
 
@@ -173,12 +173,13 @@ Output formats are how your data are represented to further processing and
 modeling. To ensure a uniform interface, output formats implement the interface
 described by ``topik.intermediaries.raw_data.CorpusInterface``. Presently, two such
 backends are implemented: ``DictionaryCorpus`` and ``ElasticSearchCorpus``. Available
-outputs can be examined by checking the keys of the topik.registered_outputs
+outputs can be examined by checking the keys of the ``topik.registered_outputs``
 dictionary:
 
 .. code-block:: python
 
-    >>> from topik import registered_outputs >>> list(registered_outputs.keys())
+    >>> from topik import registered_outputs
+    >>> list(registered_outputs.keys())
 
 
 The default output is the ``DictionaryCorpus``. No additional arguments are
@@ -187,15 +188,15 @@ it is memory intensive. All operations done with a ``DictionaryCorpus`` block un
 complete. ``DictionaryCorpus`` is the simplest to use, but it will ultimately limit
 the size of analyses that you can perform.
 
-The ``ElasticSearchCorpus`` can be specified to read_input using the output_type
-argument. It must be accompanied by another keyword argument, output_args, which
+The ``ElasticSearchCorpus`` can be specified to ``read_input`` using the ``output_type``
+argument. It must be accompanied by another keyword argument, ``output_args``, which
 should be a dictionary containing connection details and any additional
 arguments.
 
 .. code-block:: python
 
-    >>> output_args = {} >>> raw_data = read_input("test_data.json",
-    output_format='elastic', output_args=output_args)
+    >>> output_args = {}
+    >>> raw_data = read_input("test_data.json", output_format='elastic', output_args=output_args)
 
 
 ``ElasticSearchCorpus`` stores everything in an Elasticsearch instance that you
