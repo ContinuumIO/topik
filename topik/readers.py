@@ -225,7 +225,7 @@ def _iter_elastic_query(hosts, **kwargs):
 
     Parameters
     ----------
-    es_full_path: string or list
+    hosts: string or list
         Address of the elasticsearch instance any index.  May include port, username and password.
         See https://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch for all options.
 
