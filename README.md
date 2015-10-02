@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/ContinuumIO/topik.svg?branch=master)](https://travis-ci.org/ContinuumIO/topik)
 [![Coverage Status](https://coveralls.io/repos/ContinuumIO/topik/badge.svg?branch=master&service=github)](https://coveralls.io/github/ContinuumIO/topik?branch=master)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ContinuumIO/topik/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ContinuumIO/topik/?branch=master)
+[![Documentation Status](https://readthedocs.org/projects/topik/badge/?version=latest)](http://topik.readthedocs.org/en/latest/?badge=latest)
 
 # Topik
 
