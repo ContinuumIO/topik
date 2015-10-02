@@ -212,7 +212,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'Topik.tex', 'Topik Documentation',
-   'Christine Doig', 'manual'),
+   'Topik development team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -242,7 +242,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'topik', 'Topik Documentation',
-     ['Christine Doig'], 1)
+     ['Topik development team'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -256,7 +256,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Topik', 'Topik Documentation',
-   'Christine Doig', 'Topik', 'One line description of project.',
+   'Topik development team', 'Topik', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -271,3 +271,17 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+import sys
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import Mock as MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+MOCK_MODULES = ['pygtk', 'gtk', 'gobject', 'argparse', 'numpy', 'pandas', 'scipy', 'gensim']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
