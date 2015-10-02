@@ -266,10 +266,10 @@ def read_input(source, content_field, source_type="auto",
     source_type: (string) "auto" tries to figure out data type of source.  Can be manually specified instead.
         options for manual specification are:
     output_type: (string) internal format for handling user data.  Current options are:
-        ["elasticsearch", "dictionary"].  default is "dictionary"
+        ["elastic", "dictionary"].  default is "dictionary"
     output_args: (dictionary) configuration to pass through to output
     synchronous_wait: (integer) number of seconds to wait for data to finish uploading to output (this happens
-        asynchronously.)  Only relevant for some output types ("elasticsearch", not "dictionary")
+        asynchronously.)  Only relevant for some output types ("elastic", not "dictionary")
     kwargs: any other arguments to pass to input parsers
 
     Returns

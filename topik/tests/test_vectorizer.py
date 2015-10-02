@@ -2,7 +2,6 @@ import os
 import unittest
 
 from topik.readers import read_input
-from topik.preprocessing import preprocess
 from topik.tests import test_data_path
 
 
@@ -33,7 +32,7 @@ class TestCorpusBOW(unittest.TestCase):
                                            'test_data_json_stream.json'),
                                    content_field="abstract",
                                    output_type="dictionary")
-        self.processed_data = preprocess(raw_data)
+        self.processed_data = raw_data.tokenize()
 
     def test_corpus_bow_content(self):
 

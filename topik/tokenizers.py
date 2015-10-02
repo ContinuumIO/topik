@@ -12,7 +12,7 @@ from textblob import TextBlob
 
 # imports used only for doctests
 from topik.tests import test_data_path
-from topik.readers import read_input
+
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', 
@@ -29,11 +29,7 @@ def tokenize_simple(text, stopwords=STOPWORDS):
     text: input text to be tokenized
     stopwords: words to ignore as noise
 
-    >>> id_documents = read_input(
-    ...                 '{}/test_data_json_stream.json'.format(test_data_path),
-    ...                 content_field="abstract")
-    >>> id, doc_text = next(iter(id_documents))
-    >>> doc_text == str(
+    >>> doc_text = str(
     ... 'Transition metal oxides are being considered as the next generation '
     ... 'materials in field such as electronics and advanced catalysts; between'
     ... ' them is Tantalum (V) Oxide; however, there are few reports for the '
@@ -44,7 +40,6 @@ def tokenize_simple(text, stopwords=STOPWORDS):
     ... 'diameter and several microns in length; this easy method can be useful'
     ... ' in the preparation of nanomaterials for electronics, biomedical '
     ... 'applications as well as catalysts.')
-    True
     >>> tokens = tokenize_simple(doc_text)
     >>> tokens == [
     ... u'transition', u'metal', u'oxides', u'considered', u'generation',

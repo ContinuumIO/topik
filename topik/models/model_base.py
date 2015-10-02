@@ -1,12 +1,10 @@
 from abc import ABCMeta, abstractmethod
 import logging
 
-import json
 import pandas as pd
 from six import with_metaclass
 
 # doctest-only imports
-from topik.preprocessing import preprocess
 from topik.readers import read_input
 from topik.tests import test_data_path
 from topik.intermediaries.persistence import Persistor
