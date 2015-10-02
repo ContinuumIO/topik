@@ -117,7 +117,8 @@ You would read using the following ``json_prefix`` argument:
 
 .. code-block:: python
 
-   >>> corpus = read_input(source="data_file.json", content_field="text", json_prefix="nested.dictionary")
+   >>> corpus = read_input(source="data_file.json", content_field="text",
+                           json_prefix="nested.dictionary")
 
 
 Elasticsearch additional options and notes
@@ -139,7 +140,8 @@ use SSL:
 
 .. code-block:: python
 
-   >>> corpus = read_input(source="https://user:secret@localhost:443/test_index", content_field="text", use_ssl=True)
+   >>> corpus = read_input(source="https://user:secret@localhost:443/test_index",
+                           content_field="text", use_ssl=True)
 
 
 The source argument for Elasticsearch also supports multiple servers, though
@@ -147,7 +149,8 @@ this requires that you manually specify the 'elastic' source_type:
 
 .. code-block:: python
 
-    >>> corpus = read_input(source=["https://server1", "https://server2"], content_field="text")
+    >>> corpus = read_input(source=["https://server1", "https://server2"],
+                            content_field="text")
 
 
 For more information on server options, please refer to `Elasticsearch's
@@ -163,7 +166,8 @@ docs <https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.
 .. code-block:: python
 
    >>> query = "{"filtered": {"query": {"match": { "tweet": "full text search"}}}}"
-   >>> corpus = read_input(source="https://localhost/test_index", content_field="tweet", query=query)
+   >>> corpus = read_input(source="https://localhost/test_index", content_field="tweet",
+                           query=query)
 
 
 Output formats
@@ -195,8 +199,9 @@ arguments.
 
 .. code-block:: python
 
-    >>> output_args = {}
-    >>> raw_data = read_input("test_data.json", output_format='elastic', output_args=output_args)
+    >>> output_args = {"source": "localhost", "index": "destination_index"}
+    >>> raw_data = read_input("test_data.json", output_format='elastic',
+                              output_args=output_args, content_field="text")
 
 
 ``ElasticSearchCorpus`` stores everything in an Elasticsearch instance that you
