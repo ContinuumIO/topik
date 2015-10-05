@@ -261,7 +261,7 @@ def read_input(source, content_field, source_type="auto",
         Default is DictionaryCorpus class.  Specify alternatives using string key from dictionary.
     output_args: (dictionary) configuration to pass through to output
     synchronous_wait: (integer) number of seconds to wait for data to finish uploading to output (this happens
-        asynchronously.)  Only relevant for some output types ("elasticsearch", not "dictionary")
+        asynchronously.)  Only relevant for some output types ("elastic", not "dictionary")
     kwargs: any other arguments to pass to input parsers
 
     Returns
