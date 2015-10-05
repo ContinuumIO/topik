@@ -6,7 +6,6 @@ from nose.tools import assert_raises
 from topik.readers import read_input
 from topik.models import registered_models, load_model
 from topik.intermediaries.persistence import Persistor
-from topik.intermediaries.raw_data import output_formats
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)

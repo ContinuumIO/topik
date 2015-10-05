@@ -15,6 +15,15 @@ from topik.tokenizers import tokenizer_methods
 from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
 
 
+registered_outputs = {}
+
+def register_output(cls):
+    global registered_outputs
+    if cls.class_key() not in registered_outputs:
+        registered_outputs[cls.class_key()] = cls
+    return cls
+
+
 def _get_hash_identifier(input_data, id_field):
     return hash(input_data[id_field])
 
@@ -106,18 +115,13 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         return DigestedDocumentCollection(self.get_field(field=token_path))
 
 
+@register_output
 class ElasticSearchCorpus(CorpusInterface):
-    def __init__(self, host, index, content_field, port=9200, username=None,
-                 password=None, doc_type=None, query=None, iterable=None,
-                 filter_expression=""):
+    def __init__(self, source, index, content_field, doc_type=None, query=None, iterable=None,
+                 filter_expression="", **kwargs):
         super(ElasticSearchCorpus, self).__init__()
-        self.host = host
-        self.port = port
-        self.username = username
-        self.password = password
-        self.instance = Elasticsearch(hosts=[{"host": host, "port": port,
-                                              "http_auth": "{}:{}".format(username, password)}
-                                             ])
+        self.hosts = source
+        self.instance = Elasticsearch(hosts=source, **kwargs)
         self.index = index
         self.content_field = content_field
         self.doc_type = doc_type
@@ -160,9 +164,7 @@ class ElasticSearchCorpus(CorpusInterface):
            connection details."""
         if not field:
             field = self.content_field
-        return ElasticSearchCorpus(self.host, self.index, field, self.port,
-                                   self.username, self.password, self.doc_type,
-                                   self.query)
+        return ElasticSearchCorpus(self.hosts, self.index, field, self.doc_type, self.query)
 
     def import_from_iterable(self, iterable, id_field="text", batch_size=500):
         """Load data into Elasticsearch from iterable.
@@ -180,19 +182,27 @@ class ElasticSearchCorpus(CorpusInterface):
             if isinstance(item, basestring):
                 item = {id_field: item}
             id = _get_hash_identifier(item, id_field)
-            batch.append({"_id": id, "_source": item, "_type": "continuum"})
+            action = {'_op_type': 'update',
+                      '_index': self.index,
+                      '_type': 'continuum',
+                      '_id': id,
+                      'doc': item,
+                      'doc_as_upsert': "true",
+                      }
+            batch.append(action)
             if len(batch) >= batch_size:
                 helpers.bulk(client=self.instance, actions=batch, index=self.index)
                 batch = []
         if batch:
             helpers.bulk(client=self.instance, actions=batch, index=self.index)
+        self.instance.indices.refresh(self.index)
 
     def convert_date_field_and_reindex(self, field):
         index = self.index
         if self.instance.indices.get_field_mapping(field=field,
                                            index=index,
                                            doc_type="continuum") != 'date':
-            index = self.index+"_{}_date".format(field)
+            index = self.index+"_{}_alias_date".format(field)
             if not self.instance.indices.exists(index) or self.instance.indices.get_field_mapping(field=field,
                                            index=index,
                                            doc_type="continuum") != 'date':
@@ -202,6 +212,7 @@ class ElasticSearchCorpus(CorpusInterface):
                 self.instance.indices.put_alias(index=self.index,
                                                 name=index,
                                                 body=mapping)
+                self.instance.indices.refresh(index)
                 while self.instance.count(index=self.index) != self.instance.count(index=index):
                     logging.info("Waiting for date indexed data to be indexed...")
                     time.sleep(1)
@@ -210,20 +221,15 @@ class ElasticSearchCorpus(CorpusInterface):
     # TODO: validate input data to ensure that it has valid year data
     def get_date_filtered_data(self, start, end, field="date"):
         converted_index = self.convert_date_field_and_reindex(field=field)
-        return ElasticSearchCorpus(self.host, converted_index, self.content_field, self.port,
-                                   self.username, self.password, self.doc_type,
-                                   query={"query":
-                                          {"range":
-                                           {field:
-                                            {"gte": start,
-                                             "lte": end}}}},
+        return ElasticSearchCorpus(self.hosts, converted_index, self.content_field, self.doc_type,
+                                   query={"query": {"filtered": {"filter": {"range": {field: {"gte": start,
+                                                                                              "lte": end}}}}}},
                                    filter_expression=self.filter_expression + "_date_{}_{}".format(start, end))
 
     def save(self, filename, saved_data=None):
         if saved_data is None:
-            saved_data = {"host": self.host, "port": self.port, "index": self.index,
-                          "content_field": self.content_field, "username": self.username,
-                          "password": self.password, "doc_type": self.doc_type, "query": self.query}
+            saved_data = {"source": self.hosts, "index": self.index, "content_field": self.content_field,
+                          "doc_type": self.doc_type, "query": self.query}
         return super(ElasticSearchCorpus, self).save(filename, saved_data)
 
     def synchronize(self, max_wait, field):
@@ -242,6 +248,7 @@ class ElasticSearchCorpus(CorpusInterface):
             time.sleep(0.01)
         pass
 
+@register_output
 class DictionaryCorpus(CorpusInterface):
     def __init__(self, content_field, iterable=None, generate_id=True, reference_field=None, content_filter=None):
         super(DictionaryCorpus, self).__init__()
@@ -326,10 +333,6 @@ class DictionaryCorpus(CorpusInterface):
                           "iterable": [doc["_source"] for doc in self._documents]}
         return super(DictionaryCorpus, self).save(filename, saved_data)
 
-# Collection of output formats: people put files, folders, etc in, and they can choose from these to be the output
-# These consume the iterable collection of dictionaries produced by the various iter_ functions.
-output_formats = {cls.class_key(): cls for cls in CorpusInterface.__subclasses__()}
-
 def load_persisted_corpus(filename):
     corpus_dict = Persistor(filename).get_corpus_dict()
-    return output_formats[corpus_dict['class']](**corpus_dict["saved_data"])
+    return registered_outputs[corpus_dict['class']](**corpus_dict["saved_data"])
