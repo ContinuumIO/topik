@@ -4,9 +4,9 @@ import unittest
 from nose.tools import assert_raises
 
 from topik.readers import read_input
-from topik.preprocessing import preprocess
 from topik.models import registered_models, load_model
 from topik.intermediaries.persistence import Persistor
+from topik.intermediaries.raw_data import output_formats
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
@@ -20,7 +20,7 @@ class _ModelBase(object):
         raw_data = read_input(
                 source=os.path.join(module_path, 'data/test_data_json_stream.json'),
                 content_field="abstract")
-        self.digested_data = preprocess(raw_data)
+        self.digested_data = raw_data.tokenize()
         self.model = registered_models[self.model_name](self.digested_data, ntopics=NTOPICS)
 
     def tearDown(self):

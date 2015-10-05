@@ -11,10 +11,18 @@ from elasticsearch import Elasticsearch, helpers
 from six import with_metaclass
 
 from topik.intermediaries.persistence import Persistor
+from topik.tokenizers import tokenizer_methods
+from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
 
 
 def _get_hash_identifier(input_data, id_field):
     return hash(input_data[id_field])
+
+
+def _get_tokenizer_string(**kwargs):
+    """Used to create identifiers for output"""
+    id = ''.join('{}={}_'.format(key, val) for key, val in sorted(kwargs.items()))
+    return id[:-1]
 
 
 class CorpusInterface(with_metaclass(ABCMeta)):
@@ -68,6 +76,34 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         """
         self.persistor.store_corpus({"class": self.__class__.class_key(), "saved_data": saved_data})
         self.persistor.persist_data(filename)
+
+    def synchronize(self, max_wait, field):
+        """By default, operations are synchronous and no additional wait is
+        necessary.  Data sources that are asynchronous (ElasticSearch) may
+        use this function to wait for "eventual consistency" """
+        pass
+
+    def tokenize(self, method="simple", synchronous_wait=30, **kwargs):
+        """Convert data to lowercase; tokenize; create bag of words collection.
+
+        Output from this function is used as input to modeling steps.
+
+        raw_data: iterable corpus object containing the text to be processed.
+            Each iteration call should return a new document's content.
+        tokenizer_method: string id of tokenizer to use.  For keys, see
+            topik.tokenizers.tokenizer_methods (which is a dictionary of classes)
+        kwargs: arbitrary dicionary of extra parameters.  These are passed both
+            to the tokenizer and to the vectorizer steps.
+        """
+        parameters_string = _get_tokenizer_string(method=method, **kwargs)
+        token_path = "tokens_"+parameters_string
+        for record_id, raw_record in self:
+            tokenized_record = tokenizer_methods[method](raw_record,
+                                         **kwargs)
+            # TODO: would be nice to aggregate batches and append in bulk
+            self.append_to_record(record_id, token_path, tokenized_record)
+        self.synchronize(max_wait=synchronous_wait, field=token_path)
+        return DigestedDocumentCollection(self.get_field(field=token_path))
 
 
 class ElasticSearchCorpus(CorpusInterface):
@@ -190,6 +226,21 @@ class ElasticSearchCorpus(CorpusInterface):
                           "password": self.password, "doc_type": self.doc_type, "query": self.query}
         return super(ElasticSearchCorpus, self).save(filename, saved_data)
 
+    def synchronize(self, max_wait, field):
+        # TODO: change this to a more general condition for wider use, including read_input
+        # could just pass in a string condition and then 'while not eval(condition)'
+        count_not_yet_updated = -1
+        while count_not_yet_updated != 0:
+            count_not_yet_updated = self.instance.count(index=self.index,
+                                             doc_type=self.doc_type,
+                                             body={"query": {
+                                                        "constant_score" : {
+                                                            "filter" : {
+                                                                "missing" : {
+                                                                    "field" : field}}}}})['count']
+            logging.debug("Count not yet updated: {}".format(count_not_yet_updated))
+            time.sleep(0.01)
+        pass
 
 class DictionaryCorpus(CorpusInterface):
     def __init__(self, content_field, iterable=None, generate_id=True, reference_field=None, content_filter=None):
@@ -278,7 +329,6 @@ class DictionaryCorpus(CorpusInterface):
 # Collection of output formats: people put files, folders, etc in, and they can choose from these to be the output
 # These consume the iterable collection of dictionaries produced by the various iter_ functions.
 output_formats = {cls.class_key(): cls for cls in CorpusInterface.__subclasses__()}
-
 
 def load_persisted_corpus(filename):
     corpus_dict = Persistor(filename).get_corpus_dict()

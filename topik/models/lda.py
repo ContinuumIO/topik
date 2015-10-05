@@ -3,10 +3,10 @@ from __future__ import absolute_import
 import gensim
 
 from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
+from topik.intermediaries.raw_data import load_persisted_corpus
 from .model_base import TopicModelBase, register_model
 
 # Doctest imports
-from topik.preprocessing import preprocess
 from topik.readers import read_input
 from topik.tests import test_data_path
 
@@ -22,7 +22,7 @@ class LDA(TopicModelBase):
         see topik.intermediaries.tokenized_corpus for more info.
 
     >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-    >>> processed_data = preprocess(raw_data)  # preprocess returns a DigestedDocumentCollection
+    >>> processed_data = raw_data.tokenize()  # preprocess returns a DigestedDocumentCollection
     >>> model = LDA(processed_data, ntopics=3)
  
     """
@@ -33,7 +33,7 @@ class LDA(TopicModelBase):
             self.corpus = corpus_input
         elif load_filename is not None and binary_filename is not None:
             self.model = gensim.models.LdaModel.load(binary_filename)
-            self.corpus = DigestedDocumentCollection.load(load_filename)
+            self.corpus = DigestedDocumentCollection(load_persisted_corpus(load_filename))
 
     def save(self, filename):
         self.model.save(self.get_model_name_with_parameters())
