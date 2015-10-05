@@ -42,4 +42,3 @@ class DigestedDocumentCollection(CorpusABC):
     @property
     def filter_string(self):
         return self.corpus.filter_string
-

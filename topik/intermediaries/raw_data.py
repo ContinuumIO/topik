@@ -227,7 +227,7 @@ class ElasticSearchCorpus(CorpusInterface):
         return super(ElasticSearchCorpus, self).save(filename, saved_data)
 
     def synchronize(self, max_wait, field):
-        # TODO: change this to a more general condition for wider use?
+        # TODO: change this to a more general condition for wider use, including read_input
         # could just pass in a string condition and then 'while not eval(condition)'
         count_not_yet_updated = -1
         while count_not_yet_updated != 0:
