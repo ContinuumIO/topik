@@ -51,7 +51,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
             Desired name for the generated csv file
 
         >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-        >>> processed_data = preprocess(raw_data)  # preprocess returns a DigestedDocumentCollection
+        >>> processed_data = raw_data.tokenize()  # tokenize returns a DigestedDocumentCollection
         >>> model = registered_models["LDA"](processed_data, ntopics=3)
         >>> model.termite_data('termite.csv', 15)
         

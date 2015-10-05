@@ -13,8 +13,6 @@ from textblob import TextBlob
 # imports used only for doctests
 from topik.tests import test_data_path
 
-
-
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', 
                     level=logging.INFO)
 
@@ -105,6 +103,7 @@ def collect_bigrams_and_trigrams(collection, top_n = 10000, min_bigram_freq=50,
     min_trigram_freq: (integer) threshold of when to consider a triplet of words as a recognized trigram
     stopwords: (iterable) collection of words to ignore in the corpus
 
+    >>> from topik.readers import read_input
     >>> raw_data = read_input(
     ...                 '{}/test_data_json_stream.json'.format(test_data_path),
     ...                 content_field="abstract")
@@ -170,6 +169,7 @@ def tokenize_collocation(text, bigrams, trigrams, stopwords=STOPWORDS):
         Minimum frequency of a trigram in order to retrieve it. Default is 20.
 
 
+    >>> from topik.readers import read_input
     >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
     >>> bigrams, trigrams = collect_bigrams_and_trigrams(id_documents, min_bigram_freq=2, min_trigram_freq=2)
     >>> id, doc_text = next(iter(id_documents))
@@ -295,6 +295,7 @@ def tokenize_mixed(text, entities, stopwords=STOPWORDS):
     reader: generator
         A generator that yields each of the documents to tokenize. (e.g. topik.readers.iter_document_json_stream)
 
+    >>> from topik.readers import read_input
     >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
     >>> entities = find_entities(raw_data)
     >>> id, text = next(iter(raw_data))

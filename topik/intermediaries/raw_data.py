@@ -77,7 +77,7 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         self.persistor.store_corpus({"class": self.__class__.class_key(), "saved_data": saved_data})
         self.persistor.persist_data(filename)
 
-    def synchronize(self, max_wait, field, expected_count):
+    def synchronize(self, max_wait, field):
         """By default, operations are synchronous and no additional wait is
         necessary.  Data sources that are asynchronous (ElasticSearch) may
         use this function to wait for "eventual consistency" """
