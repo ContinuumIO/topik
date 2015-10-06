@@ -119,7 +119,7 @@ electron microscopy|building high field|silicon oxide nanowires|particle size nm
     return bigrams_patterns, trigrams_patterns
 
 
-def tokenize_collocation(text, bigrams_patterns, trigrams_patterns, stopwords=STOPWORDS):
+def tokenize_collocation(text, patterns, stopwords=STOPWORDS):
     """A text tokenizer that includes collocations(bigrams and trigrams).
 
     A collocation is sequence of words or terms that co-occur more often
@@ -140,18 +140,15 @@ def tokenize_collocation(text, bigrams_patterns, trigrams_patterns, stopwords=ST
     top_n: int
         Number of collocations to retrieve from the stream of words (order by decreasing frequency). Default is 10000
 
-    bigrams_patterns: compiled regex object to find bigrams
-        Obtained from collect_bigrams_and_trigrams function
-
-    trigrams_patterns: compiled regex object to find trigrams
+    patterns: tuple of compiled regex object to find n-grams
         Obtained from collect_bigrams_and_trigrams function
 
 
     >>> from topik.readers import read_input
     >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
-    >>> bigrams, trigrams = collect_bigrams_and_trigrams(id_documents, min_bigram_freq=2, min_trigram_freq=2)
+    >>> patterns = collect_bigrams_and_trigrams(id_documents, min_bigram_freq=2, min_trigram_freq=2)
     >>> id, doc_text = next(iter(id_documents))
-    >>> tokenized_text = tokenize_collocation(doc_text, bigrams, trigrams)
+    >>> tokenized_text = tokenize_collocation(doc_text, patterns)
     >>> tokenized_text
     [u'transition_metal', u'oxides', u'considered', u'generation', \
 u'materials', u'field', u'electronics', u'advanced', u'catalysts', \
@@ -164,8 +161,8 @@ u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical', \
 u'applications', u'catalysts']
     """
     text = ' '.join(tokenize_simple(text, stopwords=stopwords))
-    text = re.sub(trigrams_patterns, lambda match: match.group(0).replace(' ', '_'), text)
-    text = re.sub(bigrams_patterns, lambda match: match.group(0).replace(' ', '_'), text)
+    for pattern in patterns:
+        text = re.sub(pattern, lambda match: match.group(0).replace(' ', '_'), text)
     return text.split()
 
 
