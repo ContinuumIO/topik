@@ -9,7 +9,6 @@ import webbrowser
 import numpy as np
 
 from topik.readers import read_input
-from topik.preprocessing import preprocess
 from topik.models import LDA
 from topik.viz import Termite
 from topik.utils import to_r_ldavis, generate_csv_output_file

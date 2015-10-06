@@ -1,5 +1,6 @@
 import unittest
 import os
+import time
 
 import elasticsearch
 
@@ -53,12 +54,13 @@ class TestElasticSearchCorpus(unittest.TestCase, BaseCorpus):
         self.test_raw_data = read_input('{}/test_data_json_stream.json'.format(
             test_data_path), content_field="abstract",
             output_type=ElasticSearchCorpus.class_key(),
-            output_args= {'host': 'localhost',
-                          'index': INDEX},
+            output_args={'source': 'localhost',
+                         'index': INDEX},
             synchronous_wait=30)
 
     def tearDown(self):
         instance = elasticsearch.Elasticsearch("localhost")
         instance.indices.delete(INDEX)
-        if instance.indices.exists("{}_year_date".format(INDEX)):
-            instance.indices.delete("{}_year_date".format(INDEX))
+        if instance.indices.exists("{}_year_alias_date".format(INDEX)):
+            instance.indices.delete("{}_year_alias_date".format(INDEX))
+        time.sleep(1)

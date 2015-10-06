@@ -1,12 +1,6 @@
 from gensim.corpora.dictionary import Dictionary
 from gensim.interfaces import CorpusABC
 
-from .raw_data import load_persisted_corpus
-
-
-# Doctest-only imports
-
-
 class DigestedDocumentCollection(CorpusABC):
     """A bag-of-words representation of a corpus (collection of documents).
 
@@ -40,10 +34,6 @@ class DigestedDocumentCollection(CorpusABC):
 
     def save(self, filename):
         self.corpus.save(filename)
-
-    @classmethod
-    def load(cls, filename):
-        return cls(load_persisted_corpus(filename))
 
     @property
     def persistor(self):

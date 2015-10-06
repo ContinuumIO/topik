@@ -1,12 +1,10 @@
 from abc import ABCMeta, abstractmethod
 import logging
 
-import json
 import pandas as pd
 from six import with_metaclass
 
 # doctest-only imports
-from topik.preprocessing import preprocess
 from topik.readers import read_input
 from topik.tests import test_data_path
 from topik.intermediaries.persistence import Persistor
@@ -53,7 +51,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
             Desired name for the generated csv file
 
         >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-        >>> processed_data = preprocess(raw_data)  # preprocess returns a DigestedDocumentCollection
+        >>> processed_data = raw_data.tokenize()  # tokenize returns a DigestedDocumentCollection
         >>> model = registered_models["LDA"](processed_data, ntopics=3)
         >>> model.termite_data('termite.csv', 15)
         
