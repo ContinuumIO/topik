@@ -2,7 +2,7 @@ import os
 import unittest
 
 from topik.readers import read_input
-from topik.tokenizers import tokenizer_methods, find_entities, collect_bigrams_and_trigrams
+from topik.tokenizers import tokenizer_methods, collect_entities, collect_bigrams_and_trigrams
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)
@@ -15,15 +15,16 @@ class TestTokenizers(unittest.TestCase):
             'amazing', 'plot', 'definitely', 'original', 've', 'seen']
 
         self.solution_simple_tokenizer_test_data_json_stream = [
-            u'transition', u'metal', u'oxides', u'considered', u'generation',
-            u'materials', u'field', u'electronics', u'advanced', u'catalysts',
-            u'tantalum', u'v', u'oxide', u'reports', u'synthesis', u'material',
-            u'nanometer', u'size', u'unusual', u'properties', u'work',
-            u'present', u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel',
-            u'method', u'dna', u'structure', u'directing', u'agent', u'size',
-            u'nanorods', u'order', u'nm', u'diameter', u'microns', u'length',
-            u'easy', u'method', u'useful', u'preparation', u'nanomaterials',
-            u'electronics', u'biomedical', u'applications', u'catalysts']
+            u'transition', u'metal', u'oxides', u'considered',
+            u'generation', u'materials', u'field', u'electronics',
+            u'advanced', u'catalysts', u'tantalum', u'v', u'oxide',
+            u'reports', u'synthesis', u'material', u'nanometer', u'size',
+            u'unusual', u'properties', u'work', u'present', u'synthesis',
+            u'ta', u'o', u'nanorods', u'sol', u'gel', u'method', u'dna',
+            u'structure', u'directing', u'agent', u'size', u'nanorods',
+            u'order', u'nm', u'diameter', u'microns', u'length', u'easy',
+            u'method', u'useful', u'preparation', u'nanomaterials', u'electronics',
+            u'biomedical', u'applications', u'catalysts']
 
         self.solution_collocations_tokenizer_test_data_2 = [
             'paper', 'simple', 'rapid', 'solution', 'phase', 'chemical',
@@ -41,13 +42,13 @@ class TestTokenizers(unittest.TestCase):
         self.solution_collocations_tokenizer_test_data_json_stream = [
             u'transition_metal', u'oxides', u'considered', u'generation',
             u'materials', u'field', u'electronics', u'advanced', u'catalysts',
-            u'tantalum', u'oxide', u'reports', u'synthesis', u'material',
+            u'tantalum', u'v_oxide', u'reports', u'synthesis_material',
             u'nanometer_size', u'unusual', u'properties', u'work_present',
-            u'synthesis', u'nanorods', u'sol', u'gel', u'method', u'dna',
-            u'structure', u'directing', u'agent', u'size', u'nanorods',
-            u'order', u'diameter', u'microns', u'length', u'easy', u'method',
-            u'useful', u'preparation', u'nanomaterials', u'electronics',
-            u'biomedical', u'applications', u'catalysts']
+            u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel', u'method',
+            u'dna', u'structure', u'directing', u'agent', u'size', u'nanorods',
+            u'order', u'nm_diameter', u'microns', u'length', u'easy', u'method',
+            u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical',
+            u'applications', u'catalysts']
 
         self.solution_entities_tokenizer_test_data_2 = [
             'rapid_solution_phase_chemical_reduction_method',
@@ -92,7 +93,7 @@ class TestTokenizers(unittest.TestCase):
                 content_field="abstract",
                 output_type="dictionary")
         _, text = next(iter(raw_data))
-        doc_tokens = tokenizer_methods["simple"](text)
+        doc_tokens = tokenizer_methods["simple"](text, min_length=1)
         self.assertEqual(doc_tokens, self.solution_simple_tokenizer_test_data_json_stream)
 
     def test_collocations_tokenizer(self):
@@ -104,7 +105,8 @@ class TestTokenizers(unittest.TestCase):
                                                          min_bigram_freq=2,
                                                          min_trigram_freq=2)
         _, text = next(iter(raw_data))
-        doc_tokens = tokenizer_methods["collocation"](text, bigrams, trigrams)
+        doc_tokens = tokenizer_methods["collocation"](text, bigrams_patterns=bigrams, trigrams_patterns=trigrams)
+        print(doc_tokens)
         self.assertEqual(doc_tokens, self.solution_collocations_tokenizer_test_data_json_stream)
 
     def test_entities_tokenizer_json_stream(self):
@@ -112,7 +114,7 @@ class TestTokenizers(unittest.TestCase):
                 source=self.data_json_stream_path,
                 content_field="abstract",
                 output_type="dictionary")
-        entities = find_entities(raw_data, freq_min=1)
+        entities = collect_entities(raw_data, freq_min=1)
         _, text = next(iter(raw_data))
         doc_tokens = tokenizer_methods["entities"](text, entities)
         self.assertEqual(doc_tokens, self.solution_entities_tokenizer_test_data_json_stream)
@@ -122,7 +124,7 @@ class TestTokenizers(unittest.TestCase):
                 source=self.data_json_stream_path,
                 content_field="abstract",
                 output_type="dictionary")
-        entities = find_entities(raw_data)
+        entities = collect_entities(raw_data)
         id, text = next(iter(raw_data))
         doc_tokens = tokenizer_methods["mixed"](text, entities)
         self.assertEqual(doc_tokens, self.solution_mixed_tokenizer_test_data_json_stream)
