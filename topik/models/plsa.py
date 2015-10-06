@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import gzip
 import logging
-import marshal
 import math
 import operator
 import random
-import sys
 
 import numpy as np
 
 from .model_base import TopicModelBase, register_model
+from topik.intermediaries.raw_data import load_persisted_corpus
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
@@ -60,7 +58,7 @@ class PLSA(TopicModelBase):
             self.beta = 0.8
         elif load_filename and binary_filename:
             from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
-            self.corpus = DigestedDocumentCollection.load(load_filename)
+            self.corpus = DigestedDocumentCollection(load_persisted_corpus(load_filename))
             # total number of identified words for each given document (document length normalization factor?)
             self.each = map(sum, map(lambda x: x[1], self.corpus))
             # Maximum identified word (number of identified words in corpus)
