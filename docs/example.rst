@@ -211,5 +211,20 @@ necessarily immediately after the read_input function returns. This lag time is
 due to Elasticsearch indexing the data on the server side.
 
 
-Analyzing the results
----------------------
+Tokenizing raw input
+--------------------
+
+The next step in topic modeling is to break your documents up into individual terms.  This is called tokenization.  Tokenization is done using the ``tokenize`` method on a Corpus object (returned from ``read_input``):
+
+.. code-block:: python
+
+   >>> raw_data.tokenize()
+
+The tokenize method accepts a few arguments to specify a tokenization method and control behavior therein.  The available tokenization methods are available in the ``topik.tokenizers.tokenizer_methods`` dictionary.  The presently available methods are:
+
+  * "simple": lowercases input text and extracts single words.  Uses Gensim.
+  * "collocation": Collects bigrams and trigrams in addition to single words.  Uses NLTK.
+  * "entities": Extracts noun phrases as entities.  Uses NLTK.
+  * "mixed": first extracts noun phrases as entities, then follows up with simple tokenization for single words. Uses NLTK.
+
+All methods accept a keyword argument ``stopwords``, which are words that will be ignored in tokenization.  These are words that add little content value, such as prepositions.  The default, STOPWORDS, uses gensim's STOPWORDS collection.
