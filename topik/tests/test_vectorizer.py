@@ -32,7 +32,7 @@ class TestCorpusBOW(unittest.TestCase):
                                            'test_data_json_stream.json'),
                                    content_field="abstract",
                                    output_type="dictionary")
-        self.processed_data = raw_data.tokenize()
+        self.processed_data = raw_data.tokenize(min_length=1)
 
     def test_corpus_bow_content(self):
         self.assertEqual(self.processed_data.dict.values()[:10],
