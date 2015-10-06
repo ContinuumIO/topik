@@ -195,6 +195,7 @@ class PLSA(TopicModelBase):
         # each "topic" is a row of the dz matrix
         for topic in self.dz.T:
             word_ids = np.argpartition(topic, -topn)[-topn:]
+            word_ids = reversed(word_ids[np.argsort(topic[word_ids])])
             top_words.append([(topic[word_id], self.corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
         return top_words
 
