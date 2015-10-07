@@ -15,18 +15,34 @@ from topik.tests import test_data_path
 
 @register_model
 class LDA(TopicModelBase):
-    """A high interface for an LDA (Latent Dirichlet Allocation) model.
+    """A high-level interface for an LDA (Latent Dirichlet Allocation) model.
+
 
     Parameters
     ----------
-    corpus_input: CorpusBase-derived object
+    corpus_input : CorpusBase-derived object
         object fulfilling basic Corpus interface (preprocessed, tokenized text).
         see topik.intermediaries.tokenized_corpus for more info.
+    ntopics : int
+        Number of topics to model
+    load_filename : None or str
+        If not None, this (JSON) file is read to determine parameters of the model persisted to disk.
+    binary_filename : None or str
+        If not None, this file is loaded by Gensim to bring a disk-persisted model back into memory.
 
+
+    Attributes
+    ----------
+    corpus : CorpusBase-derived object, tokenized
+    model : Gensim LdaModel instance
+
+
+    Examples
+    --------
     >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
     >>> processed_data = raw_data.tokenize()  # preprocess returns a DigestedDocumentCollection
     >>> model = LDA(processed_data, ntopics=3)
- 
+
     """
     def __init__(self, corpus_input=None, ntopics=10, load_filename=None, binary_filename=None, **kwargs):
         if corpus_input is not None:
