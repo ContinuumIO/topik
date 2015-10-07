@@ -1,5 +1,5 @@
 Tokenizing and Vectorizing
-====================
+##########################
 
 The next step in topic modeling is to break your documents up into individual
 terms. This is called tokenization. Tokenization is done using the ``tokenize``
@@ -28,7 +28,7 @@ as prepositions. The default, STOPWORDS, uses gensim's STOPWORDS collection.
 
 
 Collocation tokenization
-------------------------
+========================
 
 Collocation tokenization collects phrases of words (pairs and triplets, bigrams
 and trigrams) that occur together often throughout your collection of documents.
@@ -70,7 +70,7 @@ Next, feed the patterns into the ``tokenize`` method of your corpus object:
 
 
 Entities tokenization
----------------------
+=====================
 
 We refer to entities as noun phrases, as extracted by `the TextBlob library
 <https://textblob.readthedocs.org/en/dev/>`_. Like collocation tokenization,
@@ -100,7 +100,7 @@ Next, tokenize the document collection:
 
 
 Mixed tokenization
-------------------
+==================
 
 Mixed tokenization employs both the entities tokenizer and the simple tokenizer,
 for when the entities tokenizer is overly restrictive, or for when words are

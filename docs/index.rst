@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to Topik's documentation!
-=================================
+#################################
 
 `Topik` is a Topic Modeling toolkit.
 
@@ -51,7 +51,7 @@ features into an easy callable function and a command line interface.
 
 
 Getting Started
----------------
+===============
 
 To demonstrate the ease of a typical `topik` workflow, we'll provide two examples: using the command line
 interface and using the method :func:`topik.run.run_model`.
@@ -105,19 +105,15 @@ The same previous example using :func:`run_model` would be:
 
 
 Contents
---------
+========
 
 User Guide
 ``````````
 .. toctree::
-   :maxdepth: 2
 
    installation
    example
-   read_input
-   tokenization
-   topic_modeling
-   visualization
+   usage_python
    intro-dev
 
 
@@ -125,13 +121,12 @@ Reference Guide
 ```````````````
 
 .. toctree::
-   :maxdepth: 2
 
    api
 
 
 Useful Topic Modeling Resources
--------------------------------
+===============================
 
 - `Topic modeling, David M. Blei <http://www.cs.princeton.edu/~blei/topicmodeling.html>`_
 

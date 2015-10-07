@@ -1,5 +1,5 @@
 Topic modeling
-==============
+##############
 
 Topic modeling performs some mathematical modeling of your input data as a
 (sparse) matrix of which documents contain which words, attempting to identify
@@ -42,7 +42,7 @@ road map, but for now, please be patient and wait for your results.
 
 
 Saving and loading results
---------------------------
+==========================
 
 The model object has a ``save`` method. This method saves a JSON file that
 describes how to load the rest of the data for your model and for your corpus.

@@ -1,5 +1,5 @@
 Introduction Tutorial
-=====================
+#####################
 
 In this tutorial we will examine `topik` with a practical example: Topic
 Modeling for Movie Reviews.
@@ -11,7 +11,7 @@ Modeling for Movie Reviews.
 
 
 The Movie Review Dataset
-------------------------
+========================
 
 In this tutorial we are going to use the `Sentiment Polarity Dataset Version 2.0
 <http://www.cs.cornell.edu/people/pabo/movie-review-data/>`_ from Bo Pang and
@@ -41,15 +41,14 @@ merge both folders `pos` and `neg`, to one named `reviews`:
 
 
 High-level interfaces
----------------------
-
+=====================
 
 For quick, one-off studies, the command line interface allows you to specify
 minimal information and obtain topic model plot output.
 
 
 Custom topic modeling flow
---------------------------
+==========================
 
 
 For interactive exploration and more efficient, involved workflows, there also
@@ -57,5 +56,3 @@ exists a Python API for using each part of the topic modeling workflow. There
 are three phases to topic modeling with topik: data import,
 tokenization/vectorization, and modeling. Each phase is modular, with several
 options available to you for each step.
-
-

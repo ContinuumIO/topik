@@ -1,11 +1,11 @@
 Development Guide
-=================
+#################
 
 
 Topik has been designed to be extensible at each of the four steps of topic modeling:
 
   * data import
-  * tokenization
+  * tokenization / vectorization
   * topic modeling
   * visualization
 
@@ -17,7 +17,7 @@ general layout of topik is the following:
 
   * __init__.py imports registered class dictionaries and functions from each
     folder
-  * a folder (python package) for a given step
+  * a folder (python package) for each step
 
     * base???.py
 

@@ -1,5 +1,5 @@
 Installation
-============
+############
 
 
 Topik is meant to be a high-level interface for many topic modeling utilities (tokenizers, algorithms,
@@ -28,7 +28,8 @@ There is also the option of just installing the Python features with pip.
 
 
 Requirements
-------------
+============
+
 `Topik`'s requirements are:
 
 * gensim

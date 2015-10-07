@@ -1,5 +1,5 @@
 Data Import
-===========
+###########
 
 Data import loads your data from some external representation into an iterable,
 internal representation for Topik. The main front end for importing data is the
@@ -42,7 +42,7 @@ feed in.
 
 
 JSON additional options
------------------------
+=======================
 
 For JSON stream and "large JSON" inputs, an additional keyword argument may be
 passed, ``json_prefix``, which is the period-separated path leading to the single
@@ -64,7 +64,7 @@ You would read using the following ``json_prefix`` argument:
 
 
 Elasticsearch additional options and notes
-------------------------------------------
+==========================================
 
 The Elasticsearch importer expects a full string specifying the Elasticsearch
 server. This string at a minimum must contain both the server address and the
@@ -113,7 +113,7 @@ docs <https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.
 
 
 Output formats
---------------
+==============
 
 Output formats are how your data are represented to further processing and
 modeling. To ensure a uniform interface, output formats implement the interface
