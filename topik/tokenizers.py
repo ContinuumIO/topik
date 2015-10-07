@@ -268,6 +268,7 @@ u'size', u'unusual', u'properties', u'sol', u'gel', u'method', u'dna', u'easy', 
 u'applications']
 
     """
+    from textblob import TextBlob
     result = []
     for np in TextBlob(text).noun_phrases:
         if ' ' in np and np not in entities:
