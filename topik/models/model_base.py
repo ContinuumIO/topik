@@ -81,36 +81,24 @@ class TopicModelBase(with_metaclass(ABCMeta)):
                                 'doc_lengths': doc_data_df['doc_length']}
         return model_lda_vis_data
 
-    def termite_data(self, filename=None, topn_words=15):
-        """Generate the csv file input for the termite plot.
+    def termite_data(self, topn_words=15):
+        """Generate the pandas dataframe input for the termite plot.
 
         Parameters
         ----------
-        filename: string
-            Desired name for the generated csv file
+        topn_words: int
+            number of words to include from each topic
 
         >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
         >>> processed_data = raw_data.tokenize()  # tokenize returns a DigestedDocumentCollection
         >>> model = registered_models["LDA"](processed_data, ntopics=3)
-        >>> model.termite_data('termite.csv', 15)
+        >>> model.termite_data(15)
         
         """
-        count = 1
-        for topic in self.get_top_words(topn_words):
-            if count == 1:
-                df_temp = pd.DataFrame(topic, columns=['weight', 'word'])
-                df_temp['topic'] = pd.Series(count, index=df_temp.index)
-                df = df_temp
-            else:
-                df_temp = pd.DataFrame(topic, columns=['weight', 'word'])
-                df_temp['topic'] = pd.Series(count, index=df_temp.index)
-                df = df.append(df_temp, ignore_index=True)
-            count += 1
-        if filename:
-            logging.info("saving termite plot input csv file to %s " % filename)
-            df.to_csv(filename, index=False, encoding='utf-8')
-            return
-        return df
+        from itertools import chain
+        return pd.DataFrame(list(chain.from_iterable([{"topic": topic_id, "weight": weight, "word": word}
+                                                      for (weight, word) in topic]
+                                                     for topic_id, topic in enumerate(self.get_top_words(topn_words)))))
 
     @property
     def persistor(self):

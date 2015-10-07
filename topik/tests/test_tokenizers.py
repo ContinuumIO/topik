@@ -101,11 +101,9 @@ class TestTokenizers(unittest.TestCase):
                 source=self.data_json_stream_path,
                 content_field="abstract",
                 output_type="dictionary")
-        bigrams, trigrams = collect_bigrams_and_trigrams(raw_data,
-                                                         min_bigram_freq=2,
-                                                         min_trigram_freq=2)
+        patterns = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=2, min_trigram_freq=2)
         _, text = next(iter(raw_data))
-        doc_tokens = tokenizer_methods["collocation"](text, bigrams_patterns=bigrams, trigrams_patterns=trigrams)
+        doc_tokens = tokenizer_methods["collocation"](text, patterns=patterns)
         self.assertEqual(doc_tokens, self.solution_collocations_tokenizer_test_data_json_stream)
 
     def test_entities_tokenizer_json_stream(self):

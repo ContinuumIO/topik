@@ -19,11 +19,10 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
+
 def run_model(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
-                content_field=None, clear_es_index=False,
-                tokenizer='simple', n_topics=10, dir_path='./topic_model', model='lda_batch', 
-                termite_plot=True, output_file=False, r_ldavis=False, json_prefix=None,  
-                seed=42, **kwargs):
+              content_field=None, tokenizer='simple', n_topics=10, dir_path='./topic_model', model='lda_batch',
+              termite_plot=True, output_file=False, r_ldavis=False, seed=42, **kwargs):
 
     """Run your data through all topik functionality and save all results to a specified directory.
 
@@ -82,10 +81,9 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
 
     np.random.seed(seed)
 
-
     raw_data = read_input(data_source, content_field=content_field,
                           source_type=source_type, **kwargs)
-    processed_data = preprocess(raw_data, tokenizer_method=tokenizer, **kwargs)
+    processed_data = raw_data.tokenize(method=tokenizer, **kwargs)
 
     # Serialize and store the corpus
     # Create LDA model from corpus and dictionary
@@ -102,16 +100,12 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         lda = LDA(processed_data, n_topics, update_every=0, passes=20)
     # Get termite plot for this model
     if termite_plot:
-        # Generate the input for the termite plot
-        csv_path = os.path.join(dir_path, 'termite.csv')
-        lda.termite_data(csv_path)
-        termite = Termite(csv_path, "Termite Plot")
+        termite = Termite(lda.termite_data(n_topics), "Termite Plot")
         termite.plot(os.path.join(dir_path, 'termite.html'))
 
     if output_file:
         filtered_documents = raw_data.get_data_by_year(start_year, stop_year, year_field)
-        df_results = generate_csv_output_file(filtered_documents, raw_data,
-                                              processed_data, lda.model)
+        generate_csv_output_file(filtered_documents, raw_data, processed_data, lda.model)
 
     if r_ldavis:
         to_r_ldavis(processed_data, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
