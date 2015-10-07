@@ -91,9 +91,30 @@ class TopicModelBase(with_metaclass(ABCMeta)):
 
         >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
         >>> processed_data = raw_data.tokenize()  # tokenize returns a DigestedDocumentCollection
+        >>> # must set seed so that we get same topics each run
+        >>> import random
+        >>> import numpy
+        >>> random.seed(42)
+        >>> numpy.random.seed(42)
         >>> model = registered_models["LDA"](processed_data, ntopics=3)
-        >>> model.termite_data(15)
-        
+        >>> model.termite_data(5)
+            topic    weight         word
+        0       0  0.005337           nm
+        1       0  0.005193         high
+        2       0  0.004622        films
+        3       0  0.004457       matrix
+        4       0  0.004194     electron
+        5       1  0.005109   properties
+        6       1  0.004654         size
+        7       1  0.004539  temperature
+        8       1  0.004499           nm
+        9       1  0.004248   mechanical
+        10      2  0.007994         high
+        11      2  0.006458           nm
+        12      2  0.005717         size
+        13      2  0.005399    materials
+        14      2  0.004734        phase
+
         """
         from itertools import chain
         return pd.DataFrame(list(chain.from_iterable([{"topic": topic_id, "weight": weight, "word": word}
