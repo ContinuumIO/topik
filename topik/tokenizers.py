@@ -244,6 +244,7 @@ applications as well as catalysts.'
     [u'transition']
 
     """
+    from textblob import TextBlob
     return ['_'.join(part for part in tokenize_simple(np, min_length=2, stopwords=stopwords))
             for np in TextBlob(text).noun_phrases if np in entities]
 
