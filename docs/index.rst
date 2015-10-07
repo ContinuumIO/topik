@@ -107,22 +107,13 @@ The same previous example using :func:`run_model` would be:
 Contents
 ========
 
-User Guide
-``````````
 .. toctree::
 
    installation
    example
    usage_python
    intro-dev
-
-
-Reference Guide
-```````````````
-
-.. toctree::
-
-   api
+   API reference <api/topik>
 
 
 Useful Topic Modeling Resources

@@ -22,7 +22,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 
-MOCK_MODULES = ['numpy', 'pandas', 'scipy', 'gensim', 'blaze', 'textblob', 'nltk',]
+MOCK_MODULES = ['numpy', 'pandas', 'scipy', 'gensim', 'blaze', 'textblob', 'nltk', 'odo', 'bokeh']
 import sys
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
@@ -42,12 +42,12 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'numpydoc'
 ]
-
 
 # Add any paths that contain templates here, relative to this directory.
 
@@ -80,7 +80,7 @@ copyright = '2015, Continuum Analytics'
 #
 
 # Topik is run from its source checkout
-print sys.path
+sys.path.insert(0, os.path.abspath('..'))
 import topik
 
 # The full version, including alpha/beta/rc tags.

@@ -2,15 +2,7 @@ from __future__ import absolute_import
 
 import logging
 
-import blaze as blz
-from odo import into
-import pandas as pd
-import bokeh.plotting as plt
-from bokeh.models.sources import ColumnDataSource
-from pyLDAvis import prepare, show
-
 from topik.tests import test_data_path
-
 
 class Termite(object):
     """A Bokeh Termite Visualization for LDA results analysis.
@@ -32,6 +24,12 @@ class Termite(object):
         self.title = title
 
     def plot(self, output_file="termite.html"):
+        import blaze as blz
+        from odo import into
+        import pandas as pd
+        import bokeh.plotting as plt
+        from bokeh.models.sources import ColumnDataSource
+
         t = blz.Data(self.input_file)
 
         MAX = blz.compute(t.weight.max())
@@ -63,5 +61,6 @@ class Termite(object):
 
 def plot_lda_vis(model_data):
     """Designed to work with to_py_lda_vis() in the model classes."""
+    from pyLDAvis import prepare, show
     model_vis_data = prepare(**model_data)
     show(model_vis_data)
