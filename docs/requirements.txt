@@ -2,4 +2,3 @@ sphinx
 numpydoc
 sphinx_rtd_theme
 mock
-topik
