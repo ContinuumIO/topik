@@ -12,3 +12,4 @@ elasticsearch
 click
 pysolr
 ijson
+versioneer
