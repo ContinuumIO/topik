@@ -49,6 +49,8 @@ extensions = [
     'numpydoc'
 ]
 
+numpydoc_show_class_members = False
+
 # Add any paths that contain templates here, relative to this directory.
 
 # on_rtd is whether we are on readthedocs.org
