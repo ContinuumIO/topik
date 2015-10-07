@@ -54,7 +54,7 @@ Getting Started
 ---------------
 
 To demonstrate the ease of a typical `topik` workflow, we'll provide two examples: using the command line
-interface and using the method ``topik.run.run_topic_model``.
+interface and using the method :func:`topik.run.run_model`.
 
 - Using the command line interface
 
@@ -93,18 +93,15 @@ word tokenization.
 
     $ topik -d ./topik/tests/data/test-data-1.json -f json_stream -o ./test -n 3 --field text -t entities
 
-- Using ``topik.run.run_topic_model``
+- Using :func:``topik.run.run_model``
 
-The same previous example using ``run_topic_model`` would be:
+The same previous example using :func:`run_model` would be:
 
 .. code-block:: python
 
    >>> from topik.run import run_topic_model
    >>> run_topic_model(data='./topik/tests/data/test-data-1.json', format='json_stream', n_topics=3, field='text', \
                        dir_path='./topic_model')
-
-
-To understand ``topik``'s output and results interpretation, see :doc:`Topik Output <output>`.
 
 
 Contents
@@ -117,24 +114,11 @@ User Guide
 
    installation
    example
-   output
-   readers
-   tokenizers
-   vectorizers
-   models
-   viz
-   faq
-   troubleshooting
-
-
-Developer Guide
-```````````````
-.. toctree::
-   :maxdepth: 2
-
+   read_input
+   tokenization
+   topic_modeling
+   visualization
    intro-dev
-   custom-readers
-   custom-tokenizers
 
 
 Reference Guide
