@@ -4,12 +4,6 @@ import itertools
 import logging
 import re
 
-import gensim
-from gensim.parsing.preprocessing import STOPWORDS
-from nltk.collocations import TrigramCollocationFinder
-from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
-from textblob import TextBlob
-
 # imports used only for doctests
 from topik.tests import test_data_path
 
@@ -18,10 +12,9 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
 
 
-def tokenize_simple(text, min_length=1, stopwords=STOPWORDS):
+def tokenize_simple(text, min_length=1, stopwords=None):
     """A text tokenizer that simply lowercases, matches alphabetic
     characters and removes stopwords.
-    Uses gensim.utils.tokenize and gensim.parsing.preprocessing.STOPWORDS.
 
     Parameters
     ----------
@@ -57,12 +50,16 @@ u'order', u'nm', u'diameter', u'microns', u'length', u'easy', \
 u'method', u'useful', u'preparation', u'nanomaterials', u'electronics', \
 u'biomedical', u'applications', u'catalysts']
     """
+
+    import gensim
+    if not stopwords:
+        from gensim.parsing.preprocessing import STOPWORDS as stopwords
     return [word for word in gensim.utils.tokenize(text, lower=True)
             if word not in stopwords and len(word) >= min_length]
 
 
 def collect_bigrams_and_trigrams(collection, top_n=10000, min_word_length=1, min_bigram_freq=50,
-                                 min_trigram_freq=20, stopwords=STOPWORDS):
+                                 min_trigram_freq=20, stopwords=None):
     """collects bigrams and trigrams from collection of documents.  Input to collocation tokenizer.
 
     bigrams are pairs of words that recur in the collection.
@@ -97,6 +94,10 @@ transmission electron microscopy|x ray diffraction|microanalysis analytical elec
 |atomic force microscopy|electron microscopy tem|narrow size distribution|scanning \
 electron microscopy|building high field|silicon oxide nanowires|particle size nm)'
     """
+
+    from nltk.collocations import TrigramCollocationFinder
+    from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
+
     # generator of documents, turn each element to its list of words
     documents = (tokenize_simple(text, min_length=min_word_length, stopwords=stopwords)
                  for text in collection.get_generator_without_id())
@@ -119,7 +120,7 @@ electron microscopy|building high field|silicon oxide nanowires|particle size nm
     return bigrams_patterns, trigrams_patterns
 
 
-def tokenize_collocation(text, patterns, stopwords=STOPWORDS):
+def tokenize_collocation(text, patterns, stopwords=None):
     """A text tokenizer that includes collocations(bigrams and trigrams).
 
     A collocation is sequence of words or terms that co-occur more often
@@ -129,7 +130,7 @@ def tokenize_collocation(text, patterns, stopwords=STOPWORDS):
     must be obtained in a prior step using the collect_bigrams_and_trigrams
     function.
 
-    Uses gensim.parsing.preprocessing.STOPWORDS to remove stopwords and nltk.collocations.TrigramCollocationFinder to
+    Uses nltk.collocations.TrigramCollocationFinder to
     find trigrams and bigrams.
 
     Parameters
@@ -180,6 +181,9 @@ def collect_entities(collection, freq_min=2, freq_max=10000):
         Maximum frequency of a noun phrase occurrences in order to retrieve it. Default is 10000.
 
     """
+
+    from textblob import TextBlob
+
     np_counts_total = {}
     docs_examined = 0
     for doc in collection.get_generator_without_id():
@@ -203,13 +207,10 @@ def collect_entities(collection, freq_min=2, freq_max=10000):
     return set(np_counts)
 
 
-def tokenize_entities(text, entities, stopwords=STOPWORDS):
+def tokenize_entities(text, entities, stopwords=None):
     """A tokenizer that extracts noun phrases from text.
 
     Requires that you first establish entities using the collect_entities function
-
-    Uses gensim.parsing.preprocessing.STOPWORDS. to remove stopwords and textblob.TextBlob().noun_phrases to find
-    `noun_phrases`.
 
     Parameters
     ----------
@@ -243,20 +244,11 @@ applications as well as catalysts.'
     [u'transition']
 
     """
-    result = []
-    for np in TextBlob(text).noun_phrases:
-        if np not in entities:
-            # only consider phrases detected in entities (with frequency parameters)
-            continue
-        token = '_'.join(part for part in gensim.utils.tokenize(np))
-        if len(token) < 2 or token in stopwords:
-            # ignore very short phrases and stop words
-            continue
-        result.append(token)
-    return result
+    return ['_'.join(part for part in tokenize_simple(np, min_length=2, stopwords=stopwords))
+            for np in TextBlob(text).noun_phrases if np in entities]
 
 
-def tokenize_mixed(text, entities, stopwords=STOPWORDS):
+def tokenize_mixed(text, entities, stopwords=None):
     """A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
 
     Parameters
@@ -278,14 +270,9 @@ u'applications']
     result = []
     for np in TextBlob(text).noun_phrases:
         if ' ' in np and np not in entities:
-            tokens = [word for word in gensim.utils.tokenize(np, lower=True) if word not in stopwords]
-            result.extend(tokens)
+            result.extend([word for word in tokenize_simple(np, stopwords=stopwords)])
         else:
-            token = '_'.join(part for part in gensim.utils.tokenize(np) if len(part) > 2)
-            if len(token) < 2 or token in stopwords:
-                # ignore very short phrases and stop words
-                continue
-            result.append(token)
+            result.append('_'.join(part for part in tokenize_simple(np, min_length=2, stopwords=stopwords)))
     return result
 
 

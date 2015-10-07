@@ -1,7 +1,6 @@
-from gensim.corpora.dictionary import Dictionary
-from gensim.interfaces import CorpusABC
+import gensim
 
-class DigestedDocumentCollection(CorpusABC):
+class DigestedDocumentCollection(gensim.interfaces.CorpusABC):
     """A bag-of-words representation of a corpus (collection of documents).
 
     This serves as direct input to modeling functions.  It is output from
@@ -17,6 +16,7 @@ class DigestedDocumentCollection(CorpusABC):
 
     """
     def __init__(self, tokenized_corpus):
+        from gensim.corpora.dictionary import Dictionary
         self.corpus = tokenized_corpus
         self.dict = Dictionary(tokenized_corpus.get_generator_without_id())
         super(DigestedDocumentCollection, self).__init__()
