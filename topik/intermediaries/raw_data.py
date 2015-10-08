@@ -7,7 +7,6 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import logging
 import time
 
-from elasticsearch import Elasticsearch, helpers
 from six import with_metaclass
 
 from topik.intermediaries.persistence import Persistor
@@ -119,6 +118,7 @@ class CorpusInterface(with_metaclass(ABCMeta)):
 class ElasticSearchCorpus(CorpusInterface):
     def __init__(self, source, index, content_field, doc_type=None, query=None, iterable=None,
                  filter_expression="", **kwargs):
+        from elasticsearch import Elasticsearch
         super(ElasticSearchCorpus, self).__init__()
         self.hosts = source
         self.instance = Elasticsearch(hosts=source, **kwargs)
@@ -139,6 +139,7 @@ class ElasticSearchCorpus(CorpusInterface):
         return self.filter_expression
 
     def __iter__(self):
+        from elasticsearch import helpers
         results = helpers.scan(self.instance, index=self.index,
                                query=self.query, doc_type=self.doc_type)
         for result in results:
@@ -150,10 +151,8 @@ class ElasticSearchCorpus(CorpusInterface):
     def get_generator_without_id(self, field=None):
         if not field:
             field = self.content_field
-        results = helpers.scan(self.instance, index=self.index,
-                               query=self.query, doc_type=self.doc_type)
-        for result in results:
-            yield result["_source"][field]
+        for (_, result) in ElasticSearchCorpus(self.hosts, self.index, field, self.doc_type, self.query):
+            yield result
 
     def append_to_record(self, record_id, field_name, field_value):
         self.instance.update(index=self.index, id=record_id, doc_type="continuum",
@@ -177,6 +176,7 @@ class ElasticSearchCorpus(CorpusInterface):
             list of strings, a dictionary with one key, "text" is created and
             used.
         """
+        from elasticsearch import helpers
         batch = []
         for item in iterable:
             if isinstance(item, basestring):
