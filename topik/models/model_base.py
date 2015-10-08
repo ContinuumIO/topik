@@ -76,7 +76,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
 
         model_lda_vis_data = {  'vocab': term_data_df['token'],
                                 'term_frequency': term_data_df['doc_count'],
-                                'topic_term_dists': term_data_df.iloc[:,2:],
+                                'topic_term_dists': term_data_df.iloc[:,2:].T,
                                 'doc_topic_dists': doc_data_df.iloc[:,:-1],
                                 'doc_lengths': doc_data_df['doc_length']}
         return model_lda_vis_data
