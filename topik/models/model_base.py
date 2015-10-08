@@ -12,6 +12,7 @@ from topik.intermediaries.persistence import Persistor
 registered_models = {}
 
 def register_model(cls):
+    """Decorator function to register new model with global registry of models"""
     global registered_models
     if cls.__name__ not in registered_models:
         registered_models[cls.__name__] = cls
@@ -19,27 +20,61 @@ def register_model(cls):
 
 
 class TopicModelBase(with_metaclass(ABCMeta)):
-    corpus = None
+    """Abstract base class for topic models.
+
+    Ensures consistent interface across models, for base result display capabilities.
+
+    Attributes
+    ----------
+    _corpus : topik.intermediaries.digested_document_collection.DigestedDocumentCollection-derived object
+        The input data for this model
+    _persistor : topik.intermediaries.persistor.Persistor object
+        The object responsible for persisting the state of this model to disk.  Persistor saves metadata
+        that instructs load_model how to load the actual data.
+    """
+    _corpus = None
 
     @abstractmethod
     def get_top_words(self, topn):
-        """Method should collect top n words per topic, translate indices/ids to words.
+        """Abstract method.  Implementations should collect top n words per topic, translate indices/ids to words.
 
-        Return a list of lists of tuples:
-        - outer list: topics
-        - inner lists: length topn collection of (weight, word) tuples
+        Returns
+        -------
+        list of lists of tuples:
+            * outer list: topics
+            * inner lists: length topn collection of (weight, word) tuples
         """
         raise NotImplementedError
 
     @abstractmethod
     def save(self, filename, saved_data):
-        self.persistor.store_model(self.get_model_name_with_parameters(),
+        """Abstract method.  Persist the model metadata and data to disk.
+
+        Implementations should both save their important data do disk with some known keyword
+        (perhaps as filename or server address details), and pass a dictionary to saved_data.
+        The contents of this dictionary will be passed to the class' constructor as **kwargs.
+
+        Be sure to either call super(YourClass, self).save(filename, saved_data) or otherwise
+        duplicate the base level of functionality here.
+
+        Parameters
+        ----------
+        filename : str
+            The filename of the JSON file to be saved, containing model and corpus metadata
+            that allow for reconstruction
+        saved_data : dict
+            Dictionary of metadata that will be fed to class __init__ method at load time.
+            This should include such things as number of topics modeled, binary filenames,
+            and any other relevant model parameters to recreate your current model.
+        """
+        self._persistor.store_model(self.get_model_name_with_parameters(),
                                    {"class": self.__class__.__name__,
                                     "saved_data": saved_data})
-        self.corpus.save(filename)
+        self._corpus.save(filename)
 
     @abstractmethod
     def get_model_name_with_parameters(self):
+        """Abstract method.  Primarily internal function, used to name configurations in persisted metadata for later retrieval."""
         raise NotImplementedError
 
     @abstractmethod
@@ -86,9 +121,11 @@ class TopicModelBase(with_metaclass(ABCMeta)):
 
         Parameters
         ----------
-        topn_words: int
+        topn_words : int
             number of words to include from each topic
 
+        Examples
+        --------
         >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
         >>> processed_data = raw_data.tokenize()  # tokenize returns a DigestedDocumentCollection
         >>> # must set seed so that we get same topics each run
@@ -122,14 +159,17 @@ class TopicModelBase(with_metaclass(ABCMeta)):
                                                      for topic_id, topic in enumerate(self.get_top_words(topn_words)))))
 
     @property
-    def persistor(self):
+    def _persistor(self):
         return self.corpus.persistor
 
 
 def load_model(filename, model_name):
     """Loads a JSON file containing instructions on how to load model data.
 
-    Returns a TopicModelBase-derived object."""
+    Returns
+    -------
+    TopicModelBase-derived object
+    """
     p = Persistor(filename)
     if model_name in p.list_available_models():
         data_dict = p.get_model_details(model_name)
