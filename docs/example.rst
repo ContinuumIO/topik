@@ -14,7 +14,9 @@ Lillian Lee.
 
 .. code-block:: shell
 
-    $ curl http://www.cs.cornell.edu/people/pabo/movie-review-data/review_polarity.tar.gz
+    $ mkdir doc_example
+    $ cd doc_example
+    $ curl -o review_polarity.tar.gz http://www.cs.cornell.edu/people/pabo/movie-review-data/review_polarity.tar.gz
     $ tar -zxf review_polarity.tar.gz
     
 
@@ -27,7 +29,7 @@ named `reviews`:
 .. code-block:: shell
 
     $ mkdir reviews
-    $ mv review_polarity/txt_sentoken/pos/* review_polarity/txt_sentoken/neg/* reviews/
+    $ mv txt_sentoken/pos/* txt_sentoken/neg/* reviews/
 
 
 High-level interface
