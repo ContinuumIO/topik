@@ -9,11 +9,14 @@ class Termite(object):
 
     Parameters
     ----------
-    input_file: string
-        A csv file from an LDA output containing columns "word", "topic" and "weight".
-    title: string
+    input_file : str or pandas DataFrame
+        A pandas dataframe from a topik model get_termite_data() containing columns "word", "topic" and "weight".
+        May also be a string, in which case the string is a filename of a csv file with the above columns.
+    title : str
         The title for your termite plot
 
+    Examples
+    --------
     >>> termite = Termite("{}/termite.csv".format(test_data_path),
     ...                   "My lda results")
     >>> termite.plot('my_termite.html')
