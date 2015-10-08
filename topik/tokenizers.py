@@ -18,9 +18,17 @@ def tokenize_simple(text, min_length=1, stopwords=None):
 
     Parameters
     ----------
-    text: input text to be tokenized
-    stopwords: words to ignore as noise
+    text : str
+        A single document's text to be tokenized
+    entities : iterable of str
+        Collection of noun phrases, obtained from collect_entities function
+    min_length : int
+        Minimum length of any single word
+    stopwords: None or iterable of str
+        Collection of words to ignore as tokens
 
+    Examples
+    --------
     >>> from topik.readers import read_input
     >>> id_documents = read_input(
     ...                 '{}/test_data_json_stream.json'.format(test_data_path),
@@ -58,48 +66,57 @@ u'biomedical', u'applications', u'catalysts']
             if word not in stopwords and len(word) >= min_length]
 
 
-def collect_bigrams_and_trigrams(collection, top_n=10000, min_word_length=1, min_bigram_freq=50,
+def collect_bigrams_and_trigrams(collection, top_n=10000, min_length=1, min_bigram_freq=50,
                                  min_trigram_freq=20, stopwords=None):
     """collects bigrams and trigrams from collection of documents.  Input to collocation tokenizer.
 
-    bigrams are pairs of words that recur in the collection.
+    bigrams are pairs of words that recur in the collection; trigrams are triplets.
 
     Parameters
     ----------
-    collection: iterable data to examine
-    top_n: limit results to this many entries
-    min_bigram_freq: (integer) threshold of when to consider a pair of words as a recognized bigram
-    min_trigram_freq: (integer) threshold of when to consider a triplet of words as a recognized trigram
-    stopwords: (iterable) collection of words to ignore in the corpus
+    collection : iterable of str
+        body of documents to examine
+    top_n : int
+        limit results to this many entries
+    min_length : int
+        Minimum length of any single word
+    min_bigram_freq : int
+        threshold of when to consider a pair of words as a recognized bigram
+    min_trigram_freq : int
+        threshold of when to consider a triplet of words as a recognized trigram
+    stopwords : None or iterable of str
+        Collection of words to ignore as tokens
 
+    Examples
+    --------
     >>> from topik.readers import read_input
     >>> raw_data = read_input(
     ...                 '{}/test_data_json_stream.json'.format(test_data_path),
     ...                 content_field="abstract")
     >>> bigrams, trigrams = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=5, min_trigram_freq=3)
     >>> bigrams.pattern
-    u'(free standing|ac electrodeposition|centered cubic|spatial resolution|\
-vapor deposition|wear resistance|plastic deformation|electrical conductivity\
-|field magnets|v o|transmission electron|x ray|et al|ray diffraction|electron \
-microscopy|room temperature|diffraction xrd|electron microscope|results indicate|\
-scanning electron|m s|doped zno|microscopy tem|polymer matrix|size distribution|\
-mechanical properties|grain size|diameters nm|high spatial|particle size|high resolution\
-|ni al|diameter nm|range nm|high field|high strength|c c)'
+    u'(free standing|ac electrodeposition|centered cubic|spatial resolution|vapor deposition\
+|wear resistance|plastic deformation|electrical conductivity|field magnets|v o|\
+transmission electron|x ray|et al|ray diffraction|electron microscopy|room \
+temperature|diffraction xrd|electron microscope|results indicate|scanning \
+electron|m s|doped zno|microscopy tem|polymer matrix|size distribution|mechanical \
+properties|grain size|diameters nm|high spatial|particle size|high resolution|ni \
+al|diameter nm|range nm|high field|high strength|c c)'
     >>> trigrams.pattern
-    u'(differential scanning calorimetry|face centered cubic\
-|ray microanalysis analytical|physical vapor deposition|\
-transmission electron microscopy|x ray diffraction|microanalysis analytical electron\
-|chemical vapor deposition|high aspect ratio|analytical electron microscope\
-|ray diffraction xrd|x ray microanalysis|high spatial resolution|high field magnets\
-|atomic force microscopy|electron microscopy tem|narrow size distribution|scanning \
-electron microscopy|building high field|silicon oxide nanowires|particle size nm)'
+    u'(differential scanning calorimetry|face centered cubic|ray microanalysis analytical|\
+physical vapor deposition|transmission electron microscopy|x ray diffraction|microanalysis \
+analytical electron|chemical vapor deposition|high aspect ratio|analytical electron \
+microscope|ray diffraction xrd|x ray microanalysis|high spatial resolution|high \
+field magnets|atomic force microscopy|electron microscopy tem|narrow size distribution\
+|scanning electron microscopy|building high field|silicon oxide nanowires|particle size \
+nm)'
     """
 
     from nltk.collocations import TrigramCollocationFinder
     from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
 
     # generator of documents, turn each element to its list of words
-    documents = (tokenize_simple(text, min_length=min_word_length, stopwords=stopwords)
+    documents = (tokenize_simple(text, min_length=min_length, stopwords=stopwords)
                  for text in collection.get_generator_without_id())
     # generator, concatenate (chain) all words into a single sequence, lazily
     words = itertools.chain.from_iterable(documents)
@@ -120,7 +137,7 @@ electron microscopy|building high field|silicon oxide nanowires|particle size nm
     return bigrams_patterns, trigrams_patterns
 
 
-def tokenize_collocation(text, patterns, stopwords=None):
+def tokenize_collocation(text, patterns, min_length=1, stopwords=None):
     """A text tokenizer that includes collocations(bigrams and trigrams).
 
     A collocation is sequence of words or terms that co-occur more often
@@ -135,16 +152,17 @@ def tokenize_collocation(text, patterns, stopwords=None):
 
     Parameters
     ----------
-    reader: generator
-        A generator that yields each of the documents to tokenize. (e.g. topik.readers.iter_document_json_stream)
-
-    top_n: int
-        Number of collocations to retrieve from the stream of words (order by decreasing frequency). Default is 10000
-
+    text : str
+        A single document's text to be tokenized
     patterns: tuple of compiled regex object to find n-grams
         Obtained from collect_bigrams_and_trigrams function
+    min_length : int
+        Minimum length of any single word
+    stopwords : None or iterable of str
+        Collection of words to ignore as tokens
 
-
+    Examples
+    --------
     >>> from topik.readers import read_input
     >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
     >>> patterns = collect_bigrams_and_trigrams(id_documents, min_bigram_freq=2, min_trigram_freq=2)
@@ -161,7 +179,7 @@ u'order', u'nm_diameter', u'microns', u'length', u'easy', u'method', \
 u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical', \
 u'applications', u'catalysts']
     """
-    text = ' '.join(tokenize_simple(text, stopwords=stopwords))
+    text = ' '.join(tokenize_simple(text, min_length=min_length, stopwords=stopwords))
     for pattern in patterns:
         text = re.sub(pattern, lambda match: match.group(0).replace(' ', '_'), text)
     return text.split()
@@ -173,10 +191,8 @@ def collect_entities(collection, freq_min=2, freq_max=10000):
     Parameters
     ----------
     collection: Corpus-base derived object or iterable collection of raw text
-
     freq_min: int
         Minimum frequency of a noun phrase occurrences in order to retrieve it. Default is 2.
-
     freq_max: int
         Maximum frequency of a noun phrase occurrences in order to retrieve it. Default is 10000.
 
@@ -207,20 +223,24 @@ def collect_entities(collection, freq_min=2, freq_max=10000):
     return set(np_counts)
 
 
-def tokenize_entities(text, entities, stopwords=None):
+def tokenize_entities(text, entities, min_length=1, stopwords=None):
     """A tokenizer that extracts noun phrases from text.
 
     Requires that you first establish entities using the collect_entities function
 
     Parameters
     ----------
-    text: str
-        The raw text representing a document's contents.  Noun phrases matching entities will be extracted.
+    text : str
+        A single document's text to be tokenized
+    entities : iterable of str
+        Collection of noun phrases, obtained from collect_entities function
+    min_length : int
+        Minimum length of any single word
+    stopwords : None or iterable of str
+        Collection of words to ignore as tokens
 
-    entities: set of str
-        Noun phrases extracted from the document collection, using the collect_entities function.
-
-
+    Examples
+    --------
     >>> from topik.readers import read_input
     >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
     >>> entities = collect_entities(id_documents)
@@ -245,36 +265,57 @@ applications as well as catalysts.'
 
     """
     from textblob import TextBlob
-    return ['_'.join(part for part in tokenize_simple(np, min_length=2, stopwords=stopwords))
-            for np in TextBlob(text).noun_phrases if np in entities]
+    result = []
+    for np in TextBlob(text).noun_phrases:
+        if np in entities:
+            # filter out stop words
+            tmp = "_".join(tokenize_simple(np, min_length=min_length, stopwords=stopwords))
+            # if we end up with nothing, don't append an empty string
+            if tmp:
+                result.append(tmp)
+    return result
 
 
-def tokenize_mixed(text, entities, stopwords=None):
+
+def tokenize_mixed(text, entities, min_length=1, stopwords=None):
     """A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
 
     Parameters
     ----------
-    reader: generator
-        A generator that yields each of the documents to tokenize. (e.g. topik.readers.iter_document_json_stream)
+    text : str
+        A single document's text to be tokenized
+    entities : iterable of str
+        Collection of noun phrases, obtained from collect_entities function
+    min_length : int
+        Minimum length of any single word
+    stopwords: None or iterable of str
+        Collection of words to ignore as tokens
 
+    Examples
+    --------
     >>> from topik.readers import read_input
     >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
     >>> entities = collect_entities(raw_data)
     >>> id, text = next(iter(raw_data))
-    >>> tokenized_text = tokenize_mixed(text, entities)
+    >>> tokenized_text = tokenize_mixed(text, entities, min_length=3)
     >>> tokenized_text
-    [u'transition', u'metal', u'oxides', u'generation', u'materials', u'tantalum', u'oxide', u'nanometer', \
-u'size', u'unusual', u'properties', u'sol', u'gel', u'method', u'dna', u'easy', u'method', u'biomedical', \
-u'applications']
+    [u'transition', u'metal', u'oxides', u'generation', u'materials', u'tantalum', \
+u'oxide', u'nanometer', u'size', u'unusual', u'properties', u'sol', u'gel', \
+u'method', u'dna', u'easy', u'method', u'biomedical', u'applications']
 
     """
     from textblob import TextBlob
     result = []
     for np in TextBlob(text).noun_phrases:
         if ' ' in np and np not in entities:
-            result.extend([word for word in tokenize_simple(np, stopwords=stopwords)])
+            # break apart the noun phrase; it does not occur often enough in the collection of text to be considered.
+            result.extend(tokenize_simple(np, min_length=min_length, stopwords=stopwords))
         else:
-            result.append('_'.join(part for part in tokenize_simple(np, min_length=2, stopwords=stopwords)))
+            # filter out stop words
+            tmp = "_".join(tokenize_simple(np, min_length=min_length, stopwords=stopwords))
+            # if we end up with nothing, don't append an empty string
+            if tmp:
+                result.append(tmp)
     return result
 
 
