@@ -18,9 +18,11 @@ def _iter_document_json_stream(filename, json_prefix=None):
 
     Parameters
     ----------
-    filename: string
+    filename : str
         The filename of the json stream.
 
+    Examples
+    --------
     >>> documents = _iter_document_json_stream(
     ... '{}/test_data_json_stream.json'.format(test_data_path))
     >>> next(documents) == {
@@ -74,10 +76,10 @@ def _iter_large_json(filename, json_prefix='item'):
 
     Parameters
     ----------
-    filename: string
+    filename : str
         The filename of the large json file
 
-    json_prefix: string
+    json_prefix : str
         The string representation of the hierarchical prefix where the items of 
         interest may be located within the larger json object.
 
@@ -89,7 +91,9 @@ def _iter_large_json(filename, json_prefix='item'):
         $               print("prefix = '%r' || event = '%r' || value = '%r'" %
         $                     (prefix, event, value))
 
-    
+
+    Examples
+    --------
     >>> documents = _iter_large_json(
     ...             '{}/test_data_large_json.json'.format(test_data_path),
     ...             json_prefix='item._source.isAuthorOf')
@@ -142,19 +146,17 @@ def _iter_documents_folder(folder, content_field='text'):
 
     Parameters
     ----------
-    folder: string
+    folder : str
         The folder containing the files you want to analyze.
 
-    content_field: string
+    content_field : str
         The usage of 'content_field' in this source is different from most other sources.  The 
         assumption in this source is that each file contains raw text, NOT dictionaries of 
         categorized data.  The content_field argument here specifies what key to store the raw
         text under in the returned dictionary for each document.
 
-    $ ls ./topik/tests/data/test_data_folder_files
-        doc1  doc2  doc3
-
-
+    Examples
+    --------
     >>> documents = _iter_documents_folder(
     ...     '{}/test_data_folder_files'.format(test_data_path))
     >>> next(documents)['text'] == (
@@ -190,15 +192,12 @@ def _iter_solr_query(solr_instance, content_field, query="*:*", content_in_list=
 
     Parameters
     ----------
-    solr_instance: string
+    solr_instance : str
         Address of the solr instance
-
-    content_field: string
+    content_field : str
         The name fo the field that contains the main text body of the document.
-
-    query: string
+    query : str
         The solr query string
-
     content_in_list: bool
         Whether the source fields are stored in single-element lists.  Used for unpacking.
     """
@@ -225,11 +224,11 @@ def _iter_elastic_query(hosts, **kwargs):
 
     Parameters
     ----------
-    hosts: string or list
+    hosts : str or list
         Address of the elasticsearch instance any index.  May include port, username and password.
         See https://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch for all options.
 
-    content_field: string
+    content_field : str
         The name fo the field that contains the main text body of the document.
 
     **kwargs: additional keyword arguments to be passed to Elasticsearch client instance and to scan query.
@@ -253,22 +252,30 @@ def read_input(source, content_field, source_type="auto",
 
     Parameters
     ----------
-    source: (string) input data.  Can be file path, directory, or server address.
-    content_field: (string) Which field contains your data to be analyzed.  Hash of this is used as id.
-    source_type: (string) "auto" tries to figure out data type of source.  Can be manually specified instead.
-        options for manual specification are:
-    output_type: (string) internal format for handling user data.  Current options are in the registered_outputs dictionary.
+    source : str
+        input data.  Can be file path, directory, or server address.
+    content_field : str
+        Which field contains your data to be analyzed.  Hash of this is used as id.
+    source_type : str
+        "auto" tries to figure out data type of source.  Can be manually specified instead.
+        options for manual specification are ['solr', 'elastic', 'json_stream', 'large_json', 'folder']
+    output_type : str
+        Internal format for handling user data.  Current options are in the registered_outputs dictionary.
         Default is DictionaryCorpus class.  Specify alternatives using string key from dictionary.
-    output_args: (dictionary) configuration to pass through to output
-    synchronous_wait: (integer) number of seconds to wait for data to finish uploading to output (this happens
+    output_args : dict
+        Configuration to pass through to output
+    synchronous_wait : positive, real number
+        Time in seconds to wait for data to finish uploading to output (this happens
         asynchronously.)  Only relevant for some output types ("elastic", not "dictionary")
-    kwargs: any other arguments to pass to input parsers
+    kwargs : any other arguments to pass to input parsers
 
     Returns
     -------
     iterable output object
 
 
+    Examples
+    --------
     >>> raw_data = read_input(
     ...         '{}/test_data_json_stream.json'.format(test_data_path),
     ...          content_field="abstract")
