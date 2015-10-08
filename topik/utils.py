@@ -10,21 +10,20 @@ import pandas as pd
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+
 def to_r_ldavis(corpus_bow, lda, dir_name):
     """Generate the input that the R package LDAvis needs.
 
     Parameters
     ----------
-    corpus_bow: topik.vectorizers.CorpusBOW
+    corpus_bow : topik.intermediares.digested_document_collection.DigestedDocumentCollection instance
         The corpus bag-of-words representation
-
-    lda: topik.models.LDA
-        LDA model
-
-     dir_name: string
-        Directory name where to store the files required in R package LDAvis.
+    lda : topik.models.LDA instance
+    dir_name : string
+        Directory name where to store the files required in R package LDAvis
 
     """
+
     if not os.path.isfile(dir_name):
         os.makedirs(dir_name)
 
@@ -51,21 +50,22 @@ def generate_csv_output_file(reader, tokenizer, corpus_bow, lda_model, output_fi
 
     Parameters
     ----------
-    reader: topik.readers
-    tokenizer: topik.tokenizer
-    corpus_bow: topik.vectorizer.CorpusBOW
-    lda: topik.models.LDA
-    output_file: string
+    reader : topik.readers
+    tokenizer : topik.tokenizer
+    corpus_bow : topik.intermediares.digested_document_collection.DigestedDocumentCollection instance
+    lda : topik.models.LDA instance
+    output_file : string
         Desired name for your output file
 
     Returns
     -------
     pandas.DataFrame
         A pandas.DataFrame with fields:
-            `text`: The original text content of the document
-            `tokens`: The tokens extracted from the text
-            `lda_probabilities`: A list of topic number and probability of the document belonging to each of the topics.
-            `topic_group`: Topic with max. probability
+
+            * `text`: The original text content of the document
+            * `tokens`: The tokens extracted from the text
+            * `lda_probabilities`: A list of topic number and probability of the document belonging to each of the topics.
+            * `topic_group`: Topic with max. probability
 
     """
     logging.info("getting output file %s " %output_file)
