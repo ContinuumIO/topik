@@ -39,10 +39,36 @@ For quick, one-off studies, the command line interface allows you to specify
 minimal information and obtain topic model plot output. For all available
 options, please run ``topik --help``
 
+.. code-block:: bash
+
+    $ topik --help
+
+    Usage: topik [OPTIONS]
+
+      Run topic modeling
+
+    Options:
+      -d, --data TEXT        Path to input data for topic modeling  [required]
+      -f, --format TEXT      Data format provided: json_stream, folder_files,
+                             large_json, elastic, solr
+      -m, --model TEXT       Statistical topic model: lda_batch, lda_online
+      -o, --output TEXT      Topic modeling output path
+      -t, --tokenizer TEXT   Tokenize method to use: simple, collocations,
+                             entities, mix
+      -n, --ntopics INTEGER  Number of topics to find
+      --prefix_value TEXT    In 'large json' files, the prefix_value to extract
+                             text from
+      --event_value TEXT     In 'large json' files the event_value to extract text
+                             from
+      --field TEXT           In 'json stream' files, the field to extract text
+                             from
+      --help                 Show this message and exit.
+
+To run this on our movie reviews data set:
+
 .. code-block:: shell
 
-   $ topik --help
-   $ topik reviews
+   $ topik -d reviews
 
 The shell command is a front end to :func:`~.run_model`, which is also
 accessible in python:

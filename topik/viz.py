@@ -59,7 +59,6 @@ class Termite(object):
                        title=self.title)
 
         p.circle(x="topic", y="word", size="size", fill_alpha=0.6, source=data_source)
-        logging.info("generating termite plot for file %s" % self.input_file)
         plt.show(p)
 
 def plot_lda_vis(model_data):
