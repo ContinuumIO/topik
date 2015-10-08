@@ -7,6 +7,7 @@ from odo import into
 import pandas as pd
 import bokeh.plotting as plt
 from bokeh.models.sources import ColumnDataSource
+from pyLDAvis import prepare, show
 
 from topik.tests import test_data_path
 
@@ -59,3 +60,8 @@ class Termite(object):
         p.circle(x="topic", y="word", size="size", fill_alpha=0.6, source=data_source)
         logging.info("generating termite plot for file %s" % self.input_file)
         plt.show(p)
+
+def plot_lda_vis(model_data):
+    """Designed to work with to_py_lda_vis() in the model classes."""
+    model_vis_data = prepare(**model_data)
+    show(model_vis_data)
