@@ -23,7 +23,7 @@ the ntopics parameter to come up with the results that are best for your
 collection of data.
 
 To perform topic modeling on your tokenized data, select a model class from the
-``topik.models.registered_models`` dictionary, or simply import a model class
+:data:`~.registered_models` dictionary, or simply import a model class
 directly, and instantiate this object with your corpus and the number of topics
 to model:
 
@@ -44,14 +44,14 @@ road map, but for now, please be patient and wait for your results.
 Saving and loading results
 ==========================
 
-The model object has a ``save`` method. This method saves a JSON file that
-describes how to load the rest of the data for your model and for your corpus.
-The ``topik.models.load_model`` function will read that JSON file, and recreate
-the necessary corpus and model objects to leave you where you saved. Each model
-has its own binary representation, and each corpus type has its own storage
-backend. The JSON file saved here generally does not include corpus data nor
-model data, but rather is simply instructions on where to find those data. If
-you move files around on your hard disk, make sure to pick up everything with
+The model object has a :meth:`~.TopicModelBase.save` method. This method saves a
+JSON file that describes how to load the rest of the data for your model and for
+your corpus. The :func:`~.load_model` function will read that JSON file, and
+recreate the necessary corpus and model objects to leave you where you saved.
+Each model has its own binary representation, and each corpus type has its own
+storage backend. The JSON file saved here generally does not include corpus data
+nor model data, but rather is simply instructions on where to find those data.
+If you move files around on your hard disk, make sure to pick up everything with
 the JSON file.
 
 .. code-block:: python

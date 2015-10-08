@@ -2,8 +2,9 @@ Tokenizing and Vectorizing
 ##########################
 
 The next step in topic modeling is to break your documents up into individual
-terms. This is called tokenization. Tokenization is done using the ``tokenize``
-method on a Corpus object (returned from ``read_input``):
+terms. This is called tokenization. Tokenization is done using the
+:meth:`~.CorpusInterface.tokenize` method on a Corpus object
+(returned from :func:`~.read_input`):
 
 .. code-block:: python
 
@@ -11,7 +12,7 @@ method on a Corpus object (returned from ``read_input``):
 
 The tokenize method accepts a few arguments to specify a tokenization method and
 control behavior therein. The available tokenization methods are available in
-the ``topik.tokenizers.tokenizer_methods`` dictionary. The presently available
+the :data:`~.tokenizer_methods` dictionary. The presently available
 methods are:
 
   * "simple": (default) lowercases input text and extracts single words. Uses
@@ -36,7 +37,7 @@ There are two steps to tokenization with collocation: establishing the patterns
 of bigrams and trigrams, and subsequently tokenizing each document individually.
 
 To obtain the bigram and trigram patterns, use the
-``topik.tokenizers.collect_bigrams_and_trigrams`` function:
+:func:`~.collect_bigrams_and_trigrams` function:
 
 
 .. code-block:: python
@@ -61,7 +62,8 @@ Parameterization is done at this step, prior to tokenization of the corpus.  Twe
 For small bodies of text, you'll need small freq values, but this may be
 correspondingly "noisy."
 
-Next, feed the patterns into the ``tokenize`` method of your corpus object:
+Next, feed the patterns into the :meth:`~.CorpusInterface.tokenize` method of
+your corpus object:
 
 .. code-block:: python
 
@@ -75,7 +77,7 @@ Entities tokenization
 We refer to entities as noun phrases, as extracted by `the TextBlob library
 <https://textblob.readthedocs.org/en/dev/>`_. Like collocation tokenization,
 entities tokenization is a two-step process. First, you establish noun phrases
-using the ``topik.tokenizers.collect_entities`` function:
+using the :func:`~.collect_entities` function:
 
 .. code-block:: python
 
@@ -111,4 +113,3 @@ interesting both together and apart. Usage is similar to the entities tokenizer:
    >>> from topik.tokenizers import collect_entities
    >>> entities = collect_entities(corpus)
    >>> raw_data.tokenize(method="mixed", entities=entities)
-
