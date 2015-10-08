@@ -19,5 +19,6 @@ dependencies:
     - textblob
     - ijson
     - click
-    - solrpy
+    - pysolr
     - elasticsearch
+    - pyldavis

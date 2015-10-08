@@ -28,7 +28,7 @@ def _get_hash_identifier(input_data, id_field):
     return hash(input_data[id_field])
 
 
-def _get_tokenizer_string(**kwargs):
+def _get_parameters_string(**kwargs):
     """Used to create identifiers for output"""
     id = ''.join('{}={}_'.format(key, val) for key, val in sorted(kwargs.items()))
     return id[:-1]
@@ -104,7 +104,7 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         kwargs: arbitrary dicionary of extra parameters.  These are passed both
             to the tokenizer and to the vectorizer steps.
         """
-        parameters_string = _get_tokenizer_string(method=method, **kwargs)
+        parameters_string = _get_parameters_string(method=method, **kwargs)
         token_path = "tokens_"+parameters_string
         for record_id, raw_record in self:
             tokenized_record = tokenizer_methods[method](raw_record,

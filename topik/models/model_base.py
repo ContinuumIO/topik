@@ -29,7 +29,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         - outer list: topics
         - inner lists: length topn collection of (weight, word) tuples
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def save(self, filename, saved_data):
@@ -41,6 +41,45 @@ class TopicModelBase(with_metaclass(ABCMeta)):
     @abstractmethod
     def get_model_name_with_parameters(self):
         raise NotImplementedError
+
+    @abstractmethod
+    def _get_term_data(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_vocab(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_term_frequency(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_topic_term_dists(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_doc_data(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_doc_topic_dists(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_doc_lengths(self):
+        raise NotImplementedError
+
+    def to_py_lda_vis(self):
+        doc_data_df = self._get_doc_data()
+        term_data_df = self._get_term_data()
+
+        model_lda_vis_data = {  'vocab': term_data_df['token'],
+                                'term_frequency': term_data_df['doc_count'],
+                                'topic_term_dists': term_data_df.iloc[:,2:].T,
+                                'doc_topic_dists': doc_data_df.iloc[:,:-1],
+                                'doc_lengths': doc_data_df['doc_length']}
+        return model_lda_vis_data
 
     def termite_data(self, filename=None, topn_words=15):
         """Generate the csv file input for the termite plot.
