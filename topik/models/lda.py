@@ -46,37 +46,37 @@ class LDA(TopicModelBase):
     """
     def __init__(self, corpus_input=None, ntopics=10, load_filename=None, binary_filename=None, **kwargs):
         if corpus_input is not None:
-            self.model = gensim.models.LdaModel(list(iter(corpus_input)), num_topics=ntopics,
+            self._model = gensim.models.LdaModel(list(iter(corpus_input)), num_topics=ntopics,
                                                 id2word=corpus_input.get_id2word_dict(), **kwargs)
-            self.corpus = corpus_input
+            self._corpus = corpus_input
         elif load_filename is not None and binary_filename is not None:
-            self.model = gensim.models.LdaModel.load(binary_filename)
-            self.corpus = DigestedDocumentCollection(load_persisted_corpus(load_filename))
+            self._model = gensim.models.LdaModel.load(binary_filename)
+            self._corpus = DigestedDocumentCollection(load_persisted_corpus(load_filename))
 
     def save(self, filename):
-        self.model.save(self.get_model_name_with_parameters())
+        self._model.save(self.get_model_name_with_parameters())
         saved_data = {"load_filename": filename, "binary_filename": self.get_model_name_with_parameters()}
         return super(LDA, self).save(filename, saved_data)
 
     def get_top_words(self, topn):
-        top_words = [self.model.show_topic(topicno, topn) for topicno in range(self.model.num_topics)]
+        top_words = [self._model.show_topic(topicno, topn) for topicno in range(self._model.num_topics)]
         return top_words
 
     def get_model_name_with_parameters(self):
-        return "LDA_{}_topics{}".format(self.model.num_topics, self.corpus.filter_string)
+        return "LDA_{}_topics{}".format(self._model.num_topics, self._corpus.filter_string)
 
     def _get_term_data(self):
         term_doc_count_df = pd.DataFrame.from_records([{'tokenid': tokenid, 'token': token,
-                                           'doc_count': self.corpus.dict.dfs.get(tokenid, 0)}
-                    for tokenid, token in self.corpus.dict.id2token.items()], index="tokenid")
+                                           'doc_count': self._corpus._dict.dfs.get(tokenid, 0)}
+                    for tokenid, token in self._corpus._dict.id2token.items()], index="tokenid")
 
         term_topic_df = pd.DataFrame([
-                pd.DataFrame.from_records(self.model.show_topic(topic_no, None),
+                pd.DataFrame.from_records(self._model.show_topic(topic_no, None),
                                          columns=['topic' + str(topic_no) + 'dist', 'token'],
                                          index='token')['topic' + str(topic_no) + 'dist']
-                for topic_no in range(self.model.num_topics)]).T
+                for topic_no in range(self._model.num_topics)]).T
 
-        token2id_df = pd.DataFrame(self.corpus.dict.token2id.items())
+        token2id_df = pd.DataFrame(self._corpus._dict.token2id.items())
         token2id_df = token2id_df.set_index(0)
         term_topic_df = pd.concat([term_topic_df, token2id_df], axis=1)
         term_topic_df = term_topic_df.set_index(1)
@@ -86,10 +86,10 @@ class LDA(TopicModelBase):
         return term_data_df
 
     def _get_vocab(self):
-        return self.corpus.dict.values()
+        return self._corpus._dict.values()
 
     def _get_term_frequency(self):
-        self.corpus.dict.save_as_text(os.path.join(test_data_path, 'dictionary'),
+        self._corpus._dict.save_as_text(os.path.join(test_data_path, 'dictionary'),
                                       sort_by_word=False)
         # TODO: see gensim source to see how it's saving this to file, then use that
 
@@ -100,8 +100,8 @@ class LDA(TopicModelBase):
 
     def _get_topic_term_dists(self):
         term_topic_df = pd.DataFrame()
-        for topic_no in range(self.model.num_topics):
-            topic_df = pd.DataFrame(self.model.show_topic(topic_no, None))
+        for topic_no in range(self._model.num_topics):
+            topic_df = pd.DataFrame(self._model.show_topic(topic_no, None))
             topic_df = topic_df.set_index(1)
             topic_df.columns = ['topic' + str(topic_no)]
             term_topic_df = pd.concat([term_topic_df, topic_df], axis=1)
@@ -116,8 +116,8 @@ class LDA(TopicModelBase):
         return doc_data_df
 
     def _get_doc_topic_dists(self):
-        id_index, bow_corpus = zip(*[(id, self.corpus.dict.doc2bow(doc_tokens))
-                              for id, doc_tokens in self.corpus.corpus])
+        id_index, bow_corpus = zip(*[(id, self.corpus._dict.doc2bow(doc_tokens))
+                              for id, doc_tokens in self._corpus.corpus])
 
         doc_topic_dists = list(self.model[bow_corpus])
 
@@ -132,5 +132,5 @@ class LDA(TopicModelBase):
 
     def _get_doc_lengths(self):
         id_index, doc_lengths = zip(*[(id, len(doc)) for id, doc in list(
-                                                        self.corpus.corpus)])
+                                                        self._corpus.corpus)])
         return pd.Series(doc_lengths, index=id_index)

@@ -17,28 +17,28 @@ class DigestedDocumentCollection(gensim.interfaces.CorpusABC):
     """
     def __init__(self, tokenized_corpus):
         from gensim.corpora.dictionary import Dictionary
-        self.corpus = tokenized_corpus
-        self.dict = Dictionary(tokenized_corpus.get_generator_without_id())
+        self._corpus = tokenized_corpus
+        self._dict = Dictionary(tokenized_corpus.get_generator_without_id())
         super(DigestedDocumentCollection, self).__init__()
 
     def __iter__(self):
         """Discards id field - for compatibility with Gensim."""
-        for _id, doc_tokens in self.corpus:
-            yield self.dict.doc2bow(doc_tokens)
+        for _id, doc_tokens in self._corpus:
+            yield self._dict.doc2bow(doc_tokens)
 
     def __len__(self):
-        return len(self.corpus)
+        return len(self._corpus)
 
     def get_id2word_dict(self):
-        return self.dict
+        return self._dict
 
     def save(self, filename):
-        self.corpus.save(filename)
+        self._corpus.save(filename)
 
     @property
     def persistor(self):
-        return self.corpus.persistor
+        return self._corpus.persistor
 
     @property
     def filter_string(self):
-        return self.corpus.filter_string
+        return self._corpus.filter_string

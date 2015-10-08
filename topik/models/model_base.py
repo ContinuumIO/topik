@@ -160,7 +160,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
 
     @property
     def _persistor(self):
-        return self.corpus.persistor
+        return self._corpus.persistor
 
 
 def load_model(filename, model_name):
