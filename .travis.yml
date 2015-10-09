@@ -13,15 +13,11 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda config --set always_yes yes
-  - conda install nltk bokeh blaze pandas nose pip numpy scipy matplotlib scikit-bio gensim
-  - pip install textblob
+  - conda install conda-env
+  - conda env create
+  - source activate topik
   - python -m textblob.download_corpora
-  - conda install -c https://conda.anaconda.org/memex solr
-  - pip install pysolr
-  - pip install click
-  - pip install coveralls
-  - pip install ijson
-  - pip install pyldavis
+  - pip install coverage
   - pip install .
 
 services:
