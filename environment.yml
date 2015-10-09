@@ -1,24 +1,18 @@
 name: topik
 channels:
-  - r
-  - chdoig
+  - memex
+  - defaults
 dependencies:
   - blaze
   - bokeh
   - numpy
   - pandas
-  - r
-  - r-ldavis
-  - r-matrix
-  - r-data.table
   - bokeh
-  - pip
-  - pip:
-    - pattern
-    - gensim
-    - textblob
-    - ijson
-    - click
-    - pysolr
-    - elasticsearch
-    - pyldavis
+  - pattern
+  - gensim
+  - textblob
+  - ijson
+  - click
+  - pysolr
+  - elasticsearch
+  - pyldavis
