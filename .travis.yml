@@ -15,6 +15,7 @@ install:
   - conda config --set always_yes yes
   - conda install conda-env
   - conda env create
+  - conda activate topik
   - python -m textblob.download_corpora
   - pip install .
 
