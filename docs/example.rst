@@ -45,30 +45,30 @@ options, please run ``topik --help``
 
     Usage: topik [OPTIONS]
 
-      Run topic modeling
+    Run topic modeling
 
     Options:
-      -d, --data TEXT        Path to input data for topic modeling  [required]
-      -f, --format TEXT      Data format provided: json_stream, folder_files,
-                             large_json, elastic, solr
-      -m, --model TEXT       Statistical topic model: lda_batch, lda_online
-      -o, --output TEXT      Topic modeling output path
-      -t, --tokenizer TEXT   Tokenize method to use: simple, collocations,
-                             entities, mix
-      -n, --ntopics INTEGER  Number of topics to find
-      --prefix_value TEXT    In 'large json' files, the prefix_value to extract
-                             text from
-      --event_value TEXT     In 'large json' files the event_value to extract text
-                             from
-      --field TEXT           In 'json stream' files, the field to extract text
-                             from
-      --help                 Show this message and exit.
+        -d, --data TEXT        Path to input data for topic modeling  [required]
+        -c, --field TEXT       the content field to extract text from, or for
+                                folders, the field to store text as  [required]
+        -f, --format TEXT      Data format provided: json_stream, folder_files,
+                                large_json, solr, elastic
+        -m, --model TEXT       Statistical topic model: lda, plsa
+        -o, --output TEXT      Topic modeling output path
+        -t, --tokenizer TEXT   Tokenize method to use: simple, collocations,
+                                entities, mix
+        -n, --ntopics INTEGER  Number of topics to find
+        --termite TEXT         Whether to output a termite plot as a result
+        --ldavis TEXT          Whether to output an LDAvis-type plot as a result
+        --help                 Show this message and exit.
+
 
 To run this on our movie reviews data set:
 
 .. code-block:: shell
 
-   $ topik -d reviews
+   $ topik -d reviews -c text
+
 
 The shell command is a front end to :func:`~.run_model`, which is also
 accessible in python:
@@ -76,7 +76,7 @@ accessible in python:
 .. code-block:: python
 
    >>> from topik.run import run_model
-   >>> run_model("reviews")
+   >>> run_model("reviews", content_field="text")
 
 
 Custom topic modeling flow
@@ -93,7 +93,7 @@ An example complete workflow would be the following:
 .. code-block:: python
 
    >>> from topik import read_input, registered_models
-   >>> raw_data = read_input("reviews")
+   >>> raw_data = read_input("reviews", content_field="text")
    >>> tokenized_corpus = raw_data.tokenize()
    >>> n_topics = 10
    >>> model = registered_models["LDA"](tokenized_corpus, n_topics)
