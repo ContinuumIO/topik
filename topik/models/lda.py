@@ -85,19 +85,6 @@ class LDA(TopicModelBase):
         term_data_df.index.name = 'token_id'
         return term_data_df
 
-    def _get_vocab(self):
-        return self._corpus._dict.values()
-
-    def _get_term_frequency(self):
-        self._corpus._dict.save_as_text(os.path.join(test_data_path, 'dictionary'),
-                                      sort_by_word=False)
-        # TODO: see gensim source to see how it's saving this to file, then use that
-
-        df = pd.read_csv(os.path.join(test_data_path, 'dictionary'), sep='\t',
-                         index_col=0, header=None)
-        df = df.sort_index()
-        return df[2]
-
     def _get_topic_term_dists(self):
         term_topic_df = pd.DataFrame()
         for topic_no in range(self._model.num_topics):
@@ -109,11 +96,6 @@ class LDA(TopicModelBase):
         term_topic_df.columns.name = 'terms'
         term_topic_df.index.name = 'topics'
         return term_topic_df
-
-    def _get_doc_data(self):
-        doc_data_df = self._get_doc_topic_dists()
-        doc_data_df['doc_length'] = self._get_doc_lengths()
-        return doc_data_df
 
     def _get_doc_topic_dists(self):
         id_index, bow_corpus = zip(*[(id, self._corpus._dict.doc2bow(doc_tokens))
@@ -129,8 +111,3 @@ class LDA(TopicModelBase):
         doc_topic_dists_df.columns = ['topic'+str(i)+'dist' for i in range(
                                                 doc_topic_dists_df.shape[1])]
         return doc_topic_dists_df
-
-    def _get_doc_lengths(self):
-        id_index, doc_lengths = zip(*[(id, len(doc)) for id, doc in list(
-                                                        self._corpus._corpus)])
-        return pd.Series(doc_lengths, index=id_index)

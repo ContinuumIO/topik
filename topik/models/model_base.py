@@ -77,16 +77,31 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         """Abstract method.  Primarily internal function, used to name configurations in persisted metadata for later retrieval."""
         raise NotImplementedError
 
+    def _get_vocab(self):
+        return self._corpus._dict.values()
+
+    def _get_term_frequency(self):
+        self._corpus._dict.save_as_text(os.path.join(test_data_path, 'dictionary'),
+                                      sort_by_word=False)
+        # TODO: see gensim source to see how it's saving this to file, then use that
+
+        df = pd.read_csv(os.path.join(test_data_path, 'dictionary'), sep='\t',
+                         index_col=0, header=None)
+        df = df.sort_index()
+        return df[2]
+
+    def _get_doc_data(self):
+        doc_data_df = self._get_doc_topic_dists()
+        doc_data_df['doc_length'] = self._get_doc_lengths()
+        return doc_data_df
+
+    def _get_doc_lengths(self):
+        id_index, doc_lengths = zip(*[(id, len(doc)) for id, doc in list(
+                                                        self._corpus._corpus)])
+        return pd.Series(doc_lengths, index=id_index)
+
     @abstractmethod
     def _get_term_data(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def _get_vocab(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def _get_term_frequency(self):
         raise NotImplementedError
 
     @abstractmethod
@@ -94,15 +109,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         raise NotImplementedError
 
     @abstractmethod
-    def _get_doc_data(self):
-        raise NotImplementedError
-
-    @abstractmethod
     def _get_doc_topic_dists(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def _get_doc_lengths(self):
         raise NotImplementedError
 
     def to_py_lda_vis(self):
