@@ -116,10 +116,10 @@ class LDA(TopicModelBase):
         return doc_data_df
 
     def _get_doc_topic_dists(self):
-        id_index, bow_corpus = zip(*[(id, self.corpus._dict.doc2bow(doc_tokens))
-                              for id, doc_tokens in self._corpus.corpus])
+        id_index, bow_corpus = zip(*[(id, self._corpus._dict.doc2bow(doc_tokens))
+                              for id, doc_tokens in self._corpus._corpus])
 
-        doc_topic_dists = list(self.model[bow_corpus])
+        doc_topic_dists = list(self._model[bow_corpus])
 
         for i, doc in enumerate(doc_topic_dists):
             for j, topic in enumerate(doc):
@@ -132,5 +132,5 @@ class LDA(TopicModelBase):
 
     def _get_doc_lengths(self):
         id_index, doc_lengths = zip(*[(id, len(doc)) for id, doc in list(
-                                                        self._corpus.corpus)])
+                                                        self._corpus._corpus)])
         return pd.Series(doc_lengths, index=id_index)
