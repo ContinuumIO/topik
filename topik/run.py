@@ -10,8 +10,7 @@ import numpy as np
 
 from topik.readers import read_input
 import topik.models
-from topik.viz import Termite
-from topik.utils import to_r_ldavis, generate_csv_output_file
+from topik.viz import plot_lda_vis, Termite
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
@@ -22,7 +21,7 @@ BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 def run_model(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
               content_field=None, tokenizer='simple', n_topics=10, dir_path='./topic_model', model='LDA',
-              termite_plot=True, output_file=False, r_ldavis=False, seed=42, **kwargs):
+              termite_plot=True, output_file=False, ldavis=False, seed=42, **kwargs):
 
     """Run your data through all topik functionality and save all results to a specified directory.
 
@@ -54,7 +53,7 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         Generate termite plot of your model if True. Default is True.
     output_file : bool
         Generate a final summary csv file of your results. For each document: text, tokens, lda_probabilities and topic.
-    r_ldavis : bool
+    ldavis : bool
         Generate an interactive data visualization of your topics. Default is False.
     seed : int
         Set random number generator to seed, to be able to reproduce results. Default 42.
@@ -74,21 +73,7 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         termite = Termite(model.termite_data(n_topics), "Termite Plot")
         termite.plot(os.path.join(dir_path, 'termite.html'))
 
-    if output_file:
-        filtered_documents = raw_data.get_data_by_year(start_year, stop_year, year_field)
-        generate_csv_output_file(filtered_documents, raw_data, processed_data, lda.model)
+    if ldavis:
+        plot_lda_vis(model.to_py_lda_vis())
 
-    if r_ldavis:
-        to_r_ldavis(processed_data, dir_name=os.path.join(dir_path, 'ldavis'), lda=lda)
-        os.environ["LDAVIS_DIR"] = os.path.join(dir_path, 'ldavis')
-        try:
-            subprocess.call(['Rscript', os.path.join(BASEDIR, 'R/runLDAvis.R')])
-        except ValueError:
-            logging.warning("Unable to run runLDAvis.R")
-        os.chdir(os.path.join(dir_path, 'ldavis', 'output'))
-        sp = subprocess.Popen(['python', '-m', 'SimpleHTTPServer', '8000'])
-        webbrowser.open_new_tab('127.0.0.1:8000')
-        time.sleep(3)
-        sp.kill()
-    os.chdir(os.path.dirname(BASEDIR))
 

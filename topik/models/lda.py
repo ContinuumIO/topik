@@ -65,49 +65,28 @@ class LDA(TopicModelBase):
     def get_model_name_with_parameters(self):
         return "LDA_{}_topics{}".format(self._model.num_topics, self._corpus.filter_string)
 
-    def _get_term_data(self):
-        term_doc_count_df = pd.DataFrame.from_records([{'tokenid': tokenid, 'token': token,
-                                           'doc_count': self._corpus._dict.dfs.get(tokenid, 0)}
-                    for tokenid, token in self._corpus._dict.id2token.items()], index="tokenid")
-
+    def _get_topic_term_dists(self):
         term_topic_df = pd.DataFrame([
                 pd.DataFrame.from_records(self._model.show_topic(topic_no, None),
                                          columns=['topic' + str(topic_no) + 'dist', 'token'],
                                          index='token')['topic' + str(topic_no) + 'dist']
                 for topic_no in range(self._model.num_topics)]).T
-
-        token2id_df = pd.DataFrame(self._corpus._dict.token2id.items())
-        token2id_df = token2id_df.set_index(0)
-        term_topic_df = pd.concat([term_topic_df, token2id_df], axis=1)
-        term_topic_df = term_topic_df.set_index(1)
-
-        term_data_df = pd.concat([term_doc_count_df, term_topic_df], axis=1)
-        term_data_df.index.name = 'token_id'
-        return term_data_df
-
-    def _get_topic_term_dists(self):
-        term_topic_df = pd.DataFrame()
-        for topic_no in range(self._model.num_topics):
-            topic_df = pd.DataFrame(self._model.show_topic(topic_no, None))
-            topic_df = topic_df.set_index(1)
-            topic_df.columns = ['topic' + str(topic_no)]
-            term_topic_df = pd.concat([term_topic_df, topic_df], axis=1)
-        term_topic_df = term_topic_df.T
-        term_topic_df.columns.name = 'terms'
-        term_topic_df.index.name = 'topics'
+        term_topic_df['term_id'] = pd.Series(dict(self._corpus._dict.token2id.items()))
+        term_topic_df = term_topic_df.set_index('term_id')
         return term_topic_df
 
     def _get_doc_topic_dists(self):
         id_index, bow_corpus = zip(*[(id, self._corpus._dict.doc2bow(doc_tokens))
                               for id, doc_tokens in self._corpus._corpus])
 
-        doc_topic_dists = list(self._model[bow_corpus])
+        doc_topic = list(self._model[bow_corpus])
 
-        for i, doc in enumerate(doc_topic_dists):
+        for i, doc in enumerate(doc_topic):
             for j, topic in enumerate(doc):
-                doc_topic_dists[i][j] = doc_topic_dists[i][j][1]
+                doc_topic[i][j] = doc_topic[i][j][1]
 
-        doc_topic_dists_df = pd.DataFrame(doc_topic_dists, index=id_index)
-        doc_topic_dists_df.columns = ['topic'+str(i)+'dist' for i in range(
-                                                doc_topic_dists_df.shape[1])]
-        return doc_topic_dists_df
+        doc_topic_df = pd.DataFrame(doc_topic, index=id_index)
+        doc_topic_df.columns = ['topic'+str(i)+'dist' for i in range(
+                                                doc_topic_df.shape[1])]
+        doc_topic_df.index.name = 'doc_id'
+        return doc_topic_df
