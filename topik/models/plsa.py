@@ -6,6 +6,7 @@ import operator
 import random
 
 import numpy as np
+import pandas as pd
 
 from .model_base import TopicModelBase, register_model
 from topik.intermediaries.raw_data import load_persisted_corpus
@@ -197,11 +198,17 @@ class PLSA(TopicModelBase):
             top_words.append([(topic[word_id], self._corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
         return top_words
 
-    def _get_term_data(self):
-        raise NotImplementedError
-
     def _get_topic_term_dists(self):
-        return self.zw
+        term_topic_df = pd.DataFrame(self.zw,
+                            index=['topic'+str(t)+'dist' for t in range(self.topics)]).T
+
+        term_topic_df.index.name = 'term_id'
+        return term_topic_df
 
     def _get_doc_topic_dists(self):
-        return self.dz
+        doc_topic_df = pd.DataFrame(self.dz,
+                            index=[doc[0] for doc in self._corpus._corpus],
+                            columns=['topic'+str(t)+'dist' for t in range(self.topics)])
+
+        doc_topic_df.index.name = 'doc_id'
+        return doc_topic_df

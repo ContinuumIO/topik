@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from collections import Counter
 import logging
 
 import pandas as pd
@@ -77,18 +78,23 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         """Abstract method.  Primarily internal function, used to name configurations in persisted metadata for later retrieval."""
         raise NotImplementedError
 
+    def _get_term_data(self):
+        vocab = self._get_vocab()
+        tf = self._get_term_frequency()
+        ttd = self._get_topic_term_dists()
+        term_data_df = ttd
+        term_data_df['term_frequency'] = tf
+        term_data_df['term'] = vocab
+        return term_data_df
+
     def _get_vocab(self):
-        return self._corpus._dict.values()
+        return pd.Series(dict(self._corpus._dict.items()))
 
     def _get_term_frequency(self):
-        self._corpus._dict.save_as_text(os.path.join(test_data_path, 'dictionary'),
-                                      sort_by_word=False)
-        # TODO: see gensim source to see how it's saving this to file, then use that
-
-        df = pd.read_csv(os.path.join(test_data_path, 'dictionary'), sep='\t',
-                         index_col=0, header=None)
-        df = df.sort_index()
-        return df[2]
+        tf = Counter()
+        [tf.update(dict(doc)) for doc in self._corpus]
+        # TODO update term documents in intermediate store
+        return pd.Series(dict(tf))
 
     def _get_doc_data(self):
         doc_data_df = self._get_doc_topic_dists()
@@ -99,10 +105,6 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         id_index, doc_lengths = zip(*[(id, len(doc)) for id, doc in list(
                                                         self._corpus._corpus)])
         return pd.Series(doc_lengths, index=id_index)
-
-    @abstractmethod
-    def _get_term_data(self):
-        raise NotImplementedError
 
     @abstractmethod
     def _get_topic_term_dists(self):
@@ -116,9 +118,9 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         doc_data_df = self._get_doc_data()
         term_data_df = self._get_term_data()
 
-        model_lda_vis_data = {  'vocab': term_data_df['token'],
-                                'term_frequency': term_data_df['doc_count'],
-                                'topic_term_dists': term_data_df.iloc[:,2:].T,
+        model_lda_vis_data = {  'vocab': term_data_df['term'],
+                                'term_frequency': term_data_df['term_frequency'],
+                                'topic_term_dists': term_data_df.iloc[:,:-2].T,
                                 'doc_topic_dists': doc_data_df.iloc[:,:-1],
                                 'doc_lengths': doc_data_df['doc_length']}
         return model_lda_vis_data
