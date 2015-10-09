@@ -17,6 +17,7 @@ install:
   - conda env create
   - source activate topik
   - python -m textblob.download_corpora
+  - pip install coverage
   - pip install .
 
 services:
