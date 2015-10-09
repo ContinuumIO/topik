@@ -23,6 +23,9 @@ requirements:
   build:
     - python
     - setuptools
+    - versioneer
+    - ijson
+    - pysolr
     - blaze
     - bokeh
     - numpy
@@ -30,13 +33,13 @@ requirements:
     - gensim
     - pattern
     - textblob
-    - r
-    - r-ldavis
-    - r-matrix
-    - r-data.table
     - click
     - solrpy
     - elasticsearch
+    - nltk
+    - pyldavis
+    - matplotlib
+    - smart_open
 
   run:
     - python
@@ -47,15 +50,15 @@ requirements:
     - gensim
     - pattern
     - textblob
-    - r
-    - r-ldavis
-    - r-matrix
-    - r-data.table
     - click
     - solrpy
     - elasticsearch
-    - beautiful-soup
     - nltk
+    - ijson
+    - pysolr
+    - pyldavis
+    - matplotlib
+    - smart_open
 
 test:
   imports:
