@@ -13,7 +13,7 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda config --set always_yes yes
-  - conda install nltk bokeh blaze pandas nose pip numpy scipy
+  - conda install nltk bokeh blaze pandas nose pip numpy scipy matplotlib scikit-bio gensim
   - pip install textblob
   - python -m textblob.download_corpora
   - conda install -c https://conda.anaconda.org/memex solr
@@ -21,7 +21,6 @@ install:
   - pip install click
   - pip install coveralls
   - pip install ijson
-  - pip install gensim
   - pip install pyldavis
   - pip install .
 
