@@ -11,7 +11,6 @@ import numpy as np
 from topik.readers import read_input
 import topik.models
 from topik.viz import plot_lda_vis, Termite
-from topik.utils import generate_csv_output_file
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
@@ -74,11 +73,7 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         termite = Termite(model.termite_data(n_topics), "Termite Plot")
         termite.plot(os.path.join(dir_path, 'termite.html'))
 
-    if output_file:
-        filtered_documents = raw_data.get_data_by_year(start_year, stop_year, year_field)
-        generate_csv_output_file(filtered_documents, raw_data, processed_data, lda.model)
-
     if ldavis:
-        plot_lda_vis(model.to_py_lda_vis)
+        plot_lda_vis(model.to_py_lda_vis())
 
 
