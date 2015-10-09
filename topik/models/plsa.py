@@ -197,24 +197,11 @@ class PLSA(TopicModelBase):
             top_words.append([(topic[word_id], self._corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
         return top_words
 
-    def _get_doc_data(self):
-        raise NotImplementedError
-
     def _get_term_data(self):
         raise NotImplementedError
 
-    def _get_vocab(self):
-        raise NotImplementedError
-
-    def _get_term_frequency(self):
-        raise NotImplementedError
-
     def _get_topic_term_dists(self):
-        raise NotImplementedError
+        return self.zw
 
     def _get_doc_topic_dists(self):
-        raise NotImplementedError
-
-    def _get_doc_lengths(self):
-        raise NotImplementedError
-
+        return self.dz
