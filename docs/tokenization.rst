@@ -8,7 +8,31 @@ terms. This is called tokenization. Tokenization is done using the
 
 .. code-block:: python
 
-   >>> raw_data.tokenize()
+   >>> tokenized_corpus = raw_data.tokenize()
+
+Note on tokenize output
+=======================
+
+The :meth:`~.CorpusInterface.tokenize` method returns a new object, presently of
+the :class:`~.DigestedDocumentCollection` type. Behind the scenes, the
+:meth:`~.CorpusInterface.tokenize` method is storing the tokenized text
+alongside your corpus, using whatever storage backend you have. This is an
+in-place modification of that object. The new object serves two purposes:
+
+  * It iterates over the particular tokenized representation of your corpus. You
+    may have multiple tokenizations associated with a single corpus. The object
+    returned from the tokenize function tracks the correct one.
+  * It also performs vectorization on the fly, counting the number of words in
+    each document, and returning a representation of each document as a bag of
+    words (list of tuples, with each tuple being (word_id, word_count). This is
+    generally the desired input to any topic model.
+
+Make sure you assign this new object to a new variable. It is what you want to
+feed into the topic modeling step.
+
+
+Available methods
+=================
 
 The tokenize method accepts a few arguments to specify a tokenization method and
 control behavior therein. The available tokenization methods are available in
@@ -19,13 +43,14 @@ methods are:
     Gensim.
   * "collocation": Collects bigrams and trigrams in addition to single words.
     Uses NLTK.
-  * "entities": Extracts noun phrases as entities. Uses NLTK.
+  * "entities": Extracts noun phrases as entities. Uses TextBlob.
   * "mixed": first extracts noun phrases as entities, then follows up with
-    simple tokenization for single words. Uses NLTK.
+    simple tokenization for single words. Uses TextBlob.
 
 All methods accept a keyword argument ``stopwords``, which are words that will
 be ignored in tokenization. These are words that add little content value, such
-as prepositions. The default, STOPWORDS, uses gensim's STOPWORDS collection.
+as prepositions. The default, ``None``, loads and uses gensim's STOPWORDS
+collection.
 
 
 Collocation tokenization
@@ -49,14 +74,14 @@ To obtain the bigram and trigram patterns, use the
 Parameterization is done at this step, prior to tokenization of the corpus.  Tweakable parameters are:
 
   * top_n: limit results to a maximum number
-  * min_word_length: the minimum length that any single word can be
+  * min_length: the minimum length that any single word can be
   * min_bigram_freq: the minimum number of times a pair of words must occur together to be included
   * min_trigram_freq: the minimum number of times a triplet of words must occur together to be included
 
 
 .. code-block:: python
 
-   >>> patterns = collect_bigrams_and_trigrams(corpus, min_word_length=3, min_bigram_freq=3, min_trigram_freq=3)
+   >>> patterns = collect_bigrams_and_trigrams(corpus, min_length=3, min_bigram_freq=3, min_trigram_freq=3)
 
 
 For small bodies of text, you'll need small freq values, but this may be
@@ -67,7 +92,7 @@ your corpus object:
 
 .. code-block:: python
 
-   >>> raw_data.tokenize(method="collocation", patterns=patterns)
+   >>> tokenized_corpus = raw_data.tokenize(method="collocation", patterns=patterns)
    
 
 
@@ -98,7 +123,7 @@ Next, tokenize the document collection:
 
 .. code-block:: python
 
-   >>> raw_data.tokenize(method="entities", entities=entities)
+   >>> tokenized_corpus = raw_data.tokenize(method="entities", entities=entities)
 
 
 Mixed tokenization
@@ -112,4 +137,4 @@ interesting both together and apart. Usage is similar to the entities tokenizer:
 
    >>> from topik.tokenizers import collect_entities
    >>> entities = collect_entities(corpus)
-   >>> raw_data.tokenize(method="mixed", entities=entities)
+   >>> tokenized_corpus = raw_data.tokenize(method="mixed", entities=entities)

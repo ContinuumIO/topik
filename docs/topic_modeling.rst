@@ -11,7 +11,7 @@ Currently, Topik provides interfaces to or implements two topic modeling
 algorithms, LDA (latent dirichlet allocation) and PLSA (probablistic latent
 semantic analysis). LDA and PLSA are closely related, with LDA being a slightly
 more recent development. The authoritative sources on LDA and PLSA are `Blei,
-Ng, Jordan (20003) <http://jmlr.csail.mit.edu/papers/v3/blei03a.html>`_, and
+Ng, Jordan (2003) <http://jmlr.csail.mit.edu/papers/v3/blei03a.html>`_, and
 `Hoffman (1999) <http://www.cs.brown.edu/people/th/papers/Hofmann-UAI99.pdf>`_,
 respectively.
 

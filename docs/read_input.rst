@@ -73,7 +73,7 @@ contain only the contents of the '_source' field returned from the query.
 
 .. code-block:: python
 
-   >>> corpus = read_input(source="https://localhost/test_index", content_field="text")
+   >>> corpus = read_input(source="https://localhost:9200", index="test_index", content_field="text")
 
 
 Extra arguments passed by keyword are passed to the `Elasticsearch` instance
@@ -82,8 +82,8 @@ use SSL:
 
 .. code-block:: python
 
-   >>> corpus = read_input(source="https://user:secret@localhost:443/test_index",
-                           content_field="text", use_ssl=True)
+   >>> corpus = read_input(source="https://user:secret@localhost:9200",
+                           index="test_index", content_field="text", use_ssl=True)
 
 
 The source argument for Elasticsearch also supports multiple servers, though
@@ -92,7 +92,7 @@ this requires that you manually specify the 'elastic' source_type:
 .. code-block:: python
 
     >>> corpus = read_input(source=["https://server1", "https://server2"],
-                            content_field="text")
+                            index="test_index", source_type="elastic", content_field="text")
 
 
 For more information on server options, please refer to `Elasticsearch's
@@ -101,15 +101,15 @@ documentation <https://elasticsearch-py.readthedocs.org/en/master/>`_.
 Extra keyword arguments are also passed to the scroll helper that returns
 results. Of special note here, an additional ``query`` keyword argument can be
 passed to limit the records imported from the server. This query must follow the
-Elasticsearch query of filter DSL. For more information on Elasticsearch query
-DSL, please refer to `Elasticsearch's DSL
-docs <https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html>`_.
+Elasticsearch query DSL. For more information on Elasticsearch query DSL, please
+refer to `Elasticsearch's DSL docs
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html>`_.
 
 .. code-block:: python
 
    >>> query = "{"filtered": {"query": {"match": { "tweet": "full text search"}}}}"
-   >>> corpus = read_input(source="https://localhost/test_index", content_field="tweet",
-                           query=query)
+   >>> corpus = read_input(source="https://localhost:9200", index="test_index",
+                           content_field="tweet", query=query)
 
 
 Output formats
@@ -145,7 +145,7 @@ dictionary containing connection details and any additional arguments.
 .. code-block:: python
 
     >>> output_args = {"source": "localhost", "index": "destination_index"}
-    >>> raw_data = read_input("test_data.json", output_format='elastic',
+    >>> raw_data = read_input("test_data.json", output_type='elastic',
                               output_args=output_args, content_field="text")
 
 
@@ -154,3 +154,62 @@ that you specify. Operations do not block, and have "eventual consistency": the
 corpus will eventually have all of the documents you sent available, but not
 necessarily immediately after the read_input function returns. This lag time is
 due to `Elasticsearch` indexing the data on the server side.
+
+
+Synchronous wait
+================
+
+As mentioned above, some output formats are not immediately ready for
+consumption after loading data. For example, after sending data to
+Elasticsearch, Elasticsearch will take some time to index that data. Until that
+indexing is complete, that data will not show up in iterations over the corpus.
+To force your program to wait for this to finish, use the ``synchronous_wait``
+argument to read_input:
+
+.. code-block:: python
+
+    >>> output_args = {"source": "localhost", "index": "destination_index"}
+    >>> raw_data = read_input("test_data.json", output_type='elastic',
+                              output_args=output_args, content_field="text",
+                              synchronous_wait=30)
+
+
+This example will wait up to 30 seconds for the Elasticsearch indexing to stabilize.
+This is evaluated as the point at which the number of documents in the output has
+not changed after 1 second.  If the number of documents has not stabilized after the
+synchronous wait period, you will get a warning message, but execution will proceed.
+
+This is a property only of output formats. Input has no wait associated with it,
+because the source is assumed to be "complete" when you ask for it. Please make
+sure that this is true, or your results will be ill-defined and impossible to
+reproduce.
+
+Saving and loading corpora
+==========================
+
+The output object of any :func:`~.read_input` step is saveable and loadable.
+This allows you to quickly get back to any filtered state you may have applied
+to some larger corpus, and also ensures that the corpus you load with a model is
+consistent with the corpus that was used to create that model. To save a corpus,
+call its :meth:`~.CorpusBase.save` method:
+
+.. code-block:: python
+
+    >>> raw_data.save("output_filename")
+
+
+The file format of the saved file is JSON. Depending on the exact class that
+your corpus is, more or less data may be saved to this JSON file. For example,
+the :class:`~.DictionaryCorpus` class saves all of its corpus data to this JSON
+file, and can be quite large. The :class:`~.ElasticsearchCorpus` class saves
+only connection details and filtering metadata to this JSON file, and is much
+smaller.
+
+Loading corpora is achieved using the :func:`~.load_persisted_corpus` function.
+This function returns the appropriate Corpus object, based on metadata in the
+JSON file.
+
+.. code-block:: python
+
+    >>> from topik.intermediaries.raw_data import load_persisted_corpus >>>
+    raw_data = load_persisted_corpus("output_filename")

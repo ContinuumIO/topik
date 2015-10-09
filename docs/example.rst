@@ -94,9 +94,9 @@ An example complete workflow would be the following:
 
    >>> from topik import read_input, registered_models
    >>> raw_data = read_input("reviews")
-   >>> raw_data.tokenize()
+   >>> tokenized_corpus = raw_data.tokenize()
    >>> n_topics = 10
-   >>> model = registered_models["LDA"](raw_data, n_topics)
+   >>> model = registered_models["LDA"](tokenized_corpus, n_topics)
    >>> from topik.viz import Termite
    >>> termite = Termite(model.termite_data(n_topics), "Termite Plot")
    >>> termite.plot('termite.html')
