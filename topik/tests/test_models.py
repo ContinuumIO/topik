@@ -45,10 +45,6 @@ class _ModelBase(object):
         self.assertLess(top_words[0][1][0], top_words[0][0][0])
         self.assertLess(top_words[0][-1][0], top_words[0][-2][0])
 
-    def test_termite_output(self):
-        self.model.termite_data(os.path.join(module_path, 'test_termite.csv'))
-        self.assertTrue(os.path.isfile(os.path.join(module_path, 'test_termite.csv')))
-
     def test_termite_pandas_output(self):
         topn_words = 15
         data = self.model.termite_data(topn_words=topn_words)

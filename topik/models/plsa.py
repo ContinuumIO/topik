@@ -42,28 +42,28 @@ class PLSA(TopicModelBase):
         self.topic_array = np.arange(ntopics, dtype=np.int32)
         if corpus:
             # iterable, each entry is tuple of (word_id, count)
-            self.corpus = corpus
+            self._corpus = corpus
             # total number of identified words for each given document (document length normalization factor?)
             self.each = map(sum, map(lambda x: x[1], corpus))
             # Maximum identified word (number of identified words in corpus)
             # TODO: seems like this could be tracked better during the tokenization step and fed in.
-            self.words = len(self.corpus.dict.token2id)
+            self.words = len(corpus._dict.token2id)
             self.likelihood = 0
             # topic-word matrix
             self.zw = _rand_mat(self.words, self.topics)
             # document-topic matrix
-            self.dz = _rand_mat(self.topics, len(self.corpus))
-            self.dw_z = [{}, ] * len(self.corpus)
-            self.p_dw = [{}, ] * len(self.corpus)
+            self.dz = _rand_mat(self.topics, len(corpus))
+            self.dw_z = [{}, ] * len(corpus)
+            self.p_dw = [{}, ] * len(corpus)
             self.beta = 0.8
         elif load_filename and binary_filename:
             from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
-            self.corpus = DigestedDocumentCollection(load_persisted_corpus(load_filename))
+            self._corpus = DigestedDocumentCollection(load_persisted_corpus(load_filename))
             # total number of identified words for each given document (document length normalization factor?)
-            self.each = map(sum, map(lambda x: x[1], self.corpus))
+            self.each = map(sum, map(lambda x: x[1], self._corpus))
             # Maximum identified word (number of identified words in corpus)
             # TODO: seems like this could be tracked better during the tokenization step and fed in.
-            self.words = max(reduce(operator.add, map(lambda x: x[0], self.corpus)))+1
+            self.words = max(reduce(operator.add, map(lambda x: x[0], self._corpus)))+1
             arrays = np.load(binary_filename)
             self.zw = arrays['zw']
             self.dz = arrays['dz']
@@ -84,10 +84,10 @@ class PLSA(TopicModelBase):
         super(PLSA, self).save(filename, saved_data=saved_data)
 
     def get_model_name_with_parameters(self):
-        return "PLSA_{}_topics{}".format(self.topics, self.corpus.filter_string)
+        return "PLSA_{}_topics{}".format(self.topics, self._corpus.filter_string)
 
     def _cal_p_dw(self):
-        for d, doc in enumerate(self.corpus):
+        for d, doc in enumerate(self._corpus):
             for word_id, word_ct in doc:
                 tmp = 0
                 for _ in range(word_ct):
@@ -97,7 +97,7 @@ class PLSA(TopicModelBase):
 
     def _e_step(self):
         self._cal_p_dw()
-        for d, doc in enumerate(self.corpus):
+        for d, doc in enumerate(self._corpus):
             for word_id, word_ct in doc:
                 self.dw_z[-1][word_id] = []
                 for z in self.topic_array:
@@ -106,13 +106,13 @@ class PLSA(TopicModelBase):
     def _m_step(self):
         for z in self.topic_array:
             self.zw[z] = [0]*self.words
-            for d, doc in enumerate(self.corpus):
+            for d, doc in enumerate(self._corpus):
                 for word_id, word_ct in doc:
                     self.zw[z][word_id] += word_ct*self.dw_z[d][word_id][z]
             norm = sum(self.zw[z])
             for w in xrange(self.words):
                 self.zw[z][w] /= norm
-        for d, doc in enumerate(self.corpus):
+        for d, doc in enumerate(self._corpus):
             self.dz[d] = 0
             for z in self.topic_array:
                 for word_id, word_ct in doc:
@@ -122,7 +122,7 @@ class PLSA(TopicModelBase):
 
     def _cal_likelihood(self):
         self.likelihood = 0
-        for d, doc in enumerate(self.corpus):
+        for d, doc in enumerate(self._corpus):
             for word_id, word_ct in doc:
                 self.likelihood += word_ct*math.log(self.p_dw[d][word_id])
 
@@ -194,7 +194,7 @@ class PLSA(TopicModelBase):
         for topic in self.dz.T:
             word_ids = np.argpartition(topic, -topn)[-topn:]
             word_ids = reversed(word_ids[np.argsort(topic[word_ids])])
-            top_words.append([(topic[word_id], self.corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
+            top_words.append([(topic[word_id], self._corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
         return top_words
 
     def _get_doc_data(self):

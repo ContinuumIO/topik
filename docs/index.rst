@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to Topik's documentation!
-=================================
+#################################
 
 `Topik` is a Topic Modeling toolkit.
 
@@ -50,104 +50,20 @@ features into an easy callable function and a command line interface.
 - Be an easy and beginner-friendly module to contribute to.
 
 
-Getting Started
----------------
-
-To demonstrate the ease of a typical `topik` workflow, we'll provide two examples: using the command line
-interface and using the method ``topik.run.run_topic_model``.
-
-- Using the command line interface
-
-To get help you can always type ``topik --help``.
-
-.. code-block:: bash
-
-    $ topik --help
-
-    Usage: topik [OPTIONS]
-
-      Run topic modeling
-
-    Options:
-      -d, --data TEXT        Path to input data for topic modeling  [required]
-      -f, --format TEXT      Data format provided: json_stream, folder_files,
-                             large_json  [required]
-      -m, --model TEXT       Statistical topic model: lda_batch, lda_online
-      -o, --output TEXT      Topic modeling output path
-      -t, --tokenizer TEXT   Tokenize method to use: simple, collocations,
-                             entities, mix
-      -n, --ntopics INTEGER  Number of topics to find
-      --prefix_value TEXT    In 'large json' files, the prefix_value to extract
-                             text from
-      --event_value TEXT     In 'large json' files the event_value to extract text
-                             from
-      --field TEXT           In 'json stream' files, the field to extract text
-                             from
-      --help                 Show this message and exit.
-
-
-The following example runs the default model LDA(batch) over a json stream, extracting the field `text` with simple
-word tokenization.
-
-.. code-block:: bash
-
-    $ topik -d ./topik/tests/data/test-data-1.json -f json_stream -o ./test -n 3 --field text -t entities
-
-- Using ``topik.run.run_topic_model``
-
-The same previous example using ``run_topic_model`` would be:
-
-.. code-block:: python
-
-   >>> from topik.run import run_topic_model
-   >>> run_topic_model(data='./topik/tests/data/test-data-1.json', format='json_stream', n_topics=3, field='text', \
-                       dir_path='./topic_model')
-
-
-To understand ``topik``'s output and results interpretation, see :doc:`Topik Output <output>`.
-
-
 Contents
---------
+========
 
-User Guide
-``````````
 .. toctree::
-   :maxdepth: 2
 
    installation
    example
-   output
-   readers
-   tokenizers
-   vectorizers
-   models
-   viz
-   faq
-   troubleshooting
-
-
-Developer Guide
-```````````````
-.. toctree::
-   :maxdepth: 2
-
+   usage_python
    intro-dev
-   custom-readers
-   custom-tokenizers
-
-
-Reference Guide
-```````````````
-
-.. toctree::
-   :maxdepth: 2
-
-   api
+   API reference <api/topik>
 
 
 Useful Topic Modeling Resources
--------------------------------
+===============================
 
 - `Topic modeling, David M. Blei <http://www.cs.princeton.edu/~blei/topicmodeling.html>`_
 

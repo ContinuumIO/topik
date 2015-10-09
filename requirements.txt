@@ -1,7 +1,7 @@
+numpy
 pandas
 blaze
 bokeh
-numpy
 gensim
 pattern
 textblob
@@ -12,3 +12,4 @@ elasticsearch
 click
 pysolr
 ijson
+versioneer

@@ -1,5 +1,5 @@
 Installation
-============
+############
 
 
 Topik is meant to be a high-level interface for many topic modeling utilities (tokenizers, algorithms,
@@ -24,19 +24,3 @@ There is also the option of just installing the Python features with pip.
 
    The pip installation option will not provide all the available features, e.g. the LDAvis R package will not be
    available.
-
-
-
-Requirements
-------------
-`Topik`'s requirements are:
-
-* gensim
-* pattern
-* textblob
-* nltk
-* pandas
-* blaze
-* bokeh
-* numpy
-* into

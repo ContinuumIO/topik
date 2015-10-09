@@ -2,26 +2,21 @@ from __future__ import absolute_import
 
 import logging
 
-import blaze as blz
-from odo import into
-import pandas as pd
-import bokeh.plotting as plt
-from bokeh.models.sources import ColumnDataSource
-from pyLDAvis import prepare, show
-
 from topik.tests import test_data_path
-
 
 class Termite(object):
     """A Bokeh Termite Visualization for LDA results analysis.
 
     Parameters
     ----------
-    input_file: string
-        A csv file from an LDA output containing columns "word", "topic" and "weight".
-    title: string
+    input_file : str or pandas DataFrame
+        A pandas dataframe from a topik model get_termite_data() containing columns "word", "topic" and "weight".
+        May also be a string, in which case the string is a filename of a csv file with the above columns.
+    title : str
         The title for your termite plot
 
+    Examples
+    --------
     >>> termite = Termite("{}/termite.csv".format(test_data_path),
     ...                   "My lda results")
     >>> termite.plot('my_termite.html')
@@ -32,6 +27,12 @@ class Termite(object):
         self.title = title
 
     def plot(self, output_file="termite.html"):
+        import blaze as blz
+        from odo import into
+        import pandas as pd
+        import bokeh.plotting as plt
+        from bokeh.models.sources import ColumnDataSource
+
         t = blz.Data(self.input_file)
 
         MAX = blz.compute(t.weight.max())
@@ -58,10 +59,10 @@ class Termite(object):
                        title=self.title)
 
         p.circle(x="topic", y="word", size="size", fill_alpha=0.6, source=data_source)
-        logging.info("generating termite plot for file %s" % self.input_file)
         plt.show(p)
 
 def plot_lda_vis(model_data):
     """Designed to work with to_py_lda_vis() in the model classes."""
+    from pyLDAvis import prepare, show
     model_vis_data = prepare(**model_data)
     show(model_vis_data)
