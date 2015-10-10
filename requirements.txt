@@ -13,3 +13,4 @@ click
 pysolr
 ijson
 versioneer
+setuptools-markdown
