@@ -15,9 +15,10 @@ setup(name='topik',
       keywords='topic modeling lda nltk gensim pattern',
       packages=find_packages(),
       package_data={'topik': ['R/runLDAvis.R']},
+      setup_requires=['setuptools-markdown'],
+      long_description_markdown_filename='README.md',
       install_requires=list(open('requirements.txt').read().strip().split('\n')),
       entry_points= {
           'console_scripts': ['topik = topik.cli:run']
       },
-      long_description=(open('README.md').read() if exists('README.md')
-                        else ''), zip_safe=False)
+      zip_safe=False)
