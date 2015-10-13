@@ -46,8 +46,17 @@ class LDA(TopicModelBase):
     """
     def __init__(self, corpus_input=None, ntopics=10, load_filename=None, binary_filename=None, **kwargs):
         if corpus_input is not None:
+            # the minimum_probability=0 argument is necessary in order for
+            # gensim to return the full document-topic-distribution matrix.  If
+            # this argument is omitted and left to the gensim default of 0.01,
+            # then all document-topic weights below that threshold will be
+            # returned as NaN, violating the subsequent LDAvis assumption that
+            # all rows (documents) in the document-topic-distribution matrix sum
+            # to 1.
+
             self._model = gensim.models.LdaModel(list(iter(corpus_input)), num_topics=ntopics,
-                                                id2word=corpus_input.get_id2word_dict(), **kwargs)
+                                                 id2word=corpus_input.get_id2word_dict(),
+                                                 minimum_probability=0, **kwargs)
             self._corpus = corpus_input
         elif load_filename is not None and binary_filename is not None:
             self._model = gensim.models.LdaModel.load(binary_filename)
