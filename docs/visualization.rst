@@ -41,5 +41,11 @@ Example syntax for these:
    >>> from topik.viz import plot_lda_vis
    >>> plot_lda_vis(model.to_py_lda_vis())
 
+.. raw:: html
+    :file: reviews_pyldavis.html
+
 Each model is free to implement its own additional outputs - check the class
 members for what might be available.
+
+.. include:: <reviews_pyldavis.html>
+    :code: html
