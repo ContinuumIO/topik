@@ -31,6 +31,9 @@ Example syntax for these:
    >>> termite = Termite(lda.termite_data(n_topics), "Termite Plot")
    >>> termite.plot(os.path.join(dir_path, 'termite.html'))
 
+.. include:: <viz/reviews_termite.html>
+    :code: html
+
 .. code-block:: python
 
    >>> from topik.viz import LDAvis
