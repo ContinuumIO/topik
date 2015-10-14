@@ -31,8 +31,11 @@ Example syntax for these:
    >>> termite = Termite(lda.termite_data(n_topics), "Termite Plot")
    >>> termite.plot(os.path.join(dir_path, 'termite.html'))
 
-.. include:: <viz/reviews_termite.html>
-    :code: html
+.. raw:: html
+   :file: viz/termite_open.html
+
+.. raw:: html
+   :file: viz/reviews_termite.html
 
 .. code-block:: python
 
@@ -45,10 +48,10 @@ Example syntax for these:
    >>> plot_lda_vis(model.to_py_lda_vis())
 
 .. raw:: html
+   :file: viz/ldavis_open.html
+
+.. raw:: html
     :file: viz/reviews_pyldavis.html
 
 Each model is free to implement its own additional outputs - check the class
 members for what might be available.
-
-.. include:: <viz/reviews_pyldavis.html>
-    :code: html
