@@ -4,7 +4,7 @@ import os
 import gensim
 import pandas as pd
 
-from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
+from topik.intermediaries.tokenized_corpus import TokenizedCorpus
 from topik.intermediaries.raw_data import load_persisted_corpus
 from .model_base import TopicModelBase, register_model
 
@@ -40,7 +40,7 @@ class LDA(TopicModelBase):
     Examples
     --------
     >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-    >>> processed_data = raw_data.tokenize()  # preprocess returns a DigestedDocumentCollection
+    >>> processed_data = raw_data.tokenize()  # preprocess returns a TokenizedCorpus
     >>> model = LDA(processed_data, ntopics=3)
 
     """
@@ -60,7 +60,7 @@ class LDA(TopicModelBase):
             self._corpus = corpus_input
         elif load_filename is not None and binary_filename is not None:
             self._model = gensim.models.LdaModel.load(binary_filename)
-            self._corpus = DigestedDocumentCollection(load_persisted_corpus(load_filename))
+            self._corpus = TokenizedCorpus(load_persisted_corpus(load_filename))
 
     def save(self, filename):
         self._model.save(self.get_model_name_with_parameters())

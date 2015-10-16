@@ -108,7 +108,6 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         # create parameter string
         parameters_string = _get_parameters_string(method=method, **kwargs)
         token_path = "tokens_"+parameters_string
-        bow_path = "bow_"+parameters_string
 
         # convert raw documents into lists of tokens
         for document_id, raw_document in self:
@@ -130,10 +129,6 @@ class CorpusInterface(with_metaclass(ABCMeta)):
                 bow[token_id] = {'count': count}
             self.append_to_record(document_id, bow_path,
                                   bow)
-
-        # create Dictionary object and iterate over terms adding them to it
-        #for term_id, term in tokenized_documents:
-            #d
 
         return TokenizedCorpus(self.get_field(field=token_path),
                                           dictionary=id2word_dict)
