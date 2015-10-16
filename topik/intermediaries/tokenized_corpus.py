@@ -1,6 +1,6 @@
 import gensim
 
-class DigestedDocumentCollection(gensim.interfaces.CorpusABC):
+class TokenizedCorpus(gensim.interfaces.CorpusABC):
     """A bag-of-words representation of a corpus (collection of documents).
 
     This serves as direct input to modeling functions.  It is output from
@@ -15,11 +15,16 @@ class DigestedDocumentCollection(gensim.interfaces.CorpusABC):
     Readers iterate over tuples (id, content), but discard id in return (for compatibility with Gensim.)
 
     """
-    def __init__(self, tokenized_corpus):
+    def __init__(self, tokenized_corpus, dictionary=None):
         from gensim.corpora.dictionary import Dictionary
         self._corpus = tokenized_corpus
-        self._dict = Dictionary(tokenized_corpus.get_generator_without_id())
-        super(DigestedDocumentCollection, self).__init__()
+
+        if dictionary:
+            self._dict = dictionary
+        else:
+            self._dict = Dictionary(tokenized_corpus.get_generator_without_id())
+
+        super(TokenizedCorpus, self).__init__()
 
     def __iter__(self):
         """Discards id field - for compatibility with Gensim."""

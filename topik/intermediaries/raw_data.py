@@ -9,9 +9,11 @@ import time
 
 from six import with_metaclass
 
+from gensim.corpora.dictionary import Dictionary
+
 from topik.intermediaries.persistence import Persistor
 from topik.tokenizers import tokenizer_methods
-from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
+from topik.intermediaries.tokenized_corpus import TokenizedCorpus
 
 
 registered_outputs = {}
@@ -103,20 +105,42 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         kwargs: arbitrary dicionary of extra parameters.  These are passed both
             to the tokenizer and to the vectorizer steps.
         """
+        # create parameter string
         parameters_string = _get_parameters_string(method=method, **kwargs)
         token_path = "tokens_"+parameters_string
-        for record_id, raw_record in self:
-            tokenized_record = tokenizer_methods[method](raw_record,
+        bow_path = "bow_"+parameters_string
+
+        # convert raw documents into lists of tokens
+        for document_id, raw_document in self:
+            tokenized_document = tokenizer_methods[method](raw_document,
                                          **kwargs)
             # TODO: would be nice to aggregate batches and append in bulk
-            self.append_to_record(record_id, token_path, tokenized_record)
+            self.append_to_record(document_id, token_path, tokenized_document)
         self.synchronize(max_wait=synchronous_wait, field=token_path)
-        return DigestedDocumentCollection(self.get_field(field=token_path))
 
+        # create a corpus dictionary
+        id2word_dict = Dictionary(self.get_generator_without_id(
+                                                            field=token_path))
+
+        # use the corpus dictionary to generate BOWs from lists of tokens
+        bow_path = "bow_"+parameters_string
+        for document_id, tokenized_document in self.get_field(field=token_path):
+            bow = {}
+            for token_id, count in dict(id2word_dict.doc2bow(tokenized_document)).items():
+                bow[token_id] = {'count': count}
+            self.append_to_record(document_id, bow_path,
+                                  bow)
+
+        # create Dictionary object and iterate over terms adding them to it
+        #for term_id, term in tokenized_documents:
+            #d
+
+        return TokenizedCorpus(self.get_field(field=token_path),
+                                          dictionary=id2word_dict)
 
 @register_output
 class ElasticSearchCorpus(CorpusInterface):
-    def __init__(self, source, index, content_field, doc_type=None, query=None, iterable=None,
+    def __init__(self, source, index, content_field, doc_type='continuum', query=None, iterable=None,
                  filter_expression="", **kwargs):
         from elasticsearch import Elasticsearch
         super(ElasticSearchCorpus, self).__init__()
@@ -155,7 +179,7 @@ class ElasticSearchCorpus(CorpusInterface):
             yield result
 
     def append_to_record(self, record_id, field_name, field_value):
-        self.instance.update(index=self.index, id=record_id, doc_type="continuum",
+        self.instance.update(index=self.index, id=record_id, doc_type=self.doc_type,
                              body={"doc": {field_name: field_value}})
 
     def get_field(self, field=None):
@@ -184,7 +208,7 @@ class ElasticSearchCorpus(CorpusInterface):
             id = _get_hash_identifier(item, id_field)
             action = {'_op_type': 'update',
                       '_index': self.index,
-                      '_type': 'continuum',
+                      '_type': self.doc_type,
                       '_id': id,
                       'doc': item,
                       'doc_as_upsert': "true",
@@ -201,14 +225,14 @@ class ElasticSearchCorpus(CorpusInterface):
         index = self.index
         if self.instance.indices.get_field_mapping(field=field,
                                            index=index,
-                                           doc_type="continuum") != 'date':
+                                           doc_type=self.doc_type) != 'date':
             index = self.index+"_{}_alias_date".format(field)
             if not self.instance.indices.exists(index) or self.instance.indices.get_field_mapping(field=field,
                                            index=index,
-                                           doc_type="continuum") != 'date':
+                                           doc_type=self.doc_type) != 'date':
                 mapping = self.instance.indices.get_mapping(index=self.index,
-                                                            doc_type="continuum")
-                mapping[self.index]["mappings"]["continuum"]["properties"][field] = {"type": "date"}
+                                                            doc_type=self.doc_type)
+                mapping[self.index]["mappings"][self.doc_type]["properties"][field] = {"type": "date"}
                 self.instance.indices.put_alias(index=self.index,
                                                 name=index,
                                                 body=mapping)
