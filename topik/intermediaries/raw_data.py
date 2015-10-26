@@ -23,8 +23,8 @@ def register_output(cls):
     return cls
 
 
-def _get_hash_identifier(input_data, id_field):
-    return hash(input_data[id_field])
+def _get_hash_identifier(input_data, field_to_hash):
+    return hash(input_data[field_to_hash])
 
 
 def _get_parameters_string(**kwargs):
@@ -165,13 +165,13 @@ class ElasticSearchCorpus(CorpusInterface):
             field = self.content_field
         return ElasticSearchCorpus(self.hosts, self.index, field, self.doc_type, self.query)
 
-    def import_from_iterable(self, iterable, id_field="text", batch_size=500):
+    def import_from_iterable(self, iterable, content_field="text", batch_size=500):
         """Load data into Elasticsearch from iterable.
 
         iterable: generally a list of dicts, but possibly a list of strings
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
-        id_field: string identifier of field to hash for content ID.  For
+        content_field: string identifier of field to hash for content ID.  For
             list of dicts, a valid key value in the dictionary is required. For
             list of strings, a dictionary with one key, "text" is created and
             used.
@@ -180,8 +180,8 @@ class ElasticSearchCorpus(CorpusInterface):
         batch = []
         for item in iterable:
             if isinstance(item, basestring):
-                item = {id_field: item}
-            id = _get_hash_identifier(item, id_field)
+                item = {content_field: item}
+            id = _get_hash_identifier(item, content_field)
             action = {'_op_type': 'update',
                       '_index': self.index,
                       '_type': 'continuum',
@@ -253,7 +253,7 @@ class DictionaryCorpus(CorpusInterface):
     def __init__(self, content_field, iterable=None, generate_id=True, reference_field=None, content_filter=None):
         super(DictionaryCorpus, self).__init__()
         self.content_field = content_field
-        self._documents = []
+        self._documents = {}
         self.idx = 0
         active_field = None
         if reference_field:
@@ -273,7 +273,7 @@ class DictionaryCorpus(CorpusInterface):
         return "dictionary"
 
     def __iter__(self):
-        for doc in self._documents:
+        for doc_id, doc in self._documents.items():
             if self.content_filter:
                 if eval(self.content_filter["expression"].format(doc["_source"][self.content_filter["field"]])):
                     yield doc["_id"], doc["_source"][self.content_field]
@@ -281,7 +281,7 @@ class DictionaryCorpus(CorpusInterface):
                 yield doc["_id"], doc["_source"][self.content_field]
 
     def __len__(self):
-        return len(self._documents)
+        return len(self._documents.keys())
 
     @property
     def filter_string(self):
@@ -313,11 +313,27 @@ class DictionaryCorpus(CorpusInterface):
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
         """
+        '''
+        for item in iterable:
+            if isinstance(item, basestring):
+                item = {content_field: item}
+            id = _get_hash_identifier(item, content_field)
+            action = {'_op_type': 'update',
+                      '_index': self.index,
+                      '_type': 'continuum',
+                      '_id': id,
+                      'doc': item,
+                      'doc_as_upsert': "true",
+                      }
+            batch.append(action)
+        '''
         if generate_id:
-            self._documents = [{"_id": hash(doc[content_field]),
-                                "_source": doc} for doc in iterable]
+            for doc in iterable:
+                self._documents[hash(doc[content_field])] = doc
             self.reference_field = content_field
         else:
+            #for doc in iterable:
+            #    self.
             self._documents = [item for item in iterable]
 
     # TODO: generalize for datetimes
