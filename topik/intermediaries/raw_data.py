@@ -281,7 +281,7 @@ class DictionaryCorpus(CorpusInterface):
                 yield doc_id, doc["_source"][self.active_field]
 
     def __len__(self):
-        return len(self._documents.keys())
+        return len(self._documents)
 
     @property
     def filter_string(self):
