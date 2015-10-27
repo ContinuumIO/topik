@@ -111,7 +111,7 @@ class CorpusInterface(with_metaclass(ABCMeta)):
             # TODO: would be nice to aggregate batches and append in bulk
             self.append_to_record(record_id, token_path, tokenized_record)
         self.synchronize(max_wait=synchronous_wait, field=token_path)
-        return DigestedDocumentCollection(self.get_field(field=token_path))
+        return DigestedDocumentCollection(self.get_field(new_active_field=token_path))
 
 
 @register_output
@@ -250,22 +250,22 @@ class ElasticSearchCorpus(CorpusInterface):
 
 @register_output
 class DictionaryCorpus(CorpusInterface):
-    def __init__(self, content_field, iterable=None, generate_id=True, reference_field=None, content_filter=None):
+    def __init__(self, content_field, iterable=None, from_existing_corpus=False,
+                 active_field=None, content_filter=None):
         super(DictionaryCorpus, self).__init__()
         self.content_field = content_field
-        self._documents = {}
-        self.idx = 0
-        active_field = None
-        if reference_field:
-            self.reference_field = reference_field
-            active_field = content_field
-            content_field = reference_field
+        if active_field is None:
+            self.active_field = content_field
         else:
-            self.reference_field = content_field
-        if iterable:
-            self.import_from_iterable(iterable, content_field, generate_id)
-        if active_field:
-            self.content_field = active_field
+            self.active_field = active_field
+        self._documents = {}
+        if from_existing_corpus:
+            self._documents = iterable
+        elif iterable:
+            self.import_from_iterable(iterable, content_field)
+
+        self.idx = 0
+
         self.content_filter = content_filter
 
     @classmethod
@@ -276,9 +276,9 @@ class DictionaryCorpus(CorpusInterface):
         for doc_id, doc in self._documents.items():
             if self.content_filter:
                 if eval(self.content_filter["expression"].format(doc["_source"][self.content_filter["field"]])):
-                    yield doc["_id"], doc["_source"][self.content_field]
+                    yield doc_id, doc["_source"][self.active_field]
             else:
-                yield doc["_id"], doc["_source"][self.content_field]
+                yield doc_id, doc["_source"][self.active_field]
 
     def __len__(self):
         return len(self._documents.keys())
@@ -288,36 +288,53 @@ class DictionaryCorpus(CorpusInterface):
         return self.content_filter["expression"].format(self.content_filter["field"]) if self.content_filter else ""
 
     def append_to_record(self, record_id, field_name, field_value):
+        if record_id in self._documents.keys():
+            self._documents[record_id]["_source"][field_name] = field_value
+        else:
+            raise ValueError("No record with id '{}' was found.".format(record_id))
+        '''
         for doc in self._documents:
             if doc["_id"] == record_id:
                 doc["_source"][field_name] = field_value
                 return
         raise ValueError("No record with id '{}' was found.".format(record_id))
+        '''
 
-    def get_field(self, field=None):
+    def term_topic_matrix(self):
+        self._term_topic_matrix={}
+
+    def get_field(self, new_active_field=None):
         """Get a different field to iterate over, keeping all other details."""
-        if not field:
-            field = self.content_field
-        return DictionaryCorpus(content_field=field, iterable=self._documents,
-                                generate_id=False, reference_field=self.content_field)
+        if not new_active_field:
+            new_active_field = self.content_field
+        return DictionaryCorpus(active_field=new_active_field,
+                                iterable=self._documents,
+                                from_existing_corpus=True,
+                                content_field=self.content_field)
 
     def get_generator_without_id(self, field=None):
         if not field:
-            field = self.content_field
-        for doc in self._documents:
+            field = self.active_field
+        for doc in self._documents.values():
             yield doc["_source"][field]
 
-    def import_from_iterable(self, iterable, content_field, generate_id=True):
+    def import_from_iterable(self, iterable, content_field):
         """
         iterable: generally a list of dicts, but possibly a list of strings
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
         """
-        '''
+
         for item in iterable:
+            print(item)
+            print(content_field)
             if isinstance(item, basestring):
+                print("looly")
                 item = {content_field: item}
             id = _get_hash_identifier(item, content_field)
+            self._documents[id] = {"_source": item}
+        self.reference_field = content_field
+        '''
             action = {'_op_type': 'update',
                       '_index': self.index,
                       '_type': 'continuum',
@@ -326,7 +343,7 @@ class DictionaryCorpus(CorpusInterface):
                       'doc_as_upsert': "true",
                       }
             batch.append(action)
-        '''
+
         if generate_id:
             for doc in iterable:
                 self._documents[hash(doc[content_field])] = doc
@@ -335,18 +352,19 @@ class DictionaryCorpus(CorpusInterface):
             #for doc in iterable:
             #    self.
             self._documents = [item for item in iterable]
+        '''
 
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
     def get_date_filtered_data(self, start, end, field="year"):
-        return DictionaryCorpus(content_field=field, iterable=self._documents,
+        return DictionaryCorpus(content_field=field, iterable=self._documents.values(),
                                 generate_id=False, reference_field=self.content_field,
                                 content_filter={"field": field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
 
     def save(self, filename, saved_data=None):
         if saved_data is None:
             saved_data = {"reference_field": self.reference_field, "content_field": self.content_field,
-                          "iterable": [doc["_source"] for doc in self._documents]}
+                          "iterable": [doc["_source"] for doc in self._documents.values()]}
         return super(DictionaryCorpus, self).save(filename, saved_data)
 
 def load_persisted_corpus(filename):
