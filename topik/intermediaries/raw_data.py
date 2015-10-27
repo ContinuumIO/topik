@@ -219,10 +219,10 @@ class ElasticSearchCorpus(CorpusInterface):
         return index
 
     # TODO: validate input data to ensure that it has valid year data
-    def get_date_filtered_data(self, start, end, field="date"):
-        converted_index = self.convert_date_field_and_reindex(field=field)
+    def get_date_filtered_data(self, start, end, filter_field="date"):
+        converted_index = self.convert_date_field_and_reindex(field=filter_field)
         return ElasticSearchCorpus(self.hosts, converted_index, self.content_field, self.doc_type,
-                                   query={"query": {"filtered": {"filter": {"range": {field: {"gte": start,
+                                   query={"query": {"filtered": {"filter": {"range": {filter_field: {"gte": start,
                                                                                               "lte": end}}}}}},
                                    filter_expression=self.filter_expression + "_date_{}_{}".format(start, end))
 
@@ -292,13 +292,6 @@ class DictionaryCorpus(CorpusInterface):
             self._documents[record_id]["_source"][field_name] = field_value
         else:
             raise ValueError("No record with id '{}' was found.".format(record_id))
-        '''
-        for doc in self._documents:
-            if doc["_id"] == record_id:
-                doc["_source"][field_name] = field_value
-                return
-        raise ValueError("No record with id '{}' was found.".format(record_id))
-        '''
 
     def term_topic_matrix(self):
         self._term_topic_matrix={}
@@ -326,45 +319,24 @@ class DictionaryCorpus(CorpusInterface):
         """
 
         for item in iterable:
-            print(item)
-            print(content_field)
             if isinstance(item, basestring):
-                print("looly")
                 item = {content_field: item}
             id = _get_hash_identifier(item, content_field)
             self._documents[id] = {"_source": item}
-        self.reference_field = content_field
-        '''
-            action = {'_op_type': 'update',
-                      '_index': self.index,
-                      '_type': 'continuum',
-                      '_id': id,
-                      'doc': item,
-                      'doc_as_upsert': "true",
-                      }
-            batch.append(action)
-
-        if generate_id:
-            for doc in iterable:
-                self._documents[hash(doc[content_field])] = doc
-            self.reference_field = content_field
-        else:
-            #for doc in iterable:
-            #    self.
-            self._documents = [item for item in iterable]
-        '''
 
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
-    def get_date_filtered_data(self, start, end, field="year"):
-        return DictionaryCorpus(content_field=field, iterable=self._documents.values(),
-                                generate_id=False, reference_field=self.content_field,
-                                content_filter={"field": field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
+    def get_date_filtered_data(self, start, end, filter_field="year"):
+        return DictionaryCorpus(content_field=self.content_field,
+                                iterable=self._documents,
+                                from_existing_corpus=True,
+                                content_filter={"field": filter_field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
 
     def save(self, filename, saved_data=None):
         if saved_data is None:
-            saved_data = {"reference_field": self.reference_field, "content_field": self.content_field,
-                          "iterable": [doc["_source"] for doc in self._documents.values()]}
+            saved_data = {"active_field": self.active_field, "content_field": self.content_field,
+                          "iterable": self._documents,
+                          "from_existing_corpus": True}
         return super(DictionaryCorpus, self).save(filename, saved_data)
 
 def load_persisted_corpus(filename):
