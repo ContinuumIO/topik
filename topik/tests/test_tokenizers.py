@@ -111,10 +111,6 @@ class TestTokenizers(unittest.TestCase):
         self.assertTrue(self.solution_mixed_tokenizer_test_data_json_stream in\
                         tokenized_texts)
 
-        #id, text = next(iter(raw_data))
-        #doc_tokens = tokenizer_methods["mixed"](text, entities)
-        #self.assertEqual(doc_tokens, self.solution_mixed_tokenizer_test_data_json_stream)
-
 
 if __name__ == '__main__':
     unittest.main()
