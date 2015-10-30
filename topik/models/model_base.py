@@ -110,6 +110,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         return pd.Series(doc_lengths, index=id_index)
 
     @abstractmethod
+    @abstractproperty
     def _get_topic_term_dists(self):
         raise NotImplementedError
 
