@@ -279,8 +279,8 @@ def read_input(source, content_field, source_type="auto",
     >>> raw_data = read_input(
     ...         '{}/test_data_json_stream.json'.format(test_data_path),
     ...          content_field="abstract")
-    >>> id, text = next(iter(raw_data))
-    >>> text == (
+    >>> ids, texts = zip(*list(iter(raw_data)))
+    >>> solution_text = (
     ... u'Transition metal oxides are being considered as the next generation '+
     ... u'materials in field such as electronics and advanced catalysts; '+
     ... u'between them is Tantalum (V) Oxide; however, there are few reports '+
@@ -291,7 +291,10 @@ def read_input(source, content_field, source_type="auto",
     ... u'100 nm in diameter and several microns in length; this easy method '+
     ... u'can be useful in the preparation of nanomaterials for electronics, '+
     ... u'biomedical applications as well as catalysts.')
+    >>> solution_text in texts
     True
+
+    >> id, text = next(iter(raw_data))
     """
 
     import time

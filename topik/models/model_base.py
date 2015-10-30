@@ -1,26 +1,21 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import Counter
 import logging
 
 import pandas as pd
 from six import with_metaclass
 
+from topik.models import registered_models
+
 # doctest-only imports
 from topik.readers import read_input
 from topik.tests import test_data_path
 from topik.intermediaries.persistence import Persistor
 
-registered_models = {}
-
-def register_model(cls):
-    """Decorator function to register new model with global registry of models"""
-    global registered_models
-    if cls.__name__ not in registered_models:
-        registered_models[cls.__name__] = cls
-    return cls
 
 
-class TopicModelBase(with_metaclass(ABCMeta)):
+
+class TopicModelResultBase(with_metaclass(ABCMeta)):
     """Abstract base class for topic models.
 
     Ensures consistent interface across models, for base result display capabilities.
@@ -73,6 +68,9 @@ class TopicModelBase(with_metaclass(ABCMeta)):
                                     "saved_data": saved_data})
         self._corpus.save(filename)
 
+    #def term_topic_matrix(self):
+    #    self._corpus.term_topic_matrix
+
     @abstractmethod
     def get_model_name_with_parameters(self):
         """Abstract method.  Primarily internal function, used to name configurations in persisted metadata for later retrieval."""
@@ -107,6 +105,7 @@ class TopicModelBase(with_metaclass(ABCMeta)):
         return pd.Series(doc_lengths, index=id_index)
 
     @abstractmethod
+    #@property
     def _get_topic_term_dists(self):
         raise NotImplementedError
 
@@ -135,31 +134,34 @@ class TopicModelBase(with_metaclass(ABCMeta)):
 
         Examples
         --------
-        >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-        >>> processed_data = raw_data.tokenize()  # tokenize returns a DigestedDocumentCollection
-        >>> # must set seed so that we get same topics each run
-        >>> import random
-        >>> import numpy
-        >>> random.seed(42)
-        >>> numpy.random.seed(42)
-        >>> model = registered_models["LDA"](processed_data, ntopics=3)
-        >>> model.termite_data(5)
-            topic    weight         word
-        0       0  0.005337           nm
-        1       0  0.005193         high
-        2       0  0.004622        films
-        3       0  0.004457       matrix
-        4       0  0.004194     electron
-        5       1  0.005109   properties
-        6       1  0.004654         size
-        7       1  0.004539  temperature
-        8       1  0.004499           nm
-        9       1  0.004248   mechanical
-        10      2  0.007994         high
-        11      2  0.006458           nm
-        12      2  0.005717         size
-        13      2  0.005399    materials
-        14      2  0.004734        phase
+
+
+        >> import random
+        >> import numpy
+        >> import os
+        >> import topik.models
+        >> random.seed(42)
+        >> numpy.random.seed(42)
+        >> model = load_model(os.path.join(os.path.dirname(os.path.realpath("__file__")),
+        >> model = load_model('{}/doctest.model'.format(test_data_path),
+        ...                    model_name="LDA_3_topics")
+        >> model.termite_data(5)
+            topic    weight           word
+        0       0  0.005735             nm
+        1       0  0.005396          phase
+        2       0  0.005304           high
+        3       0  0.005229     properties
+        4       0  0.004703      composite
+        5       1  0.007056             nm
+        6       1  0.006298           size
+        7       1  0.005977           high
+        8       1  0.005291  nanoparticles
+        9       1  0.004737    temperature
+        10      2  0.006557           high
+        11      2  0.005302      materials
+        12      2  0.004439  nanoparticles
+        13      2  0.004219           size
+        14      2  0.004149              c
 
         """
         from itertools import chain

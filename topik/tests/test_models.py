@@ -21,6 +21,8 @@ class _ModelBase(object):
                 content_field="abstract")
         self.digested_data = raw_data.tokenize()
         self.model = registered_models[self.model_name](self.digested_data, ntopics=NTOPICS)
+        #model_class = registered_models.get(self.model_name)
+        #self.model = model_class(self.digested_data, ntopics=NTOPICS)
 
     def tearDown(self):
         import glob

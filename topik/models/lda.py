@@ -6,7 +6,8 @@ import pandas as pd
 
 from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
 from topik.intermediaries.raw_data import load_persisted_corpus
-from .model_base import TopicModelBase, register_model
+from .model_base import TopicModelResultBase
+from .registered_models import register_model
 
 # Doctest imports
 from topik.readers import read_input
@@ -14,7 +15,7 @@ from topik.tests import test_data_path
 
 
 @register_model
-class LDA(TopicModelBase):
+class LDA(TopicModelResultBase):
     """A high-level interface for an LDA (Latent Dirichlet Allocation) model.
 
 

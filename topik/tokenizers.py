@@ -30,11 +30,26 @@ def tokenize_simple(text, min_length=1, stopwords=None):
     Examples
     --------
     >>> from topik.readers import read_input
-    >>> id_documents = read_input(
+    >>> raw_data = read_input(
     ...                 '{}/test_data_json_stream.json'.format(test_data_path),
     ...                 content_field="abstract")
-    >>> id, doc_text = next(iter(id_documents))
-    >>> doc_text
+    >>> tokenized_data = raw_data.tokenize()
+    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+    >>> solution_tokens = [u'transition', u'metal', u'oxides', u'considered',
+    ... u'generation', u'materials', u'field', u'electronics',
+    ... u'advanced', u'catalysts', u'tantalum', u'v', u'oxide',
+    ... u'reports', u'synthesis', u'material', u'nanometer', u'size',
+    ... u'unusual', u'properties', u'work', u'present', u'synthesis',
+    ... u'ta', u'o', u'nanorods', u'sol', u'gel', u'method', u'dna',
+    ... u'structure', u'directing', u'agent', u'size', u'nanorods',
+    ... u'order', u'nm', u'diameter', u'microns', u'length', u'easy',
+    ... u'method', u'useful', u'preparation', u'nanomaterials', u'electronics',
+    ... u'biomedical', u'applications', u'catalysts']
+    >>> solution_tokens in tokenized_texts
+    True
+
+    >> id, doc_text = next(iter(id_documents))
+    >> doc_text
     u'Transition metal oxides are being considered as the next generation \
 materials in field such as electronics and advanced catalysts; between\
  them is Tantalum (V) Oxide; however, there are few reports for the \
@@ -45,8 +60,8 @@ agent, the size of the nanorods was of the order of 40 to 100 nm in \
 diameter and several microns in length; this easy method can be useful\
  in the preparation of nanomaterials for electronics, biomedical \
 applications as well as catalysts.'
-    >>> tokens = tokenize_simple(doc_text)
-    >>> tokens
+    >> tokens = tokenize_simple(doc_text)
+    >> tokens
     [u'transition', u'metal', u'oxides', u'considered', \
 u'generation', u'materials', u'field', u'electronics', \
 u'advanced', u'catalysts', u'tantalum', u'v', u'oxide', \
@@ -164,21 +179,23 @@ def tokenize_collocation(text, patterns, min_length=1, stopwords=None):
     Examples
     --------
     >>> from topik.readers import read_input
-    >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
-    >>> patterns = collect_bigrams_and_trigrams(id_documents, min_bigram_freq=2, min_trigram_freq=2)
-    >>> id, doc_text = next(iter(id_documents))
-    >>> tokenized_text = tokenize_collocation(doc_text, patterns)
-    >>> tokenized_text
-    [u'transition_metal', u'oxides', u'considered', u'generation', \
-u'materials', u'field', u'electronics', u'advanced', u'catalysts', \
-u'tantalum', u'v_oxide', u'reports', u'synthesis_material', \
-u'nanometer_size', u'unusual', u'properties', u'work_present', \
-u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel', u'method', \
-u'dna', u'structure', u'directing', u'agent', u'size', u'nanorods', \
-u'order', u'nm_diameter', u'microns', u'length', u'easy', u'method', \
-u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical', \
-u'applications', u'catalysts']
+    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
+    >>> patterns = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=2, min_trigram_freq=2)
+    >>> tokenized_data = raw_data.tokenize(method="collocation", patterns=patterns)
+    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+    >>> solution_tokens = [u'transition_metal', u'oxides', u'considered', u'generation',
+    ... u'materials', u'field', u'electronics', u'advanced', u'catalysts',
+    ... u'tantalum', u'v_oxide', u'reports', u'synthesis_material',
+    ... u'nanometer_size', u'unusual', u'properties', u'work_present',
+    ... u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel', u'method',
+    ... u'dna', u'structure', u'directing', u'agent', u'size', u'nanorods',
+    ... u'order', u'nm_diameter', u'microns', u'length', u'easy', u'method',
+    ... u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical',
+    ... u'applications', u'catalysts']
+    >>> solution_tokens in tokenized_texts
+    True
     """
+
     text = ' '.join(tokenize_simple(text, min_length=min_length, stopwords=stopwords))
     for pattern in patterns:
         text = re.sub(pattern, lambda match: match.group(0).replace(' ', '_'), text)
@@ -196,7 +213,15 @@ def collect_entities(collection, freq_min=2, freq_max=10000):
     freq_max: int
         Maximum frequency of a noun phrase occurrences in order to retrieve it. Default is 10000.
 
+    Examples
+    --------
+    >>> from topik.readers import read_input
+    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
+    >>> entities = collect_entities(raw_data)
+    >>> len(entities)
+    220
     """
+    # TODO: add doctest
 
     from textblob import TextBlob
 
@@ -242,28 +267,15 @@ def tokenize_entities(text, entities, min_length=1, stopwords=None):
     Examples
     --------
     >>> from topik.readers import read_input
-    >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-    >>> entities = collect_entities(id_documents)
-    >>> len(entities)
-    220
-    >>> i = iter(id_documents)
-    >>> _, doc_text = next(i)
-    >>> doc_text
-    u'Transition metal oxides are being considered as the next generation \
-materials in field such as electronics and advanced catalysts; between\
- them is Tantalum (V) Oxide; however, there are few reports for the \
-synthesis of this material at the nanometer size which could have \
-unusual properties. Hence, in this work we present the synthesis of \
-Ta2O5 nanorods by sol gel method using DNA as structure directing \
-agent, the size of the nanorods was of the order of 40 to 100 nm in \
-diameter and several microns in length; this easy method can be useful\
- in the preparation of nanomaterials for electronics, biomedical \
-applications as well as catalysts.'
-    >>> tokenized_text = tokenize_entities(doc_text, entities)
-    >>> tokenized_text
-    [u'transition']
-
+    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
+    >>> entities = collect_entities(raw_data)
+    >>> tokenized_data = raw_data.tokenize(method="entities", entities=entities)
+    >>> solution_tokens = [u'transition']
+    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+    >>> solution_tokens in tokenized_texts
+    True
     """
+
     from textblob import TextBlob
     result = []
     for np in TextBlob(text).noun_phrases:
@@ -296,14 +308,17 @@ def tokenize_mixed(text, entities, min_length=1, stopwords=None):
     >>> from topik.readers import read_input
     >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
     >>> entities = collect_entities(raw_data)
-    >>> id, text = next(iter(raw_data))
-    >>> tokenized_text = tokenize_mixed(text, entities, min_length=3)
-    >>> tokenized_text
-    [u'transition', u'metal', u'oxides', u'generation', u'materials', u'tantalum', \
-u'oxide', u'nanometer', u'size', u'unusual', u'properties', u'sol', u'gel', \
-u'method', u'dna', u'easy', u'method', u'biomedical', u'applications']
-
+    >>> tokenized_data = raw_data.tokenize(method="mixed", entities=entities,
+    ...                                    min_length=3)
+    >>> solution_tokens = [u'transition', u'metal', u'oxides', u'generation',
+    ... u'materials', u'tantalum', u'oxide', u'nanometer', u'size', u'unusual',
+    ... u'properties', u'sol', u'gel', u'method', u'dna', u'easy', u'method',
+    ... u'biomedical', u'applications']
+    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+    >>> solution_tokens in tokenized_texts
+    True
     """
+
     from textblob import TextBlob
     result = []
     for np in TextBlob(text).noun_phrases:

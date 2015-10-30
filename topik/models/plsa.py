@@ -8,7 +8,8 @@ import random
 import numpy as np
 import pandas as pd
 
-from .model_base import TopicModelBase, register_model
+from .model_base import TopicModelResultBase
+from .registered_models import register_model
 from topik.intermediaries.raw_data import load_persisted_corpus
 
 
@@ -32,10 +33,14 @@ def _rand_mat(cols, rows):
     for row in out:
         row /= row.sum()
     return out
-
-
+'''
 @register_model
-class PLSA(TopicModelBase):
+def plsa(corpus, ntopics=2 )
+    train plsa
+'''
+
+#register_model
+class PLSA(TopicModelResultBase):
     def __init__(self, corpus=None, ntopics=2, load_filename=None, binary_filename=None):
         # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
         #     tuple contains (id, count) of words in that document.
