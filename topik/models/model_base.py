@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import Counter
 import logging
 
@@ -72,6 +72,9 @@ class TopicModelBase(with_metaclass(ABCMeta)):
                                    {"class": self.__class__.__name__,
                                     "saved_data": saved_data})
         self._corpus.save(filename)
+
+    def term_topic_matrix(self):
+        self._corpus.term_topic_matrix
 
     @abstractmethod
     def get_model_name_with_parameters(self):
