@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 from six import with_metaclass
 
-from topik.models import registered_models
+from topik.models.registered_models import ModelRegistry
 
 # doctest-only imports
 from topik.readers import read_input
@@ -63,6 +63,7 @@ class TopicModelResultBase(with_metaclass(ABCMeta)):
             This should include such things as number of topics modeled, binary filenames,
             and any other relevant model parameters to recreate your current model.
         """
+
         self._persistor.store_model(self.get_model_name_with_parameters(),
                                    {"class": self.__class__.__name__,
                                     "saved_data": saved_data})
@@ -184,7 +185,7 @@ def load_model(filename, model_name):
     p = Persistor(filename)
     if model_name in p.list_available_models():
         data_dict = p.get_model_details(model_name)
-        model = registered_models[data_dict['class']](**data_dict["saved_data"])
+        model = ModelRegistry.get_registry()[data_dict['class']](**data_dict["saved_data"])
     else:
         raise NameError("Model name {} has not yet been created.".format(model_name))
     return model
