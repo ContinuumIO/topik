@@ -44,14 +44,6 @@ topik.tokenizers module
     :undoc-members:
     :show-inheritance:
 
-topik.utils module
-------------------
-
-.. automodule:: topik.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 topik.viz module
 ----------------
 

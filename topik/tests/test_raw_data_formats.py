@@ -3,11 +3,9 @@ import os
 import time
 
 import elasticsearch
-
-from topik.readers import read_input
-from topik.intermediaries.raw_data import load_persisted_corpus, ElasticSearchCorpus
+from topik.fileio.readers import read_input
+from topik.fileio.raw_corpus import load_persisted_corpus, ElasticSearchCorpus
 from topik.tests import test_data_path
-
 
 INDEX = "topik_unittest"
 SAVE_FILENAME = "test_save"

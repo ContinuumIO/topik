@@ -1,7 +1,7 @@
 import unittest
 
 from topik.models import registered_models, PLSA
-from topik.readers import read_input
+from topik.fileio.readers import read_input
 from topik.tests import test_data_path
 
 

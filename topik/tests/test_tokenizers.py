@@ -1,8 +1,9 @@
 import os
 import unittest
 
-from topik.readers import read_input
+from topik.fileio.readers import read_input
 from topik.tokenizers import tokenizer_methods, collect_entities, collect_bigrams_and_trigrams
+
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)

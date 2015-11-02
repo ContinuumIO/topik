@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .model_base import TopicModelBase, register_model
-from topik.intermediaries.raw_data import load_persisted_corpus
+from topik.fileio.raw_corpus import load_persisted_corpus
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
@@ -58,7 +58,7 @@ class PLSA(TopicModelBase):
             self.p_dw = [{}, ] * len(corpus)
             self.beta = 0.8
         elif load_filename and binary_filename:
-            from topik.intermediaries.tokenized_corpus import TokenizedCorpus
+            from topik.fileio.tokenized_corpus import TokenizedCorpus
             self._corpus = TokenizedCorpus(load_persisted_corpus(load_filename))
             # total number of identified words for each given document (document length normalization factor?)
             self.each = map(sum, map(lambda x: x[1], self._corpus))

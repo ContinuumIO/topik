@@ -1,15 +1,15 @@
 from __future__ import absolute_import
 
-import os
-import gensim
 import pandas as pd
 
-from topik.intermediaries.tokenized_corpus import TokenizedCorpus
-from topik.intermediaries.raw_data import load_persisted_corpus
+import gensim
+from topik.fileio.tokenized_corpus import TokenizedCorpus
+from topik.fileio.raw_corpus import load_persisted_corpus
 from .model_base import TopicModelBase, register_model
 
+
 # Doctest imports
-from topik.readers import read_input
+from topik.fileio.readers import read_input
 from topik.tests import test_data_path
 
 
@@ -22,7 +22,7 @@ class LDA(TopicModelBase):
     ----------
     corpus_input : CorpusBase-derived object
         object fulfilling basic Corpus interface (preprocessed, tokenized text).
-        see topik.intermediaries.tokenized_corpus for more info.
+        see topik.fileio.tokenized_corpus for more info.
     ntopics : int
         Number of topics to model
     load_filename : None or str

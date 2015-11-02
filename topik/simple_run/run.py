@@ -2,16 +2,12 @@ from __future__ import absolute_import, print_function
 
 import logging
 import os
-import subprocess
-import time
-import webbrowser
 
 import numpy as np
 
-from topik.readers import read_input
+from topik.fileio.readers import read_input
 import topik.models
-from topik.viz import plot_lda_vis, Termite
-
+from topik.visualizers.viz import plot_lda_vis, Termite
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)

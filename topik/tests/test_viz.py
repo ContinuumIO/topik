@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from topik.viz import Termite
+from topik.visualizers.viz import Termite
 
 module_path = os.path.dirname(__file__)
 

@@ -1,14 +1,14 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import Counter
-import logging
 
 import pandas as pd
 from six import with_metaclass
 
+
 # doctest-only imports
-from topik.readers import read_input
+from topik.fileio.readers import read_input
 from topik.tests import test_data_path
-from topik.intermediaries.persistence import Persistor
+from topik.fileio.persistence import Persistor
 
 registered_models = {}
 
@@ -27,9 +27,9 @@ class TopicModelBase(with_metaclass(ABCMeta)):
 
     Attributes
     ----------
-    _corpus : topik.intermediaries.digested_document_collection.DigestedDocumentCollection-derived object
+    _corpus : topik.fileio.digested_document_collection.DigestedDocumentCollection-derived object
         The input data for this model
-    _persistor : topik.intermediaries.persistor.Persistor object
+    _persistor : topik.fileio.persistor.Persistor object
         The object responsible for persisting the state of this model to disk.  Persistor saves metadata
         that instructs load_model how to load the actual data.
     """

@@ -11,9 +11,9 @@ from six import with_metaclass
 
 from gensim.corpora.dictionary import Dictionary
 
-from topik.intermediaries.persistence import Persistor
+from topik.fileio.persistence import Persistor
 from topik.tokenizers import tokenizer_methods
-from topik.intermediaries.tokenized_corpus import TokenizedCorpus
+from topik.fileio.tokenized_corpus import TokenizedCorpus
 
 
 registered_outputs = {}
@@ -61,13 +61,6 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         raise NotImplementedError
 
     @abstractmethod
-    def append_to_record(self, record_id, field_name, field_value):
-        """Used to store preprocessed output alongside input data.
-
-        Field name is destination.  Value is processed value."""
-        raise NotImplementedError
-
-    @abstractmethod
     def get_date_filtered_data(self, start, end, field):
         raise NotImplementedError
 
@@ -93,45 +86,7 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         use this function to wait for "eventual consistency" """
         pass
 
-    def tokenize(self, method="simple", synchronous_wait=30, **kwargs):
-        """Convert data to lowercase; tokenize; create bag of words collection.
 
-        Output from this function is used as input to modeling steps.
-
-        raw_data: iterable corpus object containing the text to be processed.
-            Each iteration call should return a new document's content.
-        tokenizer_method: string id of tokenizer to use.  For keys, see
-            topik.tokenizers.tokenizer_methods (which is a dictionary of classes)
-        kwargs: arbitrary dicionary of extra parameters.  These are passed both
-            to the tokenizer and to the vectorizer steps.
-        """
-        # create parameter string
-        parameters_string = _get_parameters_string(method=method, **kwargs)
-        token_path = "tokens_"+parameters_string
-
-        # convert raw documents into lists of tokens
-        for document_id, raw_document in self:
-            tokenized_document = tokenizer_methods[method](raw_document,
-                                         **kwargs)
-            # TODO: would be nice to aggregate batches and append in bulk
-            self.append_to_record(document_id, token_path, tokenized_document)
-        self.synchronize(max_wait=synchronous_wait, field=token_path)
-
-        # create a corpus dictionary
-        id2word_dict = Dictionary(self.get_generator_without_id(
-                                                            field=token_path))
-
-        # use the corpus dictionary to generate BOWs from lists of tokens
-        bow_path = "bow_"+parameters_string
-        for document_id, tokenized_document in self.get_field(field=token_path):
-            bow = {}
-            for token_id, count in dict(id2word_dict.doc2bow(tokenized_document)).items():
-                bow[token_id] = {'count': count}
-            self.append_to_record(document_id, bow_path,
-                                  bow)
-
-        return TokenizedCorpus(self.get_field(field=token_path),
-                                          dictionary=id2word_dict)
 
 @register_output
 class ElasticSearchCorpus(CorpusInterface):

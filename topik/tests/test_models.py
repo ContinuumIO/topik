@@ -3,9 +3,10 @@ import unittest
 
 from nose.tools import assert_raises
 
-from topik.readers import read_input
+from topik.fileio.readers import read_input
 from topik.models import registered_models, load_model
-from topik.intermediaries.persistence import Persistor
+from topik.fileio.persistence import Persistor
+
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)

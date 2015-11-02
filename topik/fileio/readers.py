@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function
 import os
 import logging
 
-from topik.intermediaries.raw_data import registered_outputs, DictionaryCorpus
+from topik.fileio.raw_corpus import registered_outputs, DictionaryCorpus
 
 # imports used only for doctests
 from topik.tests import test_data_path

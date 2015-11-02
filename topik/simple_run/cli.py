@@ -1,6 +1,6 @@
 import click
 
-from topik.run import run_model
+from topik.simple_run.run import run_model
 
 
 @click.command(help='Run topic modeling')
