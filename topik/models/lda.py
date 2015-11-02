@@ -7,7 +7,7 @@ import pandas as pd
 from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
 from topik.intermediaries.raw_data import load_persisted_corpus
 from .model_base import TopicModelResultBase
-from .registered_models import register_model
+from ._registered_models import register_model
 
 # Doctest imports
 from topik.readers import read_input

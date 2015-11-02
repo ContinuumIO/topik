@@ -1,7 +1,7 @@
 import unittest
 
 from topik.models import PLSA
-from topik.models.registered_models import ModelRegistry
+from topik.models import registered_models
 from topik.readers import read_input
 from topik.tests import test_data_path
 
@@ -18,4 +18,4 @@ class TestPLSA(unittest.TestCase):
         assert(plsa.likelihood != 0)  # TODO: this is a really poor test, but at least makes sure that things run.
 
     def test_registration(self):
-        assert("PLSA" in ModelRegistry.get_registry())
+        assert("PLSA" in registered_models)

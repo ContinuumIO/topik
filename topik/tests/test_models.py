@@ -4,8 +4,7 @@ import unittest
 from nose.tools import assert_raises
 
 from topik.readers import read_input
-from topik.models import load_model, LDA, PLSA
-from topik.models.registered_models import ModelRegistry
+from topik.models import load_model, registered_models
 from topik.intermediaries.persistence import Persistor
 
 # sample data files are located in the same folder
@@ -21,10 +20,8 @@ class _ModelBase(object):
                 source=os.path.join(module_path, 'data/test_data_json_stream.json'),
                 content_field="abstract")
         self.digested_data = raw_data.tokenize()
-        self.model = ModelRegistry.get_registry()[self.model_name](
+        self.model = registered_models[self.model_name](
                                             self.digested_data, ntopics=NTOPICS)
-        #model_class = registered_models.get(self.model_name)
-        #self.model = model_class(self.digested_data, ntopics=NTOPICS)
 
     def tearDown(self):
         import glob

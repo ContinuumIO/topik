@@ -5,8 +5,6 @@ import logging
 import pandas as pd
 from six import with_metaclass
 
-from topik.models.registered_models import ModelRegistry
-
 # doctest-only imports
 from topik.readers import read_input
 from topik.tests import test_data_path
@@ -182,10 +180,11 @@ def load_model(filename, model_name):
     -------
     TopicModelBase-derived object
     """
+    from topik.models import registered_models
     p = Persistor(filename)
     if model_name in p.list_available_models():
         data_dict = p.get_model_details(model_name)
-        model = ModelRegistry.get_registry()[data_dict['class']](**data_dict["saved_data"])
+        model = registered_models[data_dict['class']](**data_dict["saved_data"])
     else:
         raise NameError("Model name {} has not yet been created.".format(model_name))
     return model

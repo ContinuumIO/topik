@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .model_base import TopicModelResultBase
-from .registered_models import register_model
+from ._registered_models import register_model
 from topik.intermediaries.raw_data import load_persisted_corpus
 
 
