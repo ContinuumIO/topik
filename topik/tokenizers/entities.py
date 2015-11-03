@@ -14,7 +14,15 @@ def collect_entities(collection, freq_min=2, freq_max=10000):
     freq_max: int
         Maximum frequency of a noun phrase occurrences in order to retrieve it. Default is 10000.
 
+    Examples
+    --------
+    >>> from topik.readers import read_input
+    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
+    >>> entities = collect_entities(raw_data)
+    >>> len(entities)
+    220
     """
+    # TODO: add doctest
 
     from textblob import TextBlob
 
@@ -59,29 +67,16 @@ def tokenize_entities(text, entities, min_length=1, stopwords=None):
 
     Examples
     --------
-    >>> from topik.fileio.readers import read_input
-    >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-    >>> entities = collect_entities(id_documents)
-    >>> len(entities)
-    220
-    >>> i = iter(id_documents)
-    >>> _, doc_text = next(i)
-    >>> doc_text
-    u'Transition metal oxides are being considered as the next generation \
-materials in field such as electronics and advanced catalysts; between\
- them is Tantalum (V) Oxide; however, there are few reports for the \
-synthesis of this material at the nanometer size which could have \
-unusual properties. Hence, in this work we present the synthesis of \
-Ta2O5 nanorods by sol gel method using DNA as structure directing \
-agent, the size of the nanorods was of the order of 40 to 100 nm in \
-diameter and several microns in length; this easy method can be useful\
- in the preparation of nanomaterials for electronics, biomedical \
-applications as well as catalysts.'
-    >>> tokenized_text = tokenize_entities(doc_text, entities)
-    >>> tokenized_text
-    [u'transition']
-
+    >>> from topik.readers import read_input
+    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
+    >>> entities = collect_entities(raw_data)
+    >>> tokenized_data = raw_data.tokenize(method="entities", entities=entities)
+    >>> solution_tokens = [u'transition']
+    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+    >>> solution_tokens in tokenized_texts
+    True
     """
+
     from textblob import TextBlob
     result = []
     for np in TextBlob(text).noun_phrases:
@@ -111,17 +106,20 @@ def tokenize_mixed(text, entities, min_length=1, stopwords=None):
 
     Examples
     --------
-    >>> from topik.fileio.readers import read_input
+    >>> from topik.readers import read_input
     >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
     >>> entities = collect_entities(raw_data)
-    >>> id, text = next(iter(raw_data))
-    >>> tokenized_text = tokenize_mixed(text, entities, min_length=3)
-    >>> tokenized_text
-    [u'transition', u'metal', u'oxides', u'generation', u'materials', u'tantalum', \
-u'oxide', u'nanometer', u'size', u'unusual', u'properties', u'sol', u'gel', \
-u'method', u'dna', u'easy', u'method', u'biomedical', u'applications']
-
+    >>> tokenized_data = raw_data.tokenize(method="mixed", entities=entities,
+    ...                                    min_length=3)
+    >>> solution_tokens = [u'transition', u'metal', u'oxides', u'generation',
+    ... u'materials', u'tantalum', u'oxide', u'nanometer', u'size', u'unusual',
+    ... u'properties', u'sol', u'gel', u'method', u'dna', u'easy', u'method',
+    ... u'biomedical', u'applications']
+    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+    >>> solution_tokens in tokenized_texts
+    True
     """
+
     from textblob import TextBlob
     result = []
     for np in TextBlob(text).noun_phrases:
