@@ -25,7 +25,7 @@ def plot(input_data, plot_title="Termite plot", output_file="termite.html"):
 
     """
 
-    t = blz.Data(self.input_file)
+    t = blz.Data(input_data)
 
     MAX = blz.compute(t.weight.max())
     MIN = blz.compute(t.weight.min())
@@ -48,7 +48,7 @@ def plot(input_data, plot_title="Termite plot", output_file="termite.html"):
 
     p = plt.figure(x_range=TOPICS, y_range=WORDS,
                    plot_width=1000, plot_height=1700,
-                   title=self.title)
+                   title=plot_title)
 
     p.circle(x="topic", y="word", size="size", fill_alpha=0.6, source=data_source)
     plt.show(p)

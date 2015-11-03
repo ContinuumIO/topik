@@ -74,7 +74,7 @@ nm)'
 
     return bigrams_patterns, trigrams_patterns
 
-
+@register_tokenizer
 def tokenize_collocation(text, patterns, min_length=1, stopwords=None):
     """A text tokenizer that includes collocations(bigrams and trigrams).
 

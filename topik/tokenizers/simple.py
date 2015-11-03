@@ -3,7 +3,7 @@
 # imports used only for doctests
 from topik.tests import test_data_path
 
-
+@register_tokenizer
 def tokenize_simple(text, min_length=1, stopwords=None):
     """A text tokenizer that simply lowercases, matches alphabetic
     characters and removes stopwords.
