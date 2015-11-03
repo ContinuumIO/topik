@@ -30,7 +30,7 @@ def _collect_bigrams_and_trigrams(collection, top_n=10000, min_length=1, min_fre
 
     Examples
     --------
-    >>> from topik.fileio.readers import read_input
+    >>> from topik.readers import read_input
     >>> raw_data = read_input(
     ...                 '{}/test_data_json_stream.json'.format(test_data_path),
     ...                 content_field="abstract")
@@ -102,21 +102,22 @@ def _collocation_document(text, patterns, min_length=1, stopwords=None):
 
     Examples
     --------
-    >>> from topik.fileio.readers import read_input
-    >>> id_documents = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
-    >>> patterns = collect_bigrams_and_trigrams(id_documents, min_bigram_freq=2, min_trigram_freq=2)
-    >>> id, doc_text = next(iter(id_documents))
-    >>> tokenized_text = tokenize_collocation(doc_text, patterns)
-    >>> tokenized_text
-    [u'transition_metal', u'oxides', u'considered', u'generation', \
-u'materials', u'field', u'electronics', u'advanced', u'catalysts', \
-u'tantalum', u'v_oxide', u'reports', u'synthesis_material', \
-u'nanometer_size', u'unusual', u'properties', u'work_present', \
-u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel', u'method', \
-u'dna', u'structure', u'directing', u'agent', u'size', u'nanorods', \
-u'order', u'nm_diameter', u'microns', u'length', u'easy', u'method', \
-u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical', \
-u'applications', u'catalysts']
+    >>> from topik.readers import read_input
+    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
+    >>> patterns = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=2, min_trigram_freq=2)
+    >>> tokenized_data = raw_data.tokenize(method="collocation", patterns=patterns)
+    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+    >>> solution_tokens = [u'transition_metal', u'oxides', u'considered', u'generation',
+    ... u'materials', u'field', u'electronics', u'advanced', u'catalysts',
+    ... u'tantalum', u'v_oxide', u'reports', u'synthesis_material',
+    ... u'nanometer_size', u'unusual', u'properties', u'work_present',
+    ... u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel', u'method',
+    ... u'dna', u'structure', u'directing', u'agent', u'size', u'nanorods',
+    ... u'order', u'nm_diameter', u'microns', u'length', u'easy', u'method',
+    ... u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical',
+    ... u'applications', u'catalysts']
+    >>> solution_tokens in tokenized_texts
+    True
     """
     text = ' '.join(_simple_document(text, min_length=min_length, stopwords=stopwords))
     for pattern in patterns:
