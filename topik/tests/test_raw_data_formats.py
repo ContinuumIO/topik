@@ -16,7 +16,7 @@ class BaseCorpus(object):
     def test_year_filtering(self):
         result_list = list(self.test_raw_data.get_date_filtered_data(start=1975,
                                                                      end=1999,
-                                                                     field="year"))
+                                                                     filter_field="year"))
         self.assertEqual(len(result_list), 25)
         self.assertTrue(-1611117933394825767 in [int(item[0]) for item in
                         result_list])

@@ -21,7 +21,8 @@ class _ModelBase(object):
                 source=os.path.join(module_path, 'data/test_data_json_stream.json'),
                 content_field="abstract")
         self.digested_data = raw_data.tokenize()
-        self.model = registered_models[self.model_name](self.digested_data, ntopics=NTOPICS)
+        self.model = registered_models[self.model_name](
+                                            self.digested_data, ntopics=NTOPICS)
 
     def tearDown(self):
         import glob

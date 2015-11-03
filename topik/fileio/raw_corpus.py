@@ -25,8 +25,8 @@ def register_output(cls):
     return cls
 
 
-def _get_hash_identifier(input_data, id_field):
-    return hash(input_data[id_field])
+def _get_hash_identifier(input_data, field_to_hash):
+    return hash(input_data[field_to_hash])
 
 
 def _get_parameters_string(**kwargs):
@@ -86,8 +86,6 @@ class CorpusInterface(with_metaclass(ABCMeta)):
         use this function to wait for "eventual consistency" """
         pass
 
-
-
 @register_output
 class ElasticSearchCorpus(CorpusInterface):
     def __init__(self, source, index, content_field, doc_type='continuum', query=None, iterable=None,
@@ -139,13 +137,13 @@ class ElasticSearchCorpus(CorpusInterface):
             field = self.content_field
         return ElasticSearchCorpus(self.hosts, self.index, field, self.doc_type, self.query)
 
-    def import_from_iterable(self, iterable, id_field="text", batch_size=500):
+    def import_from_iterable(self, iterable, content_field="text", batch_size=500):
         """Load data into Elasticsearch from iterable.
 
         iterable: generally a list of dicts, but possibly a list of strings
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
-        id_field: string identifier of field to hash for content ID.  For
+        content_field: string identifier of field to hash for content ID.  For
             list of dicts, a valid key value in the dictionary is required. For
             list of strings, a dictionary with one key, "text" is created and
             used.
@@ -154,8 +152,8 @@ class ElasticSearchCorpus(CorpusInterface):
         batch = []
         for item in iterable:
             if isinstance(item, basestring):
-                item = {id_field: item}
-            id = _get_hash_identifier(item, id_field)
+                item = {content_field: item}
+            id = _get_hash_identifier(item, content_field)
             action = {'_op_type': 'update',
                       '_index': self.index,
                       '_type': self.doc_type,
@@ -193,10 +191,10 @@ class ElasticSearchCorpus(CorpusInterface):
         return index
 
     # TODO: validate input data to ensure that it has valid year data
-    def get_date_filtered_data(self, start, end, field="date"):
-        converted_index = self.convert_date_field_and_reindex(field=field)
+    def get_date_filtered_data(self, start, end, filter_field="date"):
+        converted_index = self.convert_date_field_and_reindex(field=filter_field)
         return ElasticSearchCorpus(self.hosts, converted_index, self.content_field, self.doc_type,
-                                   query={"query": {"filtered": {"filter": {"range": {field: {"gte": start,
+                                   query={"query": {"filtered": {"filter": {"range": {filter_field: {"gte": start,
                                                                                               "lte": end}}}}}},
                                    filter_expression=self.filter_expression + "_date_{}_{}".format(start, end))
 
@@ -224,22 +222,22 @@ class ElasticSearchCorpus(CorpusInterface):
 
 @register_output
 class DictionaryCorpus(CorpusInterface):
-    def __init__(self, content_field, iterable=None, generate_id=True, reference_field=None, content_filter=None):
+    def __init__(self, content_field, iterable=None, from_existing_corpus=False,
+                 active_field=None, content_filter=None):
         super(DictionaryCorpus, self).__init__()
         self.content_field = content_field
-        self._documents = []
-        self.idx = 0
-        active_field = None
-        if reference_field:
-            self.reference_field = reference_field
-            active_field = content_field
-            content_field = reference_field
+        if active_field is None:
+            self.active_field = content_field
         else:
-            self.reference_field = content_field
-        if iterable:
-            self.import_from_iterable(iterable, content_field, generate_id)
-        if active_field:
-            self.content_field = active_field
+            self.active_field = active_field
+        self._documents = {}
+        if from_existing_corpus:
+            self._documents = iterable
+        elif iterable:
+            self.import_from_iterable(iterable, content_field)
+
+        self.idx = 0
+
         self.content_filter = content_filter
 
     @classmethod
@@ -247,12 +245,12 @@ class DictionaryCorpus(CorpusInterface):
         return "dictionary"
 
     def __iter__(self):
-        for doc in self._documents:
+        for doc_id, doc in self._documents.items():
             if self.content_filter:
                 if eval(self.content_filter["expression"].format(doc["_source"][self.content_filter["field"]])):
-                    yield doc["_id"], doc["_source"][self.content_field]
+                    yield doc_id, doc["_source"][self.active_field]
             else:
-                yield doc["_id"], doc["_source"][self.content_field]
+                yield doc_id, doc["_source"][self.active_field]
 
     def __len__(self):
         return len(self._documents)
@@ -262,49 +260,55 @@ class DictionaryCorpus(CorpusInterface):
         return self.content_filter["expression"].format(self.content_filter["field"]) if self.content_filter else ""
 
     def append_to_record(self, record_id, field_name, field_value):
-        for doc in self._documents:
-            if doc["_id"] == record_id:
-                doc["_source"][field_name] = field_value
-                return
-        raise ValueError("No record with id '{}' was found.".format(record_id))
+        if record_id in self._documents.keys():
+            self._documents[record_id]["_source"][field_name] = field_value
+        else:
+            raise ValueError("No record with id '{}' was found.".format(record_id))
 
-    def get_field(self, field=None):
+    def term_topic_matrix(self):
+        self._term_topic_matrix={}
+
+    def get_field(self, new_active_field=None):
         """Get a different field to iterate over, keeping all other details."""
-        if not field:
-            field = self.content_field
-        return DictionaryCorpus(content_field=field, iterable=self._documents,
-                                generate_id=False, reference_field=self.content_field)
+        if not new_active_field:
+            new_active_field = self.content_field
+        return DictionaryCorpus(active_field=new_active_field,
+                                iterable=self._documents,
+                                from_existing_corpus=True,
+                                content_field=self.content_field)
 
     def get_generator_without_id(self, field=None):
         if not field:
-            field = self.content_field
-        for doc in self._documents:
+            field = self.active_field
+        for doc in self._documents.values():
             yield doc["_source"][field]
 
-    def import_from_iterable(self, iterable, content_field, generate_id=True):
+    def import_from_iterable(self, iterable, content_field):
         """
         iterable: generally a list of dicts, but possibly a list of strings
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
         """
-        if generate_id:
-            self._documents = [{"_id": hash(doc[content_field]),
-                                "_source": doc} for doc in iterable]
-            self.reference_field = content_field
-        else:
-            self._documents = [item for item in iterable]
+
+        for item in iterable:
+            if isinstance(item, basestring):
+                item = {content_field: item}
+            id = _get_hash_identifier(item, content_field)
+            self._documents[id] = {"_source": item}
 
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
-    def get_date_filtered_data(self, start, end, field="year"):
-        return DictionaryCorpus(content_field=field, iterable=self._documents,
-                                generate_id=False, reference_field=self.content_field,
-                                content_filter={"field": field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
+    def get_date_filtered_data(self, start, end, filter_field="year"):
+        return DictionaryCorpus(content_field=self.content_field,
+                                iterable=self._documents,
+                                from_existing_corpus=True,
+                                content_filter={"field": filter_field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
 
     def save(self, filename, saved_data=None):
         if saved_data is None:
-            saved_data = {"reference_field": self.reference_field, "content_field": self.content_field,
-                          "iterable": [doc["_source"] for doc in self._documents]}
+            saved_data = {"active_field": self.active_field, "content_field": self.content_field,
+                          "iterable": self._documents,
+                          "from_existing_corpus": True}
         return super(DictionaryCorpus, self).save(filename, saved_data)
 
 def load_persisted_corpus(filename):

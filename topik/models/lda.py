@@ -3,10 +3,11 @@ from __future__ import absolute_import
 import pandas as pd
 
 import gensim
+from topik.intermediaries.digested_document_collection import DigestedDocumentCollection
 from topik.fileio.tokenized_corpus import TokenizedCorpus
 from topik.fileio.raw_corpus import load_persisted_corpus
-from .model_base import TopicModelBase, register_model
-
+from .model_base import TopicModelResultBase
+from ._registered_models import register_model
 
 # Doctest imports
 from topik.fileio.readers import read_input
@@ -14,7 +15,7 @@ from topik.tests import test_data_path
 
 
 @register_model
-class LDA(TopicModelBase):
+class LDA(TopicModelResultBase):
     """A high-level interface for an LDA (Latent Dirichlet Allocation) model.
 
 

@@ -31,6 +31,12 @@ Example syntax for these:
    >>> termite = Termite(lda.termite_data(n_topics), "Termite Plot")
    >>> termite.plot(os.path.join(dir_path, 'termite.html'))
 
+.. raw:: html
+   :file: viz/termite_open.html
+
+.. raw:: html
+   :file: viz/reviews_termite.html
+
 .. code-block:: python
 
    >>> from topik.viz import LDAvis
@@ -40,6 +46,12 @@ Example syntax for these:
    >>> model = registered_models["LDA"](tokenized_corpus, n_topics)
    >>> from topik.viz import plot_lda_vis
    >>> plot_lda_vis(model.to_py_lda_vis())
+
+.. raw:: html
+   :file: viz/ldavis_open.html
+
+.. raw:: html
+    :file: viz/reviews_pyldavis.html
 
 Each model is free to implement its own additional outputs - check the class
 members for what might be available.

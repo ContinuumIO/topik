@@ -1,5 +1,7 @@
+from .lda import LDA
+from .plsa import PLSA
 
-from .lda import LDA; LDA()
-from .plsa import PLSA; PLSA()
+from .model_base import load_model
+from ._registered_models import ModelRegistry
 
-from .model_base import registered_models, load_model
+registered_models = ModelRegistry()
