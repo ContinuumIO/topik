@@ -13,7 +13,7 @@ class BaseRegistry(with_metaclass(Singleton, dict)):
     pass
 
 
-def base_register_decorator(registry, func):
+def _base_register_decorator(registry, func):
     """Decorator function to register new model with global registry of models.
 
     registry should be the instance of the individual registry to use.

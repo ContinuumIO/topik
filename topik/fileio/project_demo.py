@@ -51,6 +51,9 @@ class TopikProject(object):
     def visualize(self, *args, **kwargs):
         return functools.partial(visualize, project=self, *args, **kwargs)
 
+    def select_tokenized_data(self, id):
+        if id in self.tokenizer_ids:
+            self.selected_tokenizer = id
 
     @property
     def filtered_corpus(self):
@@ -68,7 +71,7 @@ class TopikProject(object):
         Output from tokenization and/or transformation steps.
         Input to vectorization step.
         """
-        raise NotImplementedError
+        return self.output.get_tokenized_data(self.selected_tokenizer)
 
     @property
     def vectorized_data(self):

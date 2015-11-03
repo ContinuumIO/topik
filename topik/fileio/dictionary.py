@@ -2,10 +2,10 @@ from ._registry import register_input, register_output
 from .base_output import OutputInterface
 
 @register_output
-class DictionaryOutput(OutputInterface):
+class InMemoryOutput(OutputInterface):
     def __init__(self, content_field, iterable=None, from_existing_corpus=False,
                  active_field=None, content_filter=None):
-        super(DictionaryOutput, self).__init__()
+        super(InMemoryOutput, self).__init__()
         self.content_field = content_field
         if active_field is None:
             self.active_field = content_field
@@ -53,7 +53,7 @@ class DictionaryOutput(OutputInterface):
         """Get a different field to iterate over, keeping all other details."""
         if not new_active_field:
             new_active_field = self.content_field
-        return DictionaryOutput(active_field=new_active_field,
+        return InMemoryOutput(active_field=new_active_field,
                                 iterable=self._documents,
                                 from_existing_corpus=True,
                                 content_field=self.content_field)
@@ -80,7 +80,7 @@ class DictionaryOutput(OutputInterface):
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
     def get_date_filtered_data(self, start, end, filter_field="year"):
-        return DictionaryOutput(content_field=self.content_field,
+        return InMemoryOutput(content_field=self.content_field,
                                 iterable=self._documents,
                                 from_existing_corpus=True,
                                 content_filter={"field": filter_field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
@@ -90,4 +90,4 @@ class DictionaryOutput(OutputInterface):
             saved_data = {"active_field": self.active_field, "content_field": self.content_field,
                           "iterable": self._documents,
                           "from_existing_corpus": True}
-        return super(DictionaryOutput, self).save(filename, saved_data)
+        return super(InMemoryOutput, self).save(filename, saved_data)

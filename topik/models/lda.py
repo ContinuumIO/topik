@@ -9,7 +9,7 @@ from .base_model_output import TopicModelResultBase
 from ._registry import register
 
 # Doctest imports
-from topik.fileio.readers import read_input
+from topik.fileio import read_input
 from topik.tests import test_data_path
 
 

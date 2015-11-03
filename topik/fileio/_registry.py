@@ -1,6 +1,6 @@
 from functools import partial
 
-from topik.singleton_registry import BaseRegistry, base_register_decorator
+from topik.singleton_registry import BaseRegistry, _base_register_decorator
 
 
 # This subclass serves to establish a new singleon instance of functions
@@ -19,13 +19,13 @@ registered_outputs = OutputRegistry()
 
 
 # fill in the registration function
-register_input = partial(base_register_decorator, InputRegistry)
-register_output = partial(base_register_decorator, OutputRegistry)
+register_input = partial(_base_register_decorator, InputRegistry)
+register_output = partial(_base_register_decorator, OutputRegistry)
 
 
 # this function is the primary API for people using any registered functions.
 def read_input(source, content_field, source_type="auto",
-               output_type=DictionaryCorpus.class_key(), output_args=None,
+               output_type="DictionaryOutput", output_args=None,
                synchronous_wait=0, **kwargs):
     """
     Read data from given source into Topik's internal data structures.

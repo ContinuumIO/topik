@@ -1,6 +1,6 @@
 from functools import partial
 
-from topik.singleton_registry import BaseRegistry, base_register_decorator
+from topik.singleton_registry import BaseRegistry, _base_register_decorator
 
 
 # This subclass serves to establish a new singleon instance of functions
@@ -14,7 +14,7 @@ registered_models = ModelRegistry()
 
 
 # fill in the registration function
-register = partial(base_register_decorator, ModelRegistry)
+register = partial(_base_register_decorator, ModelRegistry)
 
 
 # this function is the primary API for people using any registered functions.

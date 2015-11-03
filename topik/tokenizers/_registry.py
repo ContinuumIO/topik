@@ -1,6 +1,6 @@
 from functools import partial
 
-from topik.singleton_registry import BaseRegistry, base_register_decorator
+from topik.singleton_registry import BaseRegistry, _base_register_decorator
 
 
 class TokenizerRegistry(BaseRegistry):
@@ -8,7 +8,7 @@ class TokenizerRegistry(BaseRegistry):
 
 
 # fill in the registration function
-register = partial(base_register_decorator, TokenizerRegistry)
+register = partial(_base_register_decorator, TokenizerRegistry)
 
 
 # a nicer, more pythonic handle to our singleton instance
