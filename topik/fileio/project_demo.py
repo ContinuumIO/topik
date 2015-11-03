@@ -2,7 +2,7 @@ import functools
 
 from topik.tokenizers import tokenize
 from topik.vectorizers import vectorize
-from topik.models import train_model
+from topik.models import run_model
 from topik.visualizers import visualize
 
 
@@ -24,21 +24,70 @@ class TopikProject(object):
         return self.corpus.
 
 
-    def tokenize(self, **kwargs):
+    def tokenize(self, method, **kwargs):
         # tokenize, and store the results on this object somehow
-         = tokenize(self.get_filtered_corpus_iterator(), **kwargs)
+        tokenized_data = tokenize(self.get_filtered_corpus_iterator(),
+                                  method=method, **kwargs)
+        tokenize_parameter_string="tk_{method}_{params}".format(
+            method=method,
+            params="_".join())
         # store this
-        return functools.partial(tokenize, project=self, *args, **kwargs)
 
-    def vectorize(self, *args, **kwargs):
-        return functools.partial(vectorize, project=self, *args, **kwargs)
 
-    def train_model(self, *args, **kwargs):
-        return functools.partial(train_model, project=self, *args, **kwargs)
+    def vectorize(self, method="", **kwargs):
+        vectorized_data = vectorize(self.get_tokenized_text_iterator(),
+                                    method=method, **kwargs)
+        # store this internally
+
+        # set _vectorized_data internal handle to point to this data
+
+
+    def run_model(self, model_name, **kwargs):
+        model_output = run_model(self.vectorized_data,
+                                  model_name=model_name, **kwargs)
+        # store this internally
+        # set _model_output internal handle to point to this data
 
     def visualize(self, *args, **kwargs):
         return functools.partial(visualize, project=self, *args, **kwargs)
 
+
+    @property
+    def filtered_corpus(self):
+        """Corpus documents, potentially a subset.
+
+        Output from read_input step.
+        Input to tokenization step.
+        """
+        raise NotImplementedError
+
+    @property
+    def tokenized_data(self):
+        """Documents broken into component words.  May also be transformed.
+
+        Output from tokenization and/or transformation steps.
+        Input to vectorization step.
+        """
+        raise NotImplementedError
+
+    @property
+    def vectorized_data(self):
+        """Data that has been vectorized into term frequencies, TF/IDF, or
+        other vector representation.
+
+        Output from vectorization step.
+        Input to modeling step.
+        """
+        raise NotImplementedError
+
+    @property
+    def model_output(self):
+        """matrices representing the model derived.
+
+        Output from modeling step.
+        Input to visualization step.
+        """
+        raise NotImplementedError
 
 
 # Example usage: utilize a context manager to keep track of this project.

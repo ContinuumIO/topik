@@ -1,11 +1,15 @@
+import itertools
+import re
+
+from topik.tokenizers.simple import _simple_document
+from ._registry import register
 
 # imports used only for doctests
 from topik.tests import test_data_path
 
 
 
-def collect_bigrams_and_trigrams(collection, top_n=10000, min_length=1, min_bigram_freq=50,
-                                 min_trigram_freq=20, stopwords=None):
+def _collect_bigrams_and_trigrams(collection, top_n=10000, min_length=1, min_freqs=None, stopwords=None):
     """collects bigrams and trigrams from collection of documents.  Input to collocation tokenizer.
 
     bigrams are pairs of words that recur in the collection; trigrams are triplets.
@@ -18,10 +22,9 @@ def collect_bigrams_and_trigrams(collection, top_n=10000, min_length=1, min_bigr
         limit results to this many entries
     min_length : int
         Minimum length of any single word
-    min_bigram_freq : int
-        threshold of when to consider a pair of words as a recognized bigram
-    min_trigram_freq : int
-        threshold of when to consider a triplet of words as a recognized trigram
+    min_freqs : iterable of int
+        threshold of when to consider a pair of words as a recognized n-gram,
+        starting with bigrams.
     stopwords : None or iterable of str
         Collection of words to ignore as tokens
 
@@ -31,8 +34,8 @@ def collect_bigrams_and_trigrams(collection, top_n=10000, min_length=1, min_bigr
     >>> raw_data = read_input(
     ...                 '{}/test_data_json_stream.json'.format(test_data_path),
     ...                 content_field="abstract")
-    >>> bigrams, trigrams = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=5, min_trigram_freq=3)
-    >>> bigrams.pattern
+    >>> patterns = _collect_bigrams_and_trigrams(raw_data, min_freqs=[5, 3])
+    >>> patterns[0]
     u'(free standing|ac electrodeposition|centered cubic|spatial resolution|vapor deposition\
 |wear resistance|plastic deformation|electrical conductivity|field magnets|v o|\
 transmission electron|x ray|et al|ray diffraction|electron microscopy|room \
@@ -40,7 +43,7 @@ temperature|diffraction xrd|electron microscope|results indicate|scanning \
 electron|m s|doped zno|microscopy tem|polymer matrix|size distribution|mechanical \
 properties|grain size|diameters nm|high spatial|particle size|high resolution|ni \
 al|diameter nm|range nm|high field|high strength|c c)'
-    >>> trigrams.pattern
+    >>> patterns[1]
     u'(differential scanning calorimetry|face centered cubic|ray microanalysis analytical|\
 physical vapor deposition|transmission electron microscopy|x ray diffraction|microanalysis \
 analytical electron|chemical vapor deposition|high aspect ratio|analytical electron \
@@ -54,20 +57,18 @@ nm)'
     from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
 
     # generator of documents, turn each element to its list of words
-    documents = (tokenize_simple(text, min_length=min_length, stopwords=stopwords)
+    documents = (_simple_document(text, min_length=min_length, stopwords=stopwords)
                  for text in collection.get_generator_without_id())
     # generator, concatenate (chain) all words into a single sequence, lazily
     words = itertools.chain.from_iterable(documents)
     tcf = TrigramCollocationFinder.from_words(iter(words))
 
-    tcf.apply_freq_filter(min_trigram_freq)
-    trigrams = [' '.join(w) for w in tcf.nbest(TrigramAssocMeasures.chi_sq, top_n)]
-    logging.info("%i trigrams found: %s..." % (len(trigrams), trigrams[:20]))
-
     bcf = tcf.bigram_finder()
-    bcf.apply_freq_filter(min_bigram_freq)
+    bcf.apply_freq_filter(min_freqs[0])
     bigrams = [' '.join(w) for w in bcf.nbest(BigramAssocMeasures.pmi, top_n)]
-    logging.info("%i bigrams found: %s..." % (len(bigrams), bigrams[:20]))
+
+    tcf.apply_freq_filter(min_freqs[1])
+    trigrams = [' '.join(w) for w in tcf.nbest(TrigramAssocMeasures.chi_sq, top_n)]
 
     bigrams_patterns = re.compile('(%s)' % '|'.join(bigrams), re.UNICODE)
     trigrams_patterns = re.compile('(%s)' % '|'.join(trigrams), re.UNICODE)
@@ -75,7 +76,7 @@ nm)'
     return bigrams_patterns, trigrams_patterns
 
 
-def tokenize_collocation(text, patterns, min_length=1, stopwords=None):
+def _collocation_document(text, patterns, min_length=1, stopwords=None):
     """A text tokenizer that includes collocations(bigrams and trigrams).
 
     A collocation is sequence of words or terms that co-occur more often
@@ -117,7 +118,17 @@ u'order', u'nm_diameter', u'microns', u'length', u'easy', u'method', \
 u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical', \
 u'applications', u'catalysts']
     """
-    text = ' '.join(tokenize_simple(text, min_length=min_length, stopwords=stopwords))
+    text = ' '.join(_simple_document(text, min_length=min_length, stopwords=stopwords))
     for pattern in patterns:
         text = re.sub(pattern, lambda match: match.group(0).replace(' ', '_'), text)
     return text.split()
+
+@register
+def ngrams(corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=None):
+    if not freq_bounds:
+        freq_bounds=[(50, 10000), (20, 10000)]
+    min_freqs = [freq[0] for freq in freq_bounds]
+    patterns = _collect_bigrams_and_trigrams(corpus, top_n=top_n, min_length=min_length, min_freqs=min_freqs,
+                                 min_trigram_freq=freq_bounds[1][0], stopwords=stopwords)
+    for doc in corpus:
+        yield _collocation_document(doc, patterns, min_length=min_length, stopwords=stopwords)

@@ -4,7 +4,7 @@ import time
 
 import elasticsearch
 from topik.fileio.readers import read_input
-from topik.fileio.raw_corpus import load_persisted_corpus, ElasticSearchCorpus
+from topik.fileio.base_output import load_persisted_corpus, ElasticSearchCorpus
 from topik.tests import test_data_path
 
 INDEX = "topik_unittest"

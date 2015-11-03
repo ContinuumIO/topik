@@ -5,7 +5,7 @@ import nose.tools as nt
 import elasticsearch
 from topik.fileio.readers import read_input
 import topik.fileio.readers as readers
-from topik.fileio.raw_corpus import ElasticSearchCorpus
+from topik.fileio.base_output import ElasticSearchCorpus
 from topik.tests import test_data_path
 
 INDEX = "test_elastic"

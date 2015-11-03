@@ -1,9 +1,13 @@
+from textblob import TextBlob
+
+from topik.tokenizers.simple import _simple_document
 
 # imports used only for doctests
 from topik.tests import test_data_path
+from ._registry import register
 
 
-def collect_entities(collection, freq_min=2, freq_max=10000):
+def _collect_entities(collection, freq_min=2, freq_max=10000):
     """Return noun phrases from collection of documents.
 
     Parameters
@@ -15,8 +19,6 @@ def collect_entities(collection, freq_min=2, freq_max=10000):
         Maximum frequency of a noun phrase occurrences in order to retrieve it. Default is 10000.
 
     """
-
-    from textblob import TextBlob
 
     np_counts_total = {}
     docs_examined = 0
@@ -40,20 +42,51 @@ def collect_entities(collection, freq_min=2, freq_max=10000):
 
     return set(np_counts)
 
-@register_tokenizer
-def tokenize_entities(text, entities, min_length=1, stopwords=None):
-    """A tokenizer that extracts noun phrases from text.
 
-    Requires that you first establish entities using the collect_entities function
+def _tokenize_entities_document(text, entities, min_length=1, stopwords=None):
+
+    result = []
+    for np in TextBlob(text).noun_phrases:
+        if np in entities:
+            # filter out stop words
+            tmp = "_".join(_simple_document(np, min_length=min_length, stopwords=stopwords))
+            # if we end up with nothing, don't append an empty string
+            if tmp:
+                result.append(tmp)
+    return result
+
+
+def _tokenize_mixed_document(text, entities, min_length=1, stopwords=None):
+
+    result = []
+    for np in TextBlob(text).noun_phrases:
+        if ' ' in np and np not in entities:
+            # break apart the noun phrase; it does not occur often enough in the collection of text to be considered.
+            result.extend(_simple_document(np, min_length=min_length, stopwords=stopwords))
+        else:
+            # filter out stop words
+            tmp = "_".join(_simple_document(np, min_length=min_length, stopwords=stopwords))
+            # if we end up with nothing, don't append an empty string
+            if tmp:
+                result.append(tmp)
+    return result
+
+
+@register
+def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
+    """A tokenizer that extracts noun phrases from a corpus, then tokenizes all
+    documents using those extracted phrases.
 
     Parameters
     ----------
-    text : str
-        A single document's text to be tokenized
-    entities : iterable of str
-        Collection of noun phrases, obtained from collect_entities function
+    corpus : iterable of str
+        A collection of text to be tokenized
     min_length : int
         Minimum length of any single word
+    freq_min : int
+        Minimum occurrence of phrase in order to be considered
+    freq_max : int
+        Maximum occurrence of phrase, beyond which it is ignored
     stopwords : None or iterable of str
         Collection of words to ignore as tokens
 
@@ -82,31 +115,27 @@ applications as well as catalysts.'
     [u'transition']
 
     """
-    from textblob import TextBlob
-    result = []
-    for np in TextBlob(text).noun_phrases:
-        if np in entities:
-            # filter out stop words
-            tmp = "_".join(tokenize_simple(np, min_length=min_length, stopwords=stopwords))
-            # if we end up with nothing, don't append an empty string
-            if tmp:
-                result.append(tmp)
-    return result
+    entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
+    for doc in corpus:
+        yield _tokenize_entities_document(doc, entities, min_length=min_length,
+                                       stopwords=stopwords)
 
 
-@register_tokenizer
-def tokenize_mixed(text, entities, min_length=1, stopwords=None):
+@register
+def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
     """A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
 
     Parameters
     ----------
-    text : str
-        A single document's text to be tokenized
-    entities : iterable of str
-        Collection of noun phrases, obtained from collect_entities function
+    corpus : iterable of str
+        A collection of text to be tokenized
     min_length : int
         Minimum length of any single word
-    stopwords: None or iterable of str
+    freq_min : int
+        Minimum occurrence of phrase in order to be considered
+    freq_max : int
+        Maximum occurrence of phrase, beyond which it is ignored
+    stopwords : None or iterable of str
         Collection of words to ignore as tokens
 
     Examples
@@ -122,16 +151,7 @@ u'oxide', u'nanometer', u'size', u'unusual', u'properties', u'sol', u'gel', \
 u'method', u'dna', u'easy', u'method', u'biomedical', u'applications']
 
     """
-    from textblob import TextBlob
-    result = []
-    for np in TextBlob(text).noun_phrases:
-        if ' ' in np and np not in entities:
-            # break apart the noun phrase; it does not occur often enough in the collection of text to be considered.
-            result.extend(tokenize_simple(np, min_length=min_length, stopwords=stopwords))
-        else:
-            # filter out stop words
-            tmp = "_".join(tokenize_simple(np, min_length=min_length, stopwords=stopwords))
-            # if we end up with nothing, don't append an empty string
-            if tmp:
-                result.append(tmp)
-    return result
+    entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
+    for doc in corpus:
+        yield _tokenize_mixed_document(doc, entities, min_length=min_length,
+                                       stopwords=stopwords)
