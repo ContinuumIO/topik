@@ -18,25 +18,25 @@ def tokenize(corpus, method="simple", synchronous_wait=30, **kwargs):
     token_path = "tokens_"+parameters_string
 
     # convert raw documents into lists of tokens
-    for document_id, raw_document in self:
+    for document_id, raw_document in corpus:
         tokenized_document = tokenizer_methods[method](raw_document,
                                      **kwargs)
         # TODO: would be nice to aggregate batches and append in bulk
-        self.append_to_record(document_id, token_path, tokenized_document)
-    self.synchronize(max_wait=synchronous_wait, field=token_path)
+        corpus.append_to_record(document_id, token_path, tokenized_document)
+    corpus.synchronize(max_wait=synchronous_wait, field=token_path)
 
     # create a corpus dictionary
-    id2word_dict = Dictionary(self.get_generator_without_id(
+    id2word_dict = Dictionary(corpus.get_generator_without_id(
                                                         field=token_path))
 
     # use the corpus dictionary to generate BOWs from lists of tokens
     bow_path = "bow_"+parameters_string
-    for document_id, tokenized_document in self.get_field(field=token_path):
+    for document_id, tokenized_document in corpus.get_field(field=token_path):
         bow = {}
         for token_id, count in dict(id2word_dict.doc2bow(tokenized_document)).items():
             bow[token_id] = {'count': count}
-        self.append_to_record(document_id, bow_path,
+        corpus.append_to_record(document_id, bow_path,
                               bow)
 
-    return TokenizedCorpus(self.get_field(field=token_path),
+    return TokenizedCorpus(corpus.get_field(field=token_path),
                                       dictionary=id2word_dict)
