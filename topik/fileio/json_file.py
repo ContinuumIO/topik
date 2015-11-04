@@ -1,9 +1,9 @@
 import logging
 
-import json_file
+import json
 import ijson
 
-from ._registry import register_input
+from topik.fileio._registry import register_input
 
 
 @register_input
@@ -38,7 +38,7 @@ def json_stream(filename, json_prefix=None):
     with open(filename, 'r') as f:
         for n, line in enumerate(f):
             try:
-                output = json_file.loads(line)
+                output = json.loads(line)
                 output["filename"] = filename
                 yield output
             except ValueError as e:

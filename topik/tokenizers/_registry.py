@@ -1,6 +1,6 @@
 from functools import partial
 
-from topik.singleton_registry import BaseRegistry, _base_register_decorator
+from topik.singleton_registry import _base_register_decorator
 
 
 class TokenizerRegistry(BaseRegistry):
