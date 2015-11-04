@@ -1,6 +1,6 @@
 from textblob import TextBlob
 
-from topik.tokenizers.simple import _simple_document
+from .simple import _simple_document
 
 # imports used only for doctests
 from topik.tests import test_data_path

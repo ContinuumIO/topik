@@ -1,6 +1,6 @@
 import logging
 
-import json
+import json_file
 import ijson
 
 from ._registry import register_input
@@ -38,7 +38,7 @@ def json_stream(filename, json_prefix=None):
     with open(filename, 'r') as f:
         for n, line in enumerate(f):
             try:
-                output = json.loads(line)
+                output = json_file.loads(line)
                 output["filename"] = filename
                 yield output
             except ValueError as e:
@@ -132,3 +132,6 @@ def large_json(filename, json_prefix='item'):
                         yield sub_item
             else:
                 raise ValueError("'item' in json source is not a dict, and is either a string or not iterable: %r" % item)
+
+if __name__ == '__main__':
+    unittest.main()
