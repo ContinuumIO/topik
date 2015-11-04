@@ -1,4 +1,5 @@
 from functools import partial
+import os
 
 from topik.singleton_registry import _base_register_decorator
 
