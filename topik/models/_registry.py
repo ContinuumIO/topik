@@ -3,7 +3,7 @@ from functools import partial
 from topik.singleton_registry import BaseRegistry, _base_register_decorator
 
 
-# This subclass serves to establish a new singleon instance of functions
+# This subclass serves to establish a new singleton instance of functions
 #    for this particular step in topic modeling.  No implementation necessary.
 class ModelRegistry(BaseRegistry):
     pass
