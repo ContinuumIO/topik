@@ -10,7 +10,7 @@ from topik.tests import test_data_path
 INDEX = "topik_unittest"
 SAVE_FILENAME = "test_save"
 
-class BaseCorpus(object):
+class BaseOutputTest(object):
     test_raw_data = None
 
     def test_year_filtering(self):
@@ -41,13 +41,13 @@ class BaseCorpus(object):
         self.assertNotEqual(date_data.filter_string, "")
 
 
-class TestDictionaryCorpus(unittest.TestCase, BaseCorpus):
+class TestInMemoryOutput(unittest.TestCase, BaseOutputTest):
     def setUp(self):
         self.test_raw_data = read_input('{}/test_data_json_stream.json'.format(
             test_data_path), content_field="abstract")
 
 
-class TestElasticSearchCorpus(unittest.TestCase, BaseCorpus):
+class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
     def setUp(self):
         self.test_raw_data = read_input('{}/test_data_json_stream.json'.format(
             test_data_path), content_field="abstract",

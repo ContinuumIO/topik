@@ -14,6 +14,7 @@ class ModelRegistry(dict):
         self.__dict__ = self.__shared_state
         super(ModelRegistry, self).__init__(*args, **kwargs)
 
+
 # a nicer, more pythonic handle to our singleton instance
 registered_models = ModelRegistry()
 

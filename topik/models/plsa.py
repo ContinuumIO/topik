@@ -2,7 +2,6 @@
 
 import logging
 import math
-import operator
 import random
 
 import numpy as np
@@ -80,7 +79,7 @@ def _cal_likelihood(vectorized_data, p_dw):
     return likelihood
 
 
-@register_train
+@register
 def PLSA(vectorized_data, unique_word_count, ntopics=2, max_iter=100):
     cur = 0
     topic_array = np.arange(ntopics, dtype=np.int32)
@@ -118,56 +117,3 @@ def PLSA(vectorized_data, unique_word_count, ntopics=2, max_iter=100):
     return TopicModelResultBase(doc_topic_matrix=doc_topic_df,
                                 topic_term_matrix=term_topic_df)
 
-@register_infer
-def infer_plsa(doc, plsa_result, max_iter=100):
-    doc = dict(filter(lambda x: x[0] < plsa_result.words, doc.items()))
-    words = sum(doc.values())
-    ret = []
-    for i in xrange(plsa_result.topics):
-        ret.append(random.random())
-    norm = sum(ret)
-    for i in xrange(plsa_result.topics):
-        ret[i] /= norm
-    tmp = 0
-    for _ in xrange(max_iter):
-        p_dw = {}
-        for w in doc:
-            p_dw[w] = 0
-            for _ in range(doc[w]):
-                for z in xrange(plsa_result.topics):
-                    p_dw[w] += (ret[z]*plsa_result.topic_term_matrix[z][w])**plsa_result.beta
-        # e setp
-        dw_z = {}
-        for w in doc:
-            dw_z[w] = []
-            for z in xrange(plsa_result.topics):
-                dw_z[w].append(((plsa_result.topic_term_matrix[z][w]*ret[z])**plsa_result.beta)/p_dw[w])
-        logging.debug('inference dw_z %r' % (dw_z,))
-        # m step
-
-        ret = [0]*plsa_result.topics
-        for z in xrange(plsa_result.topics):
-            for w in doc:
-                ret[z] += doc[w]*dw_z[w][z]
-        for z in xrange(plsa_result.topics):
-            ret[z] /= words
-        # cal likelihood
-        likelihood = 0
-        for w in doc:
-            likelihood += doc[w]*math.log(p_dw[w])
-        if tmp != 0 and abs((likelihood-tmp)/tmp) < 1e-8:
-            break
-        tmp = likelihood
-    return (ret, likelihood)
-
-"""
-    # not sure what this is used for.  Comment pending further discussion.
-    def post_prob_sim(self, docd, q):
-        sim = 0
-        for w in docd:
-            tmp = 0
-            for z in xrange(self.topics):
-                tmp += self.zw[z][w]*q[z]
-            sim += docd[w]*math.log(tmp)
-        return sim
-"""
