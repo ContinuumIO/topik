@@ -3,60 +3,20 @@ from .base_output import OutputInterface
 
 @register_output
 class InMemoryOutput(OutputInterface):
-    def __init__(self, content_field, iterable=None, from_existing_corpus=False,
-                 active_field=None, content_filter=None):
+    def __init__(self, iterable=None, content_field=None, from_existing_corpus=False,
+                 content_filter=None, models=None, vectorized_data=None, tokenized_data=None):
         super(InMemoryOutput, self).__init__()
-        self.content_field = content_field
-        if active_field is None:
-            self.active_field = content_field
-        else:
-            self.active_field = active_field
-        self._documents = {}
+        self.corpus = {}
         if from_existing_corpus:
-            self._documents = iterable
-        elif iterable:
+            self.corpus = iterable
+        elif iterable and content_field:
             self.import_from_iterable(iterable, content_field)
-
-        self.idx = 0
-
-        self.content_filter = content_filter
-
-    @classmethod
-    def class_key(cls):
-        return "dictionary"
-
-    def __iter__(self):
-        for doc_id, doc in self._documents.items():
-            if self.content_filter:
-                if eval(self.content_filter["expression"].format(doc["_source"][self.content_filter["field"]])):
-                    yield doc_id, doc["_source"][self.active_field]
-            else:
-                yield doc_id, doc["_source"][self.active_field]
-
-    def __len__(self):
-        return len(self._documents)
-
-    @property
-    def filter_string(self):
-        return self.content_filter["expression"].format(self.content_filter["field"]) if self.content_filter else ""
-
-    def append_to_record(self, record_id, field_name, field_value):
-        if record_id in self._documents.keys():
-            self._documents[record_id]["_source"][field_name] = field_value
         else:
-            raise ValueError("No record with id '{}' was found.".format(record_id))
-
-    def term_topic_matrix(self):
-        self._term_topic_matrix={}
-
-    def get_field(self, new_active_field=None):
-        """Get a different field to iterate over, keeping all other details."""
-        if not new_active_field:
-            new_active_field = self.content_field
-        return InMemoryOutput(active_field=new_active_field,
-                                iterable=self._documents,
-                                from_existing_corpus=True,
-                                content_field=self.content_field)
+            raise ValueError("Output must be instantiated with iterable and ")
+        self.content_filter = content_filter
+        self.models = models if models else {}
+        self.tokenized_data = tokenized_data if tokenized_data else {}
+        self.vectorized_data = vectorized_data if vectorized_data else {}
 
     def get_generator_without_id(self, field=None):
         if not field:
@@ -75,7 +35,7 @@ class InMemoryOutput(OutputInterface):
             if isinstance(item, basestring):
                 item = {content_field: item}
             id = hash(item[content_field])
-            self._documents[id] = {"_source": item}
+            self.corpus[id] = {"_source": item}
 
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
@@ -85,9 +45,11 @@ class InMemoryOutput(OutputInterface):
                                 from_existing_corpus=True,
                                 content_filter={"field": filter_field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
 
-    def save(self, filename, saved_data=None):
-        if saved_data is None:
-            saved_data = {"active_field": self.active_field, "content_field": self.content_field,
-                          "iterable": self._documents,
-                          "from_existing_corpus": True}
+    def save(self, filename):
+        saved_data = {"iterable": self.corpus,
+                      "from_existing_corpus": True,
+                      "models": self.models,
+                      "vectorized_data": self.vectorized_data,
+                      "tokenized_data": self.tokenized_data,
+                      "content_filter": self.content_filter}
         return super(InMemoryOutput, self).save(filename, saved_data)

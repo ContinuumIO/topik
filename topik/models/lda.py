@@ -3,8 +3,6 @@ from __future__ import absolute_import
 import pandas as pd
 
 import gensim
-from topik.fileio.tokenized_corpus import TokenizedCorpus
-from topik.fileio.base_output import load_persisted_corpus
 from .base_model_output import TopicModelResultBase
 from ._registry import register
 
@@ -60,7 +58,6 @@ class LDA(TopicModelResultBase):
             self._corpus = corpus_input
         elif load_filename is not None and binary_filename is not None:
             self._model = gensim.models.LdaModel.load(binary_filename)
-            self._corpus = TokenizedCorpus(load_persisted_corpus(load_filename))
 
     def save(self, filename):
         self._model.save(self.get_model_name_with_parameters())

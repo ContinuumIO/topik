@@ -4,9 +4,8 @@ import unittest
 
 from nose.tools import assert_raises
 
-from topik.fileio.readers import read_input
+from topik.fileio import read_input
 from topik.models import registered_models, load_model
-from topik.fileio.persistence import Persistor
 
 
 # sample data files are located in the same folder

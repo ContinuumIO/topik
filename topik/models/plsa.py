@@ -8,7 +8,6 @@ import random
 import numpy as np
 import pandas as pd
 
-from topik.fileio.base_output import load_persisted_corpus
 from .base_model_output import TopicModelResultBase
 from ._registry import register
 
@@ -59,8 +58,6 @@ class PLSA(TopicModelResultBase):
             self.p_dw = [{}, ] * len(corpus)
             self.beta = 0.8
         elif load_filename and binary_filename:
-            from topik.fileio.tokenized_corpus import TokenizedCorpus
-            self._corpus = TokenizedCorpus(load_persisted_corpus(load_filename))
             # total number of identified words for each given document (document length normalization factor?)
             self.each = map(sum, map(lambda x: x[1], self._corpus))
             # Maximum identified word (number of identified words in corpus)

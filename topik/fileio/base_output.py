@@ -1,71 +1,29 @@
-"""
-This file is concerned with providing a simple interface for data stored in
-Elasticsearch.  The class(es) defined here are fed into the preprocessing step.
-"""
-
-from abc import ABCMeta, abstractmethod, abstractproperty
-import logging
-import time
+from abc import ABCMeta, abstractmethod
 
 from six import with_metaclass
+import json
 
-from gensim.corpora.dictionary import Dictionary
-
-from topik.fileio.persistence import Persistor
-from topik.tokenizers import tokenizer_methods
-from topik.fileio.tokenized_corpus import TokenizedCorpus
-
-
-registered_outputs = {}
-
-def register_output(cls):
-    global registered_outputs
-    if cls.class_key() not in registered_outputs:
-        registered_outputs[cls.class_key()] = cls
-    return cls
-
-
-def _get_hash_identifier(input_data, field_to_hash):
-    return hash(input_data[field_to_hash])
-
-
-def _get_parameters_string(**kwargs):
-    """Used to create identifiers for output"""
-    id = ''.join('{}={}_'.format(key, val) for key, val in sorted(kwargs.items()))
-    return id[:-1]
+from ._registry import registered_outputs
 
 
 class OutputInterface(with_metaclass(ABCMeta)):
-    def __init__(self):
-        super(OutputInterface, self).__init__()
-        self.persistor = Persistor()
-
-    @classmethod
-    @abstractmethod
-    def class_key(cls):
-        """Implement this method to return the string ID with which to store your class."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def __iter__(self):
-        """This is expected to iterate over your data, returning tuples of (doc_id, <selected field>)"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def __len__(self):
-        raise NotImplementedError
+    def __init__(self, *args, **kwargs):
+        super(OutputInterface, self).__init__( *args, **kwargs)
+        # should be an iterable with each member having (id, text)
+        self.corpus = None
+        # should be a dictionary-like structure, with string ids for tokenizer used and parameters
+        #     passed and dictionaries mapping doc id to list of tokens
+        self.tokenized_data = None
+        # should be a dictionary-like structure, with string ids for vectorizer used and parameters
+        #     passed and dictionaries mapping doc id to list of tokens
+        self.vectorized_data = None
+        # should be a dictionary-like structure, with string ids for model used and parameters passed
+        #     and dictionaries mapping doc id to list of tokens
+        self.model_data = None
 
     @abstractmethod
     def get_generator_without_id(self, field=None):
         """Returns a generator that yields field content without doc_id associate"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_date_filtered_data(self, start, end, field):
-        raise NotImplementedError
-
-    @abstractproperty
-    def filter_string(self):
         raise NotImplementedError
 
     def save(self, filename, saved_data=None):
@@ -77,8 +35,8 @@ class OutputInterface(with_metaclass(ABCMeta)):
         to implement anything for saved_data, but it is stored as a key next to 'class'.
 
         """
-        self.persistor.store_corpus({"class": self.__class__.class_key(), "saved_data": saved_data})
-        self.persistor.persist_data(filename)
+        with open(filename, "w") as f:
+            json.dump({"class": self.__class__.class_key(), "saved_data": saved_data}, f)
 
     def synchronize(self, max_wait, field):
         """By default, operations are synchronous and no additional wait is
@@ -86,7 +44,11 @@ class OutputInterface(with_metaclass(ABCMeta)):
         use this function to wait for "eventual consistency" """
         pass
 
+    @abstractmethod
+    def get_filtered_corpus(self, filter=""):
+        raise NotImplementedError
 
-def load_persisted_corpus(filename):
-    corpus_dict = Persistor(filename).get_corpus_dict()
-    return registered_outputs[corpus_dict['class']](**corpus_dict["saved_data"])
+
+def load_output(filename):
+    output_details = json.load(filename)
+    return registered_outputs[output_details['class']](**output_details["saved_data"])
