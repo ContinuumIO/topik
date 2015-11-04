@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 from six import with_metaclass
-import json
+import json_streams
 
 from ._registry import registered_outputs
 
@@ -36,7 +36,7 @@ class OutputInterface(with_metaclass(ABCMeta)):
 
         """
         with open(filename, "w") as f:
-            json.dump({"class": self.__class__.class_key(), "saved_data": saved_data}, f)
+            json_streams.dump({"class": self.__class__.class_key(), "saved_data": saved_data}, f)
 
     def synchronize(self, max_wait, field):
         """By default, operations are synchronous and no additional wait is
@@ -50,5 +50,5 @@ class OutputInterface(with_metaclass(ABCMeta)):
 
 
 def load_output(filename):
-    output_details = json.load(filename)
+    output_details = json_streams.load(filename)
     return registered_outputs[output_details['class']](**output_details["saved_data"])

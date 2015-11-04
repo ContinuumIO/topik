@@ -29,6 +29,13 @@ class TopicModelResultBase(with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_top_words(self, topn):
+        top_words = []
+        # each "topic" is a row of the dz matrix
+        for topic in self.dz.T:
+            word_ids = np.argpartition(topic, -topn)[-topn:]
+            word_ids = reversed(word_ids[np.argsort(topic[word_ids])])
+            top_words.append([(topic[word_id], self._corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
+        return top_words
         """Abstract method.  Implementations should collect top n words per topic, translate indices/ids to words.
 
         Returns
