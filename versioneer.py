@@ -345,7 +345,7 @@ try:
 except ImportError:
     import ConfigParser as configparser
 import errno
-import json_file
+import json
 import os
 import re
 import subprocess
@@ -1153,13 +1153,13 @@ def versions_from_file(filename):
                    contents, re.M | re.S)
     if not mo:
         raise NotThisMethod("no version_json in _version.py")
-    return json_file.loads(mo.group(1))
+    return json.loads(mo.group(1))
 
 
 def write_to_version_file(filename, versions):
     os.unlink(filename)
-    contents = json_file.dumps(versions, sort_keys=True,
-                          indent=1, separators=(",", ": "))
+    contents = json.dumps(versions, sort_keys=True,
+                                  indent=1, separators=(",", ": "))
     with open(filename, "w") as f:
         f.write(SHORT_VERSION_PY % contents)
 

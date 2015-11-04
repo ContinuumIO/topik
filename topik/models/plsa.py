@@ -33,151 +33,135 @@ def _rand_mat(cols, rows):
         row /= row.sum()
     return out
 
+def _cal_p_dw(vectorized_data, topic_array, zw, dz, beta, p_dw):
+    for d, doc in enumerate(vectorized_data):
+        for word_id, word_ct in doc:
+            tmp = 0
+            for _ in range(word_ct):
+                for z in topic_array:
+                    tmp += (zw[z][word_id]*dz[d][z])**beta
+            p_dw[-1][word_id] = tmp
+    return p_dw
 
-@register
-class PLSA(TopicModelResultBase):
-    def __init__(self, corpus=None, ntopics=2, load_filename=None, binary_filename=None):
-        # corpus comes in as a list of lists of tuples.  Each inner list represents a document, while each
-        #     tuple contains (id, count) of words in that document.
-        self.topics = ntopics
-        self.topic_array = np.arange(ntopics, dtype=np.int32)
-        if corpus:
-            # iterable, each entry is tuple of (word_id, count)
-            self._corpus = corpus
-            # total number of identified words for each given document (document length normalization factor?)
-            self.each = map(sum, map(lambda x: x[1], corpus))
-            # Maximum identified word (number of identified words in corpus)
-            # TODO: seems like this could be tracked better during the tokenization step and fed in.
-            self.words = len(corpus._dict.token2id)
-            self.likelihood = 0
-            # topic-word matrix
-            self.zw = _rand_mat(self.words, self.topics)
-            # document-topic matrix
-            self.dz = _rand_mat(self.topics, len(corpus))
-            self.dw_z = [{}, ] * len(corpus)
-            self.p_dw = [{}, ] * len(corpus)
-            self.beta = 0.8
-        elif load_filename and binary_filename:
-            # total number of identified words for each given document (document length normalization factor?)
-            self.each = map(sum, map(lambda x: x[1], self._corpus))
-            # Maximum identified word (number of identified words in corpus)
-            # TODO: seems like this could be tracked better during the tokenization step and fed in.
-            self.words = max(reduce(operator.add, map(lambda x: x[0], self._corpus)))+1
-            arrays = np.load(binary_filename)
-            self.zw = arrays['zw']
-            self.dz = arrays['dz']
-            self.dw_z = arrays['dw_z']
-            self.p_dw = arrays['p_dw']
-            self.beta, self.likelihood = arrays["beta_likelihood"]
-        else:
-            pass  # is just being used for inference
 
-    def save(self, filename):
-        np.savez_compressed(self.get_model_name_with_parameters(),
-                            zw=self.zw,
-                            dz=self.dz,
-                            dw_z=self.dw_z,
-                            p_dw=self.p_dw,
-                            beta_likelihood=np.array([self.beta, self.likelihood]))
-        saved_data = {"load_filename": filename, "binary_filename": self.get_model_name_with_parameters()+".npz"}
-        super(PLSA, self).save(filename, saved_data=saved_data)
+def _e_step(vectorized_data, dw_z, topic_array, zw, dz, beta, p_dw):
+    for d, doc in enumerate(vectorized_data):
+        for word_id, word_ct in doc:
+            dw_z[-1][word_id] = []
+            for z in topic_array:
+                dw_z[-1][word_id].append(((zw[z][word_id]*dz[d][z])**beta)/p_dw[d][word_id])
+    return dw_z
 
-    def get_model_name_with_parameters(self):
-        return "PLSA_{}_topics{}".format(self.topics, self._corpus.filter_string)
 
-    def _cal_p_dw(self):
-        for d, doc in enumerate(self._corpus):
+def _m_step(vectorized_data, topic_array, unique_word_count, zw, dw_z, dz, each):
+    for z in topic_array:
+        zw[z] = [0]*unique_word_count
+        for d, doc in enumerate(vectorized_data):
             for word_id, word_ct in doc:
-                tmp = 0
-                for _ in range(word_ct):
-                    for z in self.topic_array:
-                        tmp += (self.zw[z][word_id]*self.dz[d][z])**self.beta
-                self.p_dw[-1][word_id] = tmp
-
-    def _e_step(self):
-        self._cal_p_dw()
-        for d, doc in enumerate(self._corpus):
+                zw[z][word_id] += word_ct*dw_z[d][word_id][z]
+        norm = sum(zw[z])
+        for w in xrange(unique_word_count):
+            zw[z][w] /= norm
+    for d, doc in enumerate(vectorized_data):
+        dz[d] = 0
+        for z in topic_array:
             for word_id, word_ct in doc:
-                self.dw_z[-1][word_id] = []
-                for z in self.topic_array:
-                    self.dw_z[-1][word_id].append(((self.zw[z][word_id]*self.dz[d][z])**self.beta)/self.p_dw[d][word_id])
+                dz[d][z] += word_ct * dw_z[d][word_id][z]
+        for z in topic_array:
+            dz[d][z] /= each[d]
+    return zw, dz
 
-    def _m_step(self):
-        for z in self.topic_array:
-            self.zw[z] = [0]*self.words
-            for d, doc in enumerate(self._corpus):
-                for word_id, word_ct in doc:
-                    self.zw[z][word_id] += word_ct*self.dw_z[d][word_id][z]
-            norm = sum(self.zw[z])
-            for w in xrange(self.words):
-                self.zw[z][w] /= norm
-        for d, doc in enumerate(self._corpus):
-            self.dz[d] = 0
-            for z in self.topic_array:
-                for word_id, word_ct in doc:
-                    self.dz[d][z] += word_ct * self.dw_z[d][word_id][z]
-            for z in self.topic_array:
-                self.dz[d][z] /= self.each[d]
 
-    def _cal_likelihood(self):
-        self.likelihood = 0
-        for d, doc in enumerate(self._corpus):
-            for word_id, word_ct in doc:
-                self.likelihood += word_ct*math.log(self.p_dw[d][word_id])
+def _cal_likelihood(vectorized_data, p_dw):
+    likelihood = 0
+    for d, doc in enumerate(vectorized_data):
+        for word_id, word_ct in doc:
+            likelihood += word_ct*math.log(p_dw[d][word_id])
+    return likelihood
 
-    def train(self, max_iter=100):
-        cur = 0
-        for i in xrange(max_iter):
-            logging.info('%d iter' % i)
-            self._e_step()
-            self._m_step()
-            self._cal_likelihood()
-            logging.info('likelihood %f ' % self.likelihood)
-            if cur != 0 and abs((self.likelihood-cur)/cur) < 1e-8:
-                break
-            cur = self.likelihood
 
-    def inference(self, doc, max_iter=100):
-        doc = dict(filter(lambda x: x[0] < self.words, doc.items()))
-        words = sum(doc.values())
-        ret = []
-        for i in xrange(self.topics):
-            ret.append(random.random())
-        norm = sum(ret)
-        for i in xrange(self.topics):
-            ret[i] /= norm
-        tmp = 0
-        for _ in xrange(max_iter):
-            p_dw = {}
+@register_train
+def PLSA(vectorized_data, unique_word_count, ntopics=2, max_iter=100):
+    cur = 0
+    topic_array = np.arange(ntopics, dtype=np.int32)
+    # topic-word matrix
+    zw = _rand_mat(unique_word_count, ntopics)
+    # total number of identified words for each given document (document length normalization factor?)
+    word_count_per_doc = map(sum, map(lambda x: x[1], vectorized_data))
+    # document-topic matrix
+    dz = _rand_mat(ntopics, len(vectorized_data))
+    dw_z = [{}, ] * len(vectorized_data)
+    p_dw = [{}, ] * len(vectorized_data)
+    beta = 0.8
+    for i in xrange(max_iter):
+        logging.info('%d iter' % i)
+        p_dw = _cal_p_dw(vectorized_data, topic_array, zw, dz, beta, p_dw)
+        dw_z = _e_step(vectorized_data, dw_z, topic_array, zw, dz, beta, p_dw)
+        zw, dz = _m_step(vectorized_data, topic_array, unique_word_count, zw, dw_z, dz, word_count_per_doc)
+        likelihood = _cal_likelihood(vectorized_data, p_dw)
+        logging.info('likelihood %f ' % likelihood)
+        if cur != 0 and abs((likelihood-cur)/cur) < 1e-8:
+            break
+        cur = likelihood
+
+    term_topic_df = pd.DataFrame(zw,
+                        index=['topic'+str(t)+'dist' for t in range(ntopics)]).T
+
+    term_topic_df.index.name = 'term_id'
+
+    doc_topic_df = pd.DataFrame(dz,
+                        index=[doc[0] for doc in vectorized_data],
+                        columns=['topic'+str(t)+'dist' for t in range(ntopics)])
+
+    doc_topic_df.index.name = 'doc_id'
+
+    return TopicModelResultBase(doc_topic_matrix=doc_topic_df,
+                                topic_term_matrix=term_topic_df)
+
+@register_infer
+def infer_plsa(doc, plsa_result, max_iter=100):
+    doc = dict(filter(lambda x: x[0] < plsa_result.words, doc.items()))
+    words = sum(doc.values())
+    ret = []
+    for i in xrange(plsa_result.topics):
+        ret.append(random.random())
+    norm = sum(ret)
+    for i in xrange(plsa_result.topics):
+        ret[i] /= norm
+    tmp = 0
+    for _ in xrange(max_iter):
+        p_dw = {}
+        for w in doc:
+            p_dw[w] = 0
+            for _ in range(doc[w]):
+                for z in xrange(plsa_result.topics):
+                    p_dw[w] += (ret[z]*plsa_result.topic_term_matrix[z][w])**plsa_result.beta
+        # e setp
+        dw_z = {}
+        for w in doc:
+            dw_z[w] = []
+            for z in xrange(plsa_result.topics):
+                dw_z[w].append(((plsa_result.topic_term_matrix[z][w]*ret[z])**plsa_result.beta)/p_dw[w])
+        logging.debug('inference dw_z %r' % (dw_z,))
+        # m step
+
+        ret = [0]*plsa_result.topics
+        for z in xrange(plsa_result.topics):
             for w in doc:
-                p_dw[w] = 0
-                for _ in range(doc[w]):
-                    for z in xrange(self.topics):
-                        p_dw[w] += (ret[z]*self.zw[z][w])**self.beta
-            # e setp
-            dw_z = {}
-            for w in doc:
-                dw_z[w] = []
-                for z in xrange(self.topics):
-                    dw_z[w].append(((self.zw[z][w]*ret[z])**self.beta)/p_dw[w])
-            logging.debug('inference dw_z %r' % (dw_z,))
-            # m step
+                ret[z] += doc[w]*dw_z[w][z]
+        for z in xrange(plsa_result.topics):
+            ret[z] /= words
+        # cal likelihood
+        likelihood = 0
+        for w in doc:
+            likelihood += doc[w]*math.log(p_dw[w])
+        if tmp != 0 and abs((likelihood-tmp)/tmp) < 1e-8:
+            break
+        tmp = likelihood
+    return (ret, likelihood)
 
-            ret = [0]*self.topics
-            for z in xrange(self.topics):
-                for w in doc:
-                    ret[z] += doc[w]*dw_z[w][z]
-            for z in xrange(self.topics):
-                ret[z] /= words
-            # cal likelihood
-            likelihood = 0
-            for w in doc:
-                likelihood += doc[w]*math.log(p_dw[w])
-            if tmp != 0 and abs((likelihood-tmp)/tmp) < 1e-8:
-                break
-            tmp = likelihood
-        return (ret, likelihood)
-
+"""
+    # not sure what this is used for.  Comment pending further discussion.
     def post_prob_sim(self, docd, q):
         sim = 0
         for w in docd:
@@ -186,27 +170,4 @@ class PLSA(TopicModelResultBase):
                 tmp += self.zw[z][w]*q[z]
             sim += docd[w]*math.log(tmp)
         return sim
-
-    def get_top_words(self, topn):
-        top_words = []
-        # each "topic" is a row of the dz matrix
-        for topic in self.dz.T:
-            word_ids = np.argpartition(topic, -topn)[-topn:]
-            word_ids = reversed(word_ids[np.argsort(topic[word_ids])])
-            top_words.append([(topic[word_id], self._corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
-        return top_words
-
-    def _get_topic_term_dists(self):
-        term_topic_df = pd.DataFrame(self.zw,
-                            index=['topic'+str(t)+'dist' for t in range(self.topics)]).T
-
-        term_topic_df.index.name = 'term_id'
-        return term_topic_df
-
-    def _get_doc_topic_dists(self):
-        doc_topic_df = pd.DataFrame(self.dz,
-                            index=[doc[0] for doc in self._corpus._corpus],
-                            columns=['topic'+str(t)+'dist' for t in range(self.topics)])
-
-        doc_topic_df.index.name = 'doc_id'
-        return doc_topic_df
+"""

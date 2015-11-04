@@ -1,9 +1,11 @@
 from functools import partial
 import os
+import logging
+import itertools
+    
 
 from .json_file import _test_json_input
 from topik.singleton_registry import _base_register_decorator
-
 
 
 class InputRegistry(dict):
@@ -13,6 +15,7 @@ class InputRegistry(dict):
     __shared_state = {}
     def __init__(self):
         self.__dict__ = self.__shared_state
+
 
 class OutputRegistry(dict):
     """Uses Borg design pattern.  Core idea is that there is a global registry for each step's
@@ -94,39 +97,27 @@ def read_input(source, content_field, source_type="auto",
 
     # solr defaults to port 8983
     if (source_type == "auto" and "8983" in source) or source_type == "solr":
-        data_iterator = _iter_solr_query(source, **kwargs)
+        data_iterator = registered_inputs["solr"](source, **kwargs)
     # web addresses default to elasticsearch
     elif (source_type == "auto" and "9200" in source) or source_type == "elastic":
-        data_iterator = _iter_elastic_query(source, **kwargs)
+        data_iterator = registered_inputs["elastic"](source, **kwargs)
     # files must end in .json.  Try json parser first, try large_json parser next.  Fail otherwise.
     elif (source_type == "auto" and os.path.splitext(source)[1] in json_extensions) or source_type == "json_stream":
         try:
-            _test_json_input(source)
-            data_iterator = _iter_document_json_stream(source, **kwargs)
+            data_iterator = registered_inputs["json_stream"](source, **kwargs)
+            # tee the iterator and try to get the first element.  If it fails, this is actually a large_json file.
+            next(itertools.tee(data_iterator)[0])
         except ValueError as e:
-            data_iterator = _iter_large_json(source, **kwargs)
+            data_iterator = registered_inputs["large_json"](source, **kwargs)
     elif source_type == "large_json":
-        data_iterator = _iter_large_json(source, **kwargs)
+        data_iterator = registered_inputs["large_json"](source, **kwargs)
     # folder paths are simple strings that don't end in an extension (.+3-4 characters), or end in a /
     elif (source_type == "auto" and os.path.splitext(source)[1] == "") or source_type == "folder":
-        data_iterator = _iter_documents_folder(source, content_field=content_field)
+        data_iterator = registered_inputs["document_folder"](source, content_field=content_field)
     else:
         raise ValueError("Unrecognized source type: {}.  Please either manually specify the type, or convert your input"
                          " to a supported type.".format(source))
     if "content_field" not in output_args:
         output_args["content_field"] = content_field
-    output = registered_outputs[output_type](iterable=data_iterator, **output_args)
-
-    if synchronous_wait > 0:
-        start = time.time()
-        items_stored = len(output)
-        time.sleep(1)
-        # TODO: might get into trouble here if upload is actually empty!
-        while len(output) <= 0 or (items_stored != len(output) and time.time() - start < synchronous_wait):
-            logging.debug("Number of documents added to the index: {}".format(len(output)))
-            time.sleep(1)
-            items_stored = len(output)
-        if time.time() - start > synchronous_wait:
-            logging.warning("Number of documents had not stabilized by end of synchronous_wait, continuing anyway.")
-    return output
+    return data_iterator
 

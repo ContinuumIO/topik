@@ -5,6 +5,7 @@ import unittest
 from nose.tools import assert_raises
 
 from topik.fileio import read_input
+from topik.tokenizers import tokenize
 from topik.models import registered_models, load_model
 
 
@@ -20,7 +21,7 @@ class _ModelBase(object):
         raw_data = read_input(
                 source=os.path.join(module_path, 'data/test_data_json_stream.json'),
                 content_field="abstract")
-        self.digested_data = raw_data.tokenize()
+        self.digested_data = tokenize(raw_data)
         self.model = registered_models[self.model_name](
                                             self.digested_data, ntopics=NTOPICS)
 
