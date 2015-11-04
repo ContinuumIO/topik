@@ -1,3 +1,8 @@
+import pysolr
+
+from ._registry import register_input
+
+
 @register_input
 def solr(solr_instance, content_field, query="*:*", content_in_list=True, **kwargs):
     # TODO: should I be checking for presence of content_field and year_field?
@@ -17,8 +22,6 @@ def solr(solr_instance, content_field, query="*:*", content_in_list=True, **kwar
     content_in_list: bool
         Whether the source fields are stored in single-element lists.  Used for unpacking.
     """
-
-    import pysolr
 
     s = pysolr.Solr(solr_instance)
     results_per_batch = 100

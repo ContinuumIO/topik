@@ -12,7 +12,7 @@ register = partial(_base_register_decorator, VectorizerRegistry)
 
 
 # a nicer, more pythonic handle to our singleton instance
-registered_tokenizers = VectorizerRegistry()
+registered_vectorizers = VectorizerRegistry()
 
 
 def vectorize(corpus, method="tfidf", **kwargs):
