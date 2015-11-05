@@ -1,15 +1,27 @@
+from math import log
 from collections import Counter
 from ._registry import register
 from vectorizer_output import VectorizerOutput
+from .bag_of_words import _count_words_in_docs
 
-def _count_words_in_docs(tokenized_data, vectorizer_output):
-    doc_counts = {}
-    for id, doc in tokenized_data:
-        raise NotImplementedError
-        # code below here is copied from bag of words, left here for example.
-        doc_counts[id] = {vectorizer_output.term_id_map[key]: value for key, value in Counter(doc).items()}
-    return doc_counts
+def _count_document_occurences(doc_counts, total_words):
+    return {word_id: sum(1 for doc in doc_counts.values() if word_id in doc)
+            for word_id in range(total_words)}
+
+def _calculate_tfidf(tokenized_data, vectorizer_output):
+    doc_counts = _count_words_in_docs(tokenized_data, vectorizer_output)
+    document_occurrences = _count_document_occurences(doc_counts, vectorizer_output.global_term_count)
+    idf = {word_id: log(len(tokenized_data) / (document_occurrences[word_id]))
+           for word_id in range(vectorizer_output.global_term_count)}
+    tf_idf = {}
+    # TODO: this is essentially a sparse matrix multiply and could be done much more efficiently
+    for id, doc in doc_counts.items():
+        tf_idf[id] = {}
+        for word_id, count in doc.items():
+            tf_idf[id].update({word_id: count*idf[word_id]})
+    return tf_idf
+
 
 @register
 def tfidf(tokenized_data):
-    return VectorizerOutput(tokenized_data, _count_words_in_docs)
+    return VectorizerOutput(tokenized_data, _calculate_tfidf)

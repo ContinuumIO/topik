@@ -1,11 +1,9 @@
-from abc import abstractproperty
-
 def _accumulate_terms(tokenized_data):
     global_terms=set()
     document_term_counts = {}
     for id, doc in tokenized_data:
         doc_terms = set(doc)
-        global_terms = global_terms.update(doc_terms)
+        global_terms.update(doc_terms)
         document_term_counts[id] = len(doc_terms)
     return global_terms, document_term_counts
 
@@ -33,6 +31,6 @@ class VectorizerOutput(object):
     def document_term_counts(self):
         return self._document_term_counts
 
-    @abstractproperty
+    @property
     def vectors(self):
         return self._vectors
