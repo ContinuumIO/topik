@@ -4,6 +4,7 @@ import logging
 import itertools
     
 
+from .json_file import _test_json_input
 from topik.singleton_registry import _base_register_decorator
 
 

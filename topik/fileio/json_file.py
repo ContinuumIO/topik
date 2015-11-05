@@ -3,7 +3,7 @@ import logging
 import json
 import ijson
 
-from ._registry import register_input
+from topik.fileio._registry import register_input
 
 
 @register_input
