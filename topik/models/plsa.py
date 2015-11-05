@@ -80,7 +80,8 @@ def _cal_likelihood(vectorized_data, p_dw):
     return likelihood
 
 
-@register_train
+#@register_train
+@register
 def PLSA(vectorized_data, unique_word_count, ntopics=2, max_iter=100):
     cur = 0
     topic_array = np.arange(ntopics, dtype=np.int32)
@@ -118,7 +119,8 @@ def PLSA(vectorized_data, unique_word_count, ntopics=2, max_iter=100):
     return TopicModelResultBase(doc_topic_matrix=doc_topic_df,
                                 topic_term_matrix=term_topic_df)
 
-@register_infer
+#@register_infer
+@register
 def infer_plsa(doc, plsa_result, max_iter=100):
     doc = dict(filter(lambda x: x[0] < plsa_result.words, doc.items()))
     words = sum(doc.values())

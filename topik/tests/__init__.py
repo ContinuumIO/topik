@@ -1,5 +1,4 @@
 import os
-import doctest
 
 # sample data files are located in the same folder
 module_path = os.path.dirname(__file__)

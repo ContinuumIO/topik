@@ -4,10 +4,16 @@ import json
 import ijson
 
 from topik.fileio._registry import register_input
-
+from topik.tests import test_data_path
 
 @register_input
-def json_stream(filename):
+def read_json_stream(filename, json_prefix='item'):
+    # TODO: decide between:
+    #   a) allow this unused json_prefix argument so that current check in read_input works
+    #   b) allow **kwargs instead
+    #   c) improve the check in read_input.. (maybe read first line and see if it is a valid, self-contained json object?
+    #   d) actually do use an optional json_prefix argument to only return a subset of each json object.
+
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters
@@ -17,7 +23,7 @@ def json_stream(filename):
 
     Examples
     --------
-    >>> documents = _iter_document_json_stream(
+    >>> documents = read_json_stream(
     ... '{}/test_data_json_stream.json'.format(test_data_path))
     >>> next(documents) == {
     ... u'doi': u'http://dx.doi.org/10.1557/PROC-879-Z3.3',
@@ -45,13 +51,6 @@ def json_stream(filename):
                 logging.debug("Unable to process line: {} (error was: {})".format(str(line), e))
                 raise
 
-
-def _test_json_input(filename):
-    """This is here to test the first item of the JSON stream, so that we raise an exception with
-    the _iter_json_stream reader and fall back to _iter_large_json."""
-    return next(json_stream(filename))
-
-
 def __is_iterable(obj):
     try:
         iter(obj)
@@ -61,7 +60,7 @@ def __is_iterable(obj):
 
 
 @register_input
-def large_json(filename, json_prefix='item'):
+def read_large_json(filename, json_prefix='item'):
     # TODO: add the script to automatically find the json_prefix based on a key
     # Also should still have the option to manually specify a prefix for complex
     # json structures.
@@ -88,7 +87,7 @@ def large_json(filename, json_prefix='item'):
 
     Examples
     --------
-    >>> documents = _iter_large_json(
+    >>> documents = read_large_json(
     ...             '{}/test_data_large_json.json'.format(test_data_path),
     ...             json_prefix='item._source.isAuthorOf')
     >>> next(documents) == {

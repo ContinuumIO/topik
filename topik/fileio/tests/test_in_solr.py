@@ -1,1 +1,2 @@
-__author__ = 'ryoungblood'
+def test_read_solr():
+    raise NotImplementedError

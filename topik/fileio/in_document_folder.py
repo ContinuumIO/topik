@@ -6,7 +6,7 @@ from topik.fileio._registry import register_input
 from topik.tests import test_data_path
 
 @register_input
-def document_folder(folder, content_field='text'):
+def read_document_folder(folder, content_field='text'):
     """Iterate over the files in a folder to retrieve the content to process and tokenize.
 
     Parameters
@@ -22,7 +22,7 @@ def document_folder(folder, content_field='text'):
 
     Examples
     --------
-    >>> documents = document_folder(
+    >>> documents = read_document_folder(
     ...     '{}/test_data_folder_files'.format(test_data_path))
     >>> next(documents)['text'] == (
     ...     u"'Interstellar' was incredible. The visuals, the score, " +

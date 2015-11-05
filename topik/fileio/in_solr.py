@@ -4,7 +4,7 @@ from ._registry import register_input
 
 
 @register_input
-def solr(solr_instance, content_field, query="*:*", content_in_list=True, **kwargs):
+def read_solr(solr_instance, content_field, query="*:*", content_in_list=True, **kwargs):
     # TODO: should I be checking for presence of content_field and year_field?
     # If not then we don't need them as params
     # TODO: should I care at this level whether the content_in_list or only at
