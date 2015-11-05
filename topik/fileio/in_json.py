@@ -132,5 +132,3 @@ def read_large_json(filename, json_prefix='item'):
             else:
                 raise ValueError("'item' in json source is not a dict, and is either a string or not iterable: %r" % item)
 
-if __name__ == '__main__':
-    unittest.main()
