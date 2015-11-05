@@ -3,9 +3,8 @@ import unittest
 import nose.tools as nt
 
 import elasticsearch
-from topik.fileio.readers import read_input
-import topik.fileio.readers as readers
-from topik.fileio.base_output import ElasticSearchCorpus
+from topik.fileio.reader import read_input
+from topik.fileio.out_elastic import ElasticSearchOutput
 from topik.tests import test_data_path
 
 INDEX = "test_elastic"
@@ -82,14 +81,15 @@ class TestReader(unittest.TestCase):
         # import data from file into known elastic server
         read_input('{}/test_data_json_stream.json'.format(
                    test_data_path), content_field="abstract",
-                   output_type=ElasticSearchCorpus.class_key(),
+                   output_type=ElasticSearchOutput.class_key(),
                    output_args=output_args, synchronous_wait=30)
         loaded_corpus = read_input("localhost", source_type="elastic", content_field="abstract", index=INDEX)
         ids, texts = zip(*list(iter(loaded_corpus)))
         self.assertTrue(self.solution_4_hash in ids)
 
 def test_bad_folder():
-    nt.assert_raises(IOError, next, readers._iter_documents_folder("Frank"))
+    nt.assert_raises(IOError, next, read_input("Frank", source_type="folder"))
+    # readers._iter_documents_folder("Frank"))
 
 
 if __name__ == '__main__':

@@ -2,7 +2,8 @@ import os
 import logging
 import gzip
 
-from ._registry import register_input
+from topik.fileio._registry import register_input
+from topik.tests import test_data_path
 
 @register_input
 def document_folder(folder, content_field='text'):

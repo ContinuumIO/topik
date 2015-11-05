@@ -7,7 +7,7 @@ from topik.fileio._registry import register_input
 
 
 @register_input
-def json_stream(filename, json_prefix=None):
+def json_stream(filename):
     """Iterate over a json stream of items and get the field that contains the text to process and tokenize.
 
     Parameters

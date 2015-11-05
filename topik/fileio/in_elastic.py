@@ -38,10 +38,12 @@ def elastic(hosts, **kwargs):
 class ElasticSearchOutput(OutputInterface):
     def __init__(self, source, index, content_field, doc_type='continuum', query=None, iterable=None,
                  filter_expression="", **kwargs):
-        from elasticsearch import Elasticsearch
+        #from elasticsearch import Elasticsearch
+        import elasticsearch
+        print(dir(elasticsearch))
         super(ElasticSearchOutput, self).__init__()
         self.hosts = source
-        self.instance = Elasticsearch(hosts=source, **kwargs)
+        self.instance = elasticsearch.Elasticsearch(hosts=source, **kwargs)
         self.index = index
         self.content_field = content_field
         self.doc_type = doc_type
@@ -50,6 +52,7 @@ class ElasticSearchOutput(OutputInterface):
             self.import_from_iterable(iterable, content_field)
         self.filter_expression = filter_expression
 
+    # TODO: are these still useful now that we have decorator registers?
     @classmethod
     def class_key(cls):
         return "elastic"
@@ -85,7 +88,7 @@ class ElasticSearchOutput(OutputInterface):
             field = self.content_field
         return ElasticSearchOutput(self.hosts, self.index, field, self.doc_type, self.query)
 
-    def import_from_iterable(self, iterable, content_field="text", batch_size=500):
+    def import_from_iterable(self, iterable, content_field='text', batch_size=500):
         """Load data into Elasticsearch from iterable.
 
         iterable: generally a list of dicts, but possibly a list of strings
@@ -145,6 +148,9 @@ class ElasticSearchOutput(OutputInterface):
                                    query={"query": {"filtered": {"filter": {"range": {filter_field: {"gte": start,
                                                                                               "lte": end}}}}}},
                                    filter_expression=self.filter_expression + "_date_{}_{}".format(start, end))
+
+    def get_filtered_corpus(self, filter=""):
+        raise NotImplementedError
 
     def save(self, filename, saved_data=None):
         if saved_data is None:
