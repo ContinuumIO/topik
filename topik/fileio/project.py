@@ -9,28 +9,37 @@ def _get_parameters_string(**kwargs):
 
 
 class TopikProject(object):
-    def __init__(self, output_type, output_args, **kwargs):
-        """
+    def __init__(self, output_type="InMemoryOutput", output_args=None, **kwargs):
+        """Class that abstracts persistence.  Drives different output types, and handles
+        storing intermediate results to given output type.
+
         output_type : string
-            internal format for handling user data.  Current options are:
-            ["elasticsearch", "dictionary"].  default is "dictionary"
-        output_args : dictionary
+            internal format for handling user data.  Current options are
+            present in topik.fileio.registered_outputs.  default is "InMemoryOutput".
+        output_args : dictionary or None
             configuration to pass through to output
         synchronous_wait : integer
             number of seconds to wait for data to finish uploading to output, when using an asynchronous
-             output type.  Only relevant for some output types ("elasticsearch", not "dictionary")
+             output type.  Only relevant for some output types ("ElasticSearchOutput", not "InMemoryOutput")
         **kwargs : passed through to superclass __init__.  Not passed to output.
         """
+        if output_args is None:
+            output_args = {}
+        # loading the output here is sufficient to restore all results: the output is responsible for loading them as
+        #    necessary, and returning iterators or output objects appropriately.
         self.output = registered_outputs[output_type](**output_args)
-        self.corpus_filter = None  # None or a string expression in Elasticsearch query format
-        self._tokenizer_id = None  # Initially None, set to string value when tokenize or transform method called
-        self._vectorizer_id = None  # Initially None, set to string value when vectorize method called
-        self._model_id = None # Initially None, set to string value when run_model method called
+        # None or a string expression in Elasticsearch query format
+        self.corpus_filter = kwargs["corpus_filter"] if "corpus_filter" in kwargs else None
+        # Initially None, set to string value when tokenize or transform method called
+        self._tokenizer_id = kwargs["_tokenizer_id"] if "_tokenizer_id" in kwargs else None
+        # Initially None, set to string value when vectorize method called
+        self._vectorizer_id = kwargs["_vectorizer_id"] if "_vectorizer_id" in kwargs else None
+        # Initially None, set to string value when run_model method called
+        self._model_id = kwargs["_model_id"] if "_model_id" in kwargs else None
         super(TopikProject, self).__init__(**kwargs)
 
     def __enter__(self):
-        pass  # the loading should take place in the __init__ call
-        # self.output.load()
+        pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.output.persist()
@@ -145,17 +154,4 @@ class TopikProject(object):
         Input to visualization step.
         """
         return self.output.model_data[self._model_id]
-
-
-# Example usage: utilize a context manager to keep track of this project.
-#    Methods are called on that object as a very thin convenience layer
-#    to pass the project object to other functionst that do stuff.
-"""
-with TopikProject("filename", parameters_for_backend) as project:
-    raw_input = read_input(file_to_load, project, )
-    # apply filters
-    filtered_data = raw_input.filter()
-    result = project.tokenize(filtered_data, method=, data_filters)
-    vectorize(project, method=, OR specify tokenization method) # if
-"""
 

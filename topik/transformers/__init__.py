@@ -1,1 +1,1 @@
-from _registry import registered_transformers, transform
+from _registry import registered_transformers, register, transform

@@ -3,4 +3,4 @@
 from .termite import termite
 from .pyldavis import lda_vis
 
-from ._registry import registered_visualizers, visualize
+from ._registry import registered_visualizers, register, visualize

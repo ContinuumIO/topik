@@ -1,12 +1,13 @@
 from math import log
-from collections import Counter
 from ._registry import register
 from vectorizer_output import VectorizerOutput
 from .bag_of_words import _count_words_in_docs
 
+
 def _count_document_occurences(doc_counts, total_words):
     return {word_id: sum(1 for doc in doc_counts.values() if word_id in doc)
             for word_id in range(total_words)}
+
 
 def _calculate_tfidf(tokenized_data, vectorizer_output):
     doc_counts = _count_words_in_docs(tokenized_data, vectorizer_output)

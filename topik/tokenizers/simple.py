@@ -1,7 +1,4 @@
-import gensim
-
 # imports used only for doctests
-from topik.tests import test_data_path
 from ._registry import register
 
 

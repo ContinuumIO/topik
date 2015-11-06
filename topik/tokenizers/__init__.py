@@ -4,4 +4,4 @@ from .entities import entities
 from .simple import simple
 from .ngrams import ngrams
 
-from ._registry import registered_tokenizers, tokenize
+from ._registry import registered_tokenizers, register, tokenize
