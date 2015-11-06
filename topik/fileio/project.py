@@ -1,5 +1,6 @@
 from topik import tokenizers, transformers, vectorizers, models, visualizers
-from ._registry import registered_outputs, read_input
+from ._registry import registered_outputs
+from .reader import read_input
 
 
 def _get_parameters_string(**kwargs):
@@ -46,8 +47,11 @@ class TopikProject(object):
         self.output.close()  # close any open file handles or network connections
 
     def read_input(self, source, content_field, source_type="auto", **kwargs):
-        self.output.corpus = read_input(source, content_field=content_field, source_type=source_type,
-                                        **kwargs)
+        self.output.import_from_iterable(read_input(source,
+                                                    content_field=content_field,
+                                                    source_type=source_type,
+                                                    **kwargs),
+                                         content_field=content_field)
 
     def get_filtered_corpus_iterator(self, filter_expression=None):
         if filter_expression is None:

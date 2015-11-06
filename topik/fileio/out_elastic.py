@@ -1,38 +1,8 @@
 import logging
 import time
 
-from ._registry import register_input, register_output
+from ._registry import register_output
 from .base_output import OutputInterface
-
-
-@register_input
-def elastic(hosts, **kwargs):
-    """Iterate over all documents in the specified elasticsearch intance and index that match the specified query.
-
-    kwargs are passed to Elasticsearch class instantiation, and can be used to pass any additional options
-    described at https://elasticsearch-py.readthedocs.org/en/master/
-
-    Parameters
-    ----------
-    hosts : str or list
-        Address of the elasticsearch instance any index.  May include port, username and password.
-        See https://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch for all options.
-
-    content_field : str
-        The name fo the field that contains the main text body of the document.
-
-    **kwargs: additional keyword arguments to be passed to Elasticsearch client instance and to scan query.
-              See
-              https://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch for all client options.
-              https://elasticsearch-py.readthedocs.org/en/master/helpers.html#elasticsearch.helpers.scan for all scan options.
-    """
-
-    from elasticsearch import Elasticsearch, helpers
-    es = Elasticsearch(hosts, **kwargs)
-    results = helpers.scan(es, **kwargs)
-    for result in results:
-        yield result['_source']
-
 
 @register_output
 class ElasticSearchOutput(OutputInterface):
@@ -49,10 +19,6 @@ class ElasticSearchOutput(OutputInterface):
         if iterable:
             self.import_from_iterable(iterable, content_field)
         self.filter_expression = filter_expression
-
-    @classmethod
-    def class_key(cls):
-        return "elastic"
 
     @property
     def filter_string(self):
@@ -85,7 +51,7 @@ class ElasticSearchOutput(OutputInterface):
             field = self.content_field
         return ElasticSearchOutput(self.hosts, self.index, field, self.doc_type, self.query)
 
-    def import_from_iterable(self, iterable, content_field="text", batch_size=500):
+    def import_from_iterable(self, iterable, content_field='text', batch_size=500):
         """Load data into Elasticsearch from iterable.
 
         iterable: generally a list of dicts, but possibly a list of strings
@@ -146,6 +112,9 @@ class ElasticSearchOutput(OutputInterface):
                                                                                               "lte": end}}}}}},
                                    filter_expression=self.filter_expression + "_date_{}_{}".format(start, end))
 
+    def get_filtered_corpus(self, filter=""):
+        raise NotImplementedError
+
     def save(self, filename, saved_data=None):
         if saved_data is None:
             saved_data = {"source": self.hosts, "index": self.index, "content_field": self.content_field,
@@ -167,4 +136,3 @@ class ElasticSearchOutput(OutputInterface):
             logging.debug("Count not yet updated: {}".format(count_not_yet_updated))
             time.sleep(0.01)
         pass
-

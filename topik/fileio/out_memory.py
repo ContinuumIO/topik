@@ -45,6 +45,9 @@ class InMemoryOutput(OutputInterface):
                                 from_existing_corpus=True,
                                 content_filter={"field": filter_field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
 
+    def get_filtered_corpus(self, filter=""):
+        raise NotImplementedError
+
     def save(self, filename):
         saved_data = {"iterable": self.corpus,
                       "from_existing_corpus": True,

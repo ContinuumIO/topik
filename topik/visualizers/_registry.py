@@ -1,10 +1,10 @@
 from functools import partial
 
-from topik.singleton_registry import BaseRegistry, _base_register_decorator
+from topik.singleton_registry import _base_register_decorator
 
 # This subclass serves to establish a new singleon instance of functions
 #    for this particular step in topic modeling.  No implementation necessary.
-class VisualizerRegistry(BaseRegistry):
+class VisualizerRegistry(dict):
     pass
 
 # a nicer, more pythonic handle to our singleton instance
@@ -12,7 +12,7 @@ registered_visualizers = VisualizerRegistry()
 
 
 # fill in the registration function
-register = partial(_base_register_decorator, VisualizerRegistry)
+register = partial(_base_register_decorator, registered_visualizers)
 
 
 # this function is the primary API for people using any registered functions.
