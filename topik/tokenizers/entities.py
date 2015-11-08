@@ -1,3 +1,5 @@
+import logging
+
 from textblob import TextBlob
 
 from .simple import _simple_document
@@ -7,7 +9,7 @@ from topik.tests import test_data_path
 from ._registry import register
 
 
-def _collect_entities(collection, freq_min=2, freq_max=10000):
+def _collect_entities(raw_corpus, freq_min=2, freq_max=10000):
     """Return noun phrases from collection of documents.
 
     Parameters
@@ -30,7 +32,7 @@ def _collect_entities(collection, freq_min=2, freq_max=10000):
 
     np_counts_total = {}
     docs_examined = 0
-    for doc in collection.get_generator_without_id():
+    for doc_id, doc_text in raw_corpus:
         if docs_examined > 0 and docs_examined % 1000 == 0:
             sorted_phrases = sorted(np_counts_total.items(),
                                     key=lambda item: -item[1])
@@ -38,7 +40,7 @@ def _collect_entities(collection, freq_min=2, freq_max=10000):
             logging.info("at document #%i, considering %i phrases: %s..." %
                          (docs_examined, len(np_counts_total), sorted_phrases[0]))
 
-        for np in TextBlob(doc).noun_phrases:
+        for np in TextBlob(doc_text).noun_phrases:
             np_counts_total[np] = np_counts_total.get(np, 0) + 1
         docs_examined += 1
 
@@ -52,7 +54,10 @@ def _collect_entities(collection, freq_min=2, freq_max=10000):
 
 
 def _tokenize_entities_document(text, entities, min_length=1, stopwords=None):
-
+    '''
+    entities : iterable of str
+        Collection of noun phrases, obtained from collect_entities function
+    '''
     result = []
     for np in TextBlob(text).noun_phrases:
         if np in entities:
@@ -110,8 +115,8 @@ def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
     True
     """
     entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
-    for doc in corpus:
-        yield _tokenize_entities_document(doc, entities, min_length=min_length,
+    for doc_id, doc_text in corpus:
+        yield doc_id, _tokenize_entities_document(doc_text, entities, min_length=min_length,
                                        stopwords=stopwords)
 
 
@@ -148,6 +153,7 @@ def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
     True
     """
     entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
-    for doc in corpus:
-        yield _tokenize_mixed_document(doc, entities, min_length=min_length,
-                                       stopwords=stopwords)
+    for doc_id, doc_text in corpus:
+        yield doc_id, _tokenize_mixed_document(doc_text, entities,
+                                                min_length=min_length,
+                                                stopwords=stopwords)
