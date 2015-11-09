@@ -6,15 +6,16 @@ from topik.tokenizers._registry import register
 
 # sample_corpus for doctests
 sample_corpus = [
-            ("doc1", str(u"Frank the Stank-Tank walked his sassy unicorn, Brony,"
+            ("doc1", str(u"Frank the Swank-Tank walked his sassy unicorn, Brony,"
                          u" to prancercise class daily.  Prancercise was "
                          u"a tremendously popular pastime of sassy "
                          u"unicorns and retirees alike.")),
             ("doc2", str(u"Prancercise is a form of both art and fitniss, "
                          u"originally invented by sassy unicorns. It has "
                          u"recently been popularized by such retired "
-                         u"celebrities as Frank The Stank-Tank."))]
+                         u"celebrities as Frank The Swank-Tank."))]
 
+# TODO: replace min_freqs with freq_bounds like ngrams takes
 def _collect_bigrams_and_trigrams(raw_corpus, top_n=10000, min_length=1, min_freqs=None, stopwords=None):
     """collects bigrams and trigrams from collection of documents.  Input to collocation tokenizer.
 
@@ -38,9 +39,9 @@ def _collect_bigrams_and_trigrams(raw_corpus, top_n=10000, min_length=1, min_fre
     --------
     >>> patterns = _collect_bigrams_and_trigrams(sample_corpus, min_freqs=[2, 2])
     >>> patterns[0].pattern
-    u'(frank stank|stank tank|sassy unicorns)'
+    u'(frank swank|swank tank|sassy unicorns)'
     >>> patterns[1].pattern
-    u'(frank stank tank)'
+    u'(frank swank tank)'
     """
 
     from nltk.collocations import TrigramCollocationFinder
@@ -92,21 +93,13 @@ def _collocation_document(text, patterns, min_length=1, stopwords=None):
 
     Examples
     --------
+    >>> patterns = _collect_bigrams_and_trigrams(sample_corpus, min_freqs=[2, 2])
     >>> text = sample_corpus[0][1]
-    >>> #raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
-    >>> #patterns = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=2, min_trigram_freq=2)
-    >>> #tokenized_data = raw_data.tokenize(method="collocation", patterns=patterns)
-    >>> #ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
-    >> #solution_tokens = [u'transition_metal', u'oxides', u'considered', u'generation',
-    ... u'materials', u'field', u'electronics', u'advanced', u'catalysts',
-    ... u'tantalum', u'v_oxide', u'reports', u'synthesis_material',
-    ... u'nanometer_size', u'unusual', u'properties', u'work_present',
-    ... u'synthesis', u'ta', u'o', u'nanorods', u'sol', u'gel', u'method',
-    ... u'dna', u'structure', u'directing', u'agent', u'size', u'nanorods',
-    ... u'order', u'nm_diameter', u'microns', u'length', u'easy', u'method',
-    ... u'useful', u'preparation', u'nanomaterials', u'electronics', u'biomedical',
-    ... u'applications', u'catalysts']
-    >> #solution_tokens in tokenized_texts
+    >>> tokenized_text = _collocation_document(text,patterns)
+    >>> tokenized_text == [
+    ...     u'frank_swank', u'tank', u'walked', u'sassy', u'unicorn', u'brony',
+    ...     u'prancercise', u'class', u'daily', u'prancercise', u'tremendously',
+    ...     u'popular', u'pastime', u'sassy_unicorns', u'retirees', u'alike']
     True
     """
     text = ' '.join(_simple_document(text, min_length=min_length, stopwords=stopwords))
@@ -116,6 +109,35 @@ def _collocation_document(text, patterns, min_length=1, stopwords=None):
 
 @register
 def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=None):
+    '''
+    A tokenizer that extracts collocations (bigrams and trigrams) from a corpus
+    according to the frequency bounds, then tokenizes all documents using those
+    extracted phrases.
+
+    Parameters
+    ----------
+    raw_corpus : iterable of tuple of (doc_id(str/int), doc_text(str))
+        body of documents to examine
+    min_length : int
+        Minimum length of any single word
+    freq_bounds : list of tuples of ints
+        Currently ngrams supports bigrams and trigrams, so this list should
+        contain two tuples (the first for bigrams, the second for trigrams),
+        where each tuple consists of a (minimum, maximum) corpus-wide frequency.
+    top_n : int
+        limit results to this many entries
+    stopwords: None or iterable of str
+        Collection of words to ignore as tokens
+
+    Examples
+    --------
+    >>> tokenized_data = ngrams(sample_corpus, freq_bounds=[(2,100),(2,100)])
+    >>> next(tokenized_data) == ('doc1',
+    ...     [u'frank_swank', u'tank', u'walked', u'sassy', u'unicorn', u'brony',
+    ...     u'prancercise', u'class', u'daily', u'prancercise', u'tremendously',
+    ...     u'popular', u'pastime', u'sassy_unicorns', u'retirees', u'alike'])
+    True
+    '''
     if not freq_bounds:
         freq_bounds=[(50, 10000), (20, 10000)]
     min_freqs = [freq[0] for freq in freq_bounds]

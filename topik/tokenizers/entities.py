@@ -2,19 +2,27 @@ import logging
 
 from textblob import TextBlob
 
-from .simple import _simple_document
+from topik.tokenizers.simple import _simple_document
 
 # imports used only for doctests
-from topik.tests import test_data_path
-from ._registry import register
+from topik.tokenizers._registry import register
 
+sample_corpus = [
+            ("doc1", str(u"Frank the Swank-Tank walked his sassy unicorn, Brony,"
+                         u" to prancercise class daily.  Prancercise was "
+                         u"a tremendously popular pastime of sassy "
+                         u"unicorns and retirees alike.")),
+            ("doc2", str(u"Prancercise is a form of both art and fitniss, "
+                         u"originally invented by sassy unicorns. It has "
+                         u"recently been popularized by such retired "
+                         u"celebrities as Frank The Swank-Tank."))]
 
 def _collect_entities(raw_corpus, freq_min=2, freq_max=10000):
     """Return noun phrases from collection of documents.
 
     Parameters
     ----------
-    collection: Corpus-base derived object or iterable collection of raw text
+    raw_corpus: Corpus-base derived object or iterable collection of raw text
     freq_min: int
         Minimum frequency of a noun phrase occurrences in order to retrieve it. Default is 2.
     freq_max: int
@@ -22,13 +30,10 @@ def _collect_entities(raw_corpus, freq_min=2, freq_max=10000):
 
     Examples
     --------
-    >>> from topik.readers import read_input
-    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-    >>> entities = collect_entities(raw_data)
-    >>> len(entities)
-    220
+    >>> ents = _collect_entities(sample_corpus)
+    >>> ents == {'swank-tank', 'prancercise', 'sassy unicorns', 'frank'}
+    True
     """
-    # TODO: add doctest
 
     np_counts_total = {}
     docs_examined = 0
@@ -55,8 +60,28 @@ def _collect_entities(raw_corpus, freq_min=2, freq_max=10000):
 
 def _tokenize_entities_document(text, entities, min_length=1, stopwords=None):
     '''
+    A text tokenizer that passes only terms (a.k.a. 'entities') explicitly
+    contained in the entities argument.
+
+    Parameters
+    ----------
+    text : str
+        A single text document to be tokenized
     entities : iterable of str
         Collection of noun phrases, obtained from collect_entities function
+    min_length : int
+        Minimum length of any single word
+    stopwords : None or iterable of str
+        Collection of words to ignore as tokens
+
+    Examples
+    --------
+    >>> ents = _collect_entities(sample_corpus)
+    >>> text = sample_corpus[0][1]
+    >>> tokenized_text = _tokenize_entities_document(text,ents)
+    >>> tokenized_text == [
+    ...     u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns']
+    True
     '''
     result = []
     for np in TextBlob(text).noun_phrases:
@@ -70,7 +95,30 @@ def _tokenize_entities_document(text, entities, min_length=1, stopwords=None):
 
 
 def _tokenize_mixed_document(text, entities, min_length=1, stopwords=None):
+    """
+    A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
 
+    Parameters
+    ----------
+    text : str
+        A single text document to be tokenized
+    entities : iterable of str
+        Collection of noun phrases, obtained from collect_entities function
+    min_length : int
+        Minimum length of any single word
+    stopwords : None or iterable of str
+        Collection of words to ignore as tokens
+
+    Examples
+    --------
+    >>> ents = _collect_entities(sample_corpus)
+    >>> text = sample_corpus[0][1]
+    >>> tokenized_text = _tokenize_mixed_document(text,ents)
+    >>> tokenized_text == [u'frank', u'swank_tank', u'sassy', u'unicorn',
+    ... u'brony', u'prancercise', u'class', u'prancercise', u'popular',
+    ... u'pastime', u'sassy_unicorns']
+    True
+    """
     result = []
     for np in TextBlob(text).noun_phrases:
         if ' ' in np and np not in entities:
@@ -87,7 +135,8 @@ def _tokenize_mixed_document(text, entities, min_length=1, stopwords=None):
 
 @register
 def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
-    """A tokenizer that extracts noun phrases from a corpus, then tokenizes all
+    """
+    A tokenizer that extracts noun phrases from a corpus, then tokenizes all
     documents using those extracted phrases.
 
     Parameters
@@ -105,13 +154,9 @@ def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
 
     Examples
     --------
-    >>> from topik.readers import read_input
-    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-    >>> entities = collect_entities(raw_data)
-    >>> tokenized_data = raw_data.tokenize(method="entities", entities=entities)
-    >>> solution_tokens = [u'transition']
-    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
-    >>> solution_tokens in tokenized_texts
+    >>> tokenized_data = entities(sample_corpus)
+    >>> next(tokenized_data) == ('doc1',
+    ...     [u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns'])
     True
     """
     entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
@@ -139,17 +184,9 @@ def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
 
     Examples
     --------
-    >>> from topik.readers import read_input
-    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), content_field="abstract")
-    >>> entities = collect_entities(raw_data)
-    >>> tokenized_data = raw_data.tokenize(method="mixed", entities=entities,
-    ...                                    min_length=3)
-    >>> solution_tokens = [u'transition', u'metal', u'oxides', u'generation',
-    ... u'materials', u'tantalum', u'oxide', u'nanometer', u'size', u'unusual',
-    ... u'properties', u'sol', u'gel', u'method', u'dna', u'easy', u'method',
-    ... u'biomedical', u'applications']
-    >>> ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
-    >>> solution_tokens in tokenized_texts
+    >>> tokenized_data = entities(sample_corpus)
+    >>> next(tokenized_data) == ('doc1',
+    ...     [u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns'])
     True
     """
     entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)

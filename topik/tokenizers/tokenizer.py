@@ -6,7 +6,7 @@ def tokenize(corpus, method="simple", synchronous_wait=30, **kwargs):
 
     Output from this function is used as input to modeling steps.
 
-    raw_data: iterable corpus object containing the text to be processed.
+    corpus: iterable corpus object containing the text to be processed.
         Each iteration call should return a new document's content.
     tokenizer_method: string id of tokenizer to use.  For keys, see
         topik.tokenizers.tokenizer_methods (which is a dictionary of classes)
