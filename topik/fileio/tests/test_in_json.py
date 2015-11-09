@@ -1,7 +1,7 @@
 import nose.tools as nt
 
 from topik.fileio.in_json import read_json_stream, read_large_json, __is_iterable
-from topik.tests import test_data_path
+from topik.fileio.tests import test_data_path
 from ._solutions import solution_json_stream, solution_large_json
 
 def test_read_document_json_stream():

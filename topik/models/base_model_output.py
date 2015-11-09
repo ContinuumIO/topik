@@ -1,15 +1,9 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import Counter
 
+import numpy as np
 import pandas as pd
 from six import with_metaclass
-
-
-# doctest-only imports
-from topik.fileio import read_input
-from topik.tests import test_data_path
-
-
 
 
 class TopicModelResultBase(with_metaclass(ABCMeta)):

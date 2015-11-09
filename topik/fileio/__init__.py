@@ -8,5 +8,6 @@ from .in_solr import read_solr
 from .out_elastic import ElasticSearchOutput
 from .out_memory import InMemoryOutput
 
-from ._registry import registered_inputs, registered_outputs
+from ._registry import registered_inputs, registered_outputs, register_input, register_output
+from .project import TopikProject
 from .reader import read_input

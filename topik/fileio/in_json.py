@@ -4,7 +4,7 @@ import json
 import ijson
 
 from topik.fileio._registry import register_input
-from topik.tests import test_data_path
+from topik.fileio.tests import test_data_path
 
 @register_input
 def read_json_stream(filename, json_prefix='item'):

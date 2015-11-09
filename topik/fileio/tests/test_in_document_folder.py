@@ -1,7 +1,7 @@
 import nose.tools as nt
 
 from topik.fileio import read_document_folder
-from topik.tests import test_data_path
+from topik.fileio.tests import test_data_path
 from ._solutions import solution_document_folder, solution_document_folder_gz
 
 def test_read_document_folder():
