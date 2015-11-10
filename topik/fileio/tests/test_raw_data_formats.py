@@ -3,9 +3,9 @@ import os
 import time
 
 import elasticsearch
-from topik.fileio.readers import read_input
-from topik.fileio.base_output import load_persisted_corpus, ElasticSearchCorpus
-from topik.tests import test_data_path
+from topik.fileio.reader import read_input
+from topik.fileio.base_output import load_output, ElasticSearchCorpus
+from topik.fileio.tests import test_data_path
 
 INDEX = "topik_unittest"
 SAVE_FILENAME = "test_save"
@@ -32,7 +32,7 @@ class BaseOutputTest(object):
 
     def test_load_file(self):
         self.test_raw_data.save(SAVE_FILENAME)
-        test_raw_data = load_persisted_corpus(SAVE_FILENAME)
+        test_raw_data = load_output(SAVE_FILENAME)
         self.assertEqual(len(test_raw_data), 100)
 
     def test_has_filter_string(self):

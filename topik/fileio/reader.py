@@ -2,12 +2,11 @@ import itertools
 import os
 
 from topik.fileio._registry import registered_inputs, registered_outputs
-from topik.tests import test_data_path
+from topik.fileio.tests import test_data_path
 
 # this function is the primary API for people using any registered functions.
 def read_input(source, source_type="auto", content_field='text',
-               output_args=None,
-               synchronous_wait=0, **kwargs):
+               output_args=None, synchronous_wait=0, **kwargs):
     """
     Read data from given source into Topik's internal data structures.
 
@@ -54,8 +53,6 @@ def read_input(source, source_type="auto", content_field='text',
     True
     """
     json_extensions = [".js", ".json"]
-    #if output_args is None:
-    #    output_args = {}
 
     # solr defaults to port 8983
     if (source_type == "auto" and "8983" in source) or source_type == "solr":
@@ -82,7 +79,5 @@ def read_input(source, source_type="auto", content_field='text',
     else:
         raise ValueError("Unrecognized source type: {}.  Please either manually specify the type, or convert your input"
                          " to a supported type.".format(source))
-    #if "content_field" not in output_args:
-    #    output_args["content_field"] = content_field
     return data_iterator
 

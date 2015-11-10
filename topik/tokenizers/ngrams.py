@@ -15,7 +15,7 @@ sample_corpus = [
                          u"recently been popularized by such retired "
                          u"celebrities as Frank The Swank-Tank."))]
 
-# TODO: replace min_freqs with freq_bounds like ngrams takes
+# TODO: replace min_freqs with freq_bounds like ngrams takes.  Unify format across the board.
 def _collect_bigrams_and_trigrams(raw_corpus, top_n=10000, min_length=1, min_freqs=None, stopwords=None):
     """collects bigrams and trigrams from collection of documents.  Input to collocation tokenizer.
 

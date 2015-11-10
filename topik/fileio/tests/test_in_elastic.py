@@ -2,7 +2,7 @@ import nose.tools as nt
 
 from topik.fileio.in_elastic import read_elastic
 from topik.fileio.project import TopikProject
-from topik.tests import test_data_path
+from topik.fileio.tests import test_data_path
 from ._solutions import solution_elastic
 
 INDEX = "test_elastic"

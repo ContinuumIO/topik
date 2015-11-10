@@ -1,7 +1,7 @@
 import nose.tools as nt
 
 from topik.fileio.reader import read_input
-from topik.tests import test_data_path
+from topik.fileio.tests import test_data_path
 from ._solutions import solution_json_stream, solution_large_json,\
                         solution_document_folder, solution_document_folder_gz
 
