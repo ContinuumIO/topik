@@ -3,7 +3,7 @@ import logging
 import gzip
 
 from topik.fileio._registry import register_input
-from topik.tests import test_data_path
+from topik.fileio.tests import test_data_path
 
 @register_input
 def read_document_folder(folder, content_field='text'):

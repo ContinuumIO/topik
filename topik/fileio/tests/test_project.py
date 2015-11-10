@@ -1,14 +1,25 @@
-import unittest
 import os
 import time
+import unittest
 
 import elasticsearch
+
 from topik.fileio.reader import read_input
-from topik.fileio.base_output import load_output, ElasticSearchCorpus
+from topik.fileio.base_output import load_output
+from topik.fileio import TopikProject
 from topik.fileio.tests import test_data_path
+
+from topik.fileio.out_elastic import ElasticSearchOutput
+
+test_data_path = os.path.join(test_data_path, "test_data_json_stream.json")
 
 INDEX = "topik_unittest"
 SAVE_FILENAME = "test_save"
+
+def test_in_memory_project_read():
+    with TopikProject() as project:
+        project.read_input(test_data_path)
+        assert(len(list(project.get_filtered_corpus_iterator())) == 100)
 
 class BaseOutputTest(object):
     test_raw_data = None
@@ -43,6 +54,8 @@ class BaseOutputTest(object):
 
 class TestInMemoryOutput(unittest.TestCase, BaseOutputTest):
     def setUp(self):
+        self.output_type = "InMemoryOutput"
+        self.output_args = {}
         self.test_raw_data = read_input('{}/test_data_json_stream.json'.format(
             test_data_path), content_field="abstract")
 
@@ -51,7 +64,7 @@ class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
     def setUp(self):
         self.test_raw_data = read_input('{}/test_data_json_stream.json'.format(
             test_data_path), content_field="abstract",
-            output_type=ElasticSearchCorpus.class_key(),
+            output_type=ElasticSearchOutput.class_key(),
             output_args={'source': 'localhost',
                          'index': INDEX},
             synchronous_wait=30)
@@ -62,3 +75,4 @@ class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
         if instance.indices.exists("{}_year_alias_date".format(INDEX)):
             instance.indices.delete("{}_year_alias_date".format(INDEX))
         time.sleep(1)
+        # TODO: delete the file from disk

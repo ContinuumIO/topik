@@ -1,7 +1,7 @@
 import itertools
 import os
 
-from topik.fileio._registry import registered_inputs, registered_outputs
+from topik.fileio._registry import registered_inputs
 from topik.fileio.tests import test_data_path
 
 # this function is the primary API for people using any registered functions.
