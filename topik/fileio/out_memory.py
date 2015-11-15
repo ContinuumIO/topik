@@ -7,12 +7,13 @@ class InMemoryOutput(OutputInterface):
                  content_filter=None, models=None, vectorized_data=None, tokenized_data=None):
         super(InMemoryOutput, self).__init__()
         self.corpus = {}
+        self.content_field = content_field
         if from_existing_corpus:
             self.corpus = iterable
         elif iterable and content_field:
             self.import_from_iterable(iterable, content_field)
-        else:
-            raise ValueError("Output must be instantiated with iterable and ")
+        #else:
+        #    raise ValueError("Output must be instantiated with iterable and ")
         self.content_filter = content_filter
         self.models = models if models else {}
         self.tokenized_data = tokenized_data if tokenized_data else {}
@@ -20,9 +21,18 @@ class InMemoryOutput(OutputInterface):
 
     def get_generator_without_id(self, field=None):
         if not field:
-            field = self.active_field
-        for doc in self._documents.values():
+            field = self.content_field
+        for doc in self.corpus.values():
             yield doc["_source"][field]
+
+    def append_to_record(self, record_id, field_name, field_value):
+        raise NotImplementedError
+
+    def append_from_iterable(self, iterable, field):
+        """load an iterable of (id, value) pairs to the specified new or
+           new or existing field within existing documents."""
+        for doc_id, value in iterable:
+            self.corpus[doc_id]['_source'][field] = value
 
     def import_from_iterable(self, iterable, content_field):
         """
@@ -30,7 +40,7 @@ class InMemoryOutput(OutputInterface):
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
         """
-
+        self.content_field = content_field
         for item in iterable:
             if isinstance(item, basestring):
                 item = {content_field: item}
@@ -45,8 +55,14 @@ class InMemoryOutput(OutputInterface):
                                 from_existing_corpus=True,
                                 content_filter={"field": filter_field, "expression": "{}<=int({})<={}".format(start, "{}", end)})
 
-    def get_filtered_corpus(self, filter=""):
-        raise NotImplementedError
+    def get_filtered_data(self, field=None, filter=""):
+        if not field:
+            field = self.content_field
+        if not filter:
+            for doc_id, doc in self.corpus.items():
+                yield doc_id, doc["_source"][field]
+        else:
+            raise NotImplementedError
 
     def save(self, filename):
         saved_data = {"iterable": self.corpus,

@@ -26,11 +26,20 @@ class OutputInterface(with_metaclass(ABCMeta)):
         """Returns a generator that yields field content without doc_id associate"""
         raise NotImplementedError
 
+    @abstractmethod
+    def append_to_record(self, record_id, field_name, field_value):
+        self.corpus[record_id][field_name] = field_value
+
+    def append_from_iterable(self, iterable, field):
+        """load an iterable of (id, value) pairs to the specified new or
+           new or existing field within existing documents."""
+        raise NotImplementedError
+
     def save(self, filename, saved_data=None):
         """Persist this object to disk somehow.
 
         You can save your data in any number of files in any format, but at a minimum, you need one json file that
-        describes enough to bootstrap the loading prcess.  Namely, you must have a key called 'class' so that upon
+        describes enough to bootstrap the loading process.  Namely, you must have a key called 'class' so that upon
         loading the output, the correct class can be instantiated and used to load any other data.  You don't have
         to implement anything for saved_data, but it is stored as a key next to 'class'.
 
@@ -45,7 +54,7 @@ class OutputInterface(with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def get_filtered_corpus(self, filter=""):
+    def get_filtered_data(self, filter=""):
         raise NotImplementedError
 
 

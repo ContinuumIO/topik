@@ -65,11 +65,13 @@ def read_input(source, source_type="auto", content_field='text',
         try:
             data_iterator = registered_inputs["read_json_stream"](source, **kwargs)
             # tee the iterator and try to get the first element.  If it fails, this is actually a large_json file.
-            next(itertools.tee(data_iterator)[0])
+            #next(itertools.tee(data_iterator)[0])
+            next(data_iterator)
             # reset the iterator after this check so that it starts at
             # document 0 rather than document 1
             data_iterator = registered_inputs["read_json_stream"](source, **kwargs)
         except ValueError as e:
+            print('dang. large json')
             data_iterator = registered_inputs["read_large_json"](source, **kwargs)
     elif source_type == "large_json":
         data_iterator = registered_inputs["read_large_json"](source, **kwargs)

@@ -6,8 +6,8 @@ from .base_output import OutputInterface
 
 @register_output
 class ElasticSearchOutput(OutputInterface):
-    def __init__(self, source, index, content_field, doc_type='continuum', query=None, iterable=None,
-                 filter_expression="", **kwargs):
+    def __init__(self, source, index, content_field, doc_type='continuum',
+                 query=None, iterable=None, filter_expression="", **kwargs):
         from elasticsearch import Elasticsearch
         super(ElasticSearchOutput, self).__init__()
         self.hosts = source
@@ -43,6 +43,27 @@ class ElasticSearchOutput(OutputInterface):
     def append_to_record(self, record_id, field_name, field_value):
         self.instance.update(index=self.index, id=record_id, doc_type=self.doc_type,
                              body={"doc": {field_name: field_value}})
+
+    def append_from_iterable(self, iterable, field):
+        """load an iterable of (id, value) pairs to the specified new or
+           new or existing field within existing documents."""
+        from elasticsearch import helpers
+        batch = []
+        for doc_id, value in iterable:
+            action = {'_op_type': 'update',
+                      '_index': self.index,
+                      '_type': self.doc_type,
+                      '_id': doc_id,
+                      'doc': {field: value},
+                      'doc_as_upsert': "true",
+                      }
+            batch.append(action)
+            if len(batch) >= batch_size:
+                helpers.bulk(client=self.instance, actions=batch, index=self.index)
+                batch = []
+        if batch:
+            helpers.bulk(client=self.instance, actions=batch, index=self.index)
+        self.instance.indices.refresh(self.index)
 
     def get_field(self, field=None):
         """Get a different field to iterate over, keeping all other
@@ -112,8 +133,14 @@ class ElasticSearchOutput(OutputInterface):
                                                                                               "lte": end}}}}}},
                                    filter_expression=self.filter_expression + "_date_{}_{}".format(start, end))
 
-    def get_filtered_corpus(self, filter=""):
-        raise NotImplementedError
+    def get_filtered_data(self, field=None, filter=""):
+        if not field:
+            field = self.content_field
+        if not filter:
+            for (doc_id, doc_text) in ElasticSearchOutput(self.hosts, self.index, field, self.doc_type, self.query):
+                yield doc_id, doc_text
+        else:
+            raise NotImplementedError
 
     def save(self, filename, saved_data=None):
         if saved_data is None:

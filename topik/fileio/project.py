@@ -40,11 +40,12 @@ class TopikProject(object):
         super(TopikProject, self).__init__(**kwargs)
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.output.persist()
-        self.output.close()  # close any open file handles or network connections
+        pass
+        #self.output.persist()
+        #self.output.close()  # close any open file handles or network connections
 
     def read_input(self, source, content_field, source_type="auto", **kwargs):
         self.output.import_from_iterable(read_input(source,
@@ -65,8 +66,11 @@ class TopikProject(object):
         tokenize_parameter_string="tk_{method}_{params}".format(
             method=method,
             params=_get_parameters_string(**kwargs))
+
         # store this
-        self.output.token_data[tokenize_parameter_string] = tokenized_data
+        self.output.append_from_iterable(tokenized_data,
+                                         tokenize_parameter_string)
+        #self.output.token_data[tokenize_parameter_string] = tokenized_data
         # set _tokenizer_id internal handle to point to this data
         self._tokenizer_id = tokenize_parameter_string
 
