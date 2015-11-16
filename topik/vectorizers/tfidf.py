@@ -9,10 +9,10 @@ def _count_document_occurences(doc_counts, total_words):
             for word_id in range(total_words)}
 
 
-def _calculate_tfidf(tokenized_data, vectorizer_output):
-    doc_counts = _count_words_in_docs(tokenized_data, vectorizer_output)
+def _calculate_tfidf(tokenized_corpora, vectorizer_output):
+    doc_counts = _count_words_in_docs(tokenized_corpora, vectorizer_output)
     document_occurrences = _count_document_occurences(doc_counts, vectorizer_output.global_term_count)
-    idf = {word_id: log(len(tokenized_data) / (document_occurrences[word_id]))
+    idf = {word_id: log(len(tokenized_corpora) / (document_occurrences[word_id]))
            for word_id in range(vectorizer_output.global_term_count)}
     tf_idf = {}
     # TODO: this is essentially a sparse matrix multiply and could be done much more efficiently
@@ -24,5 +24,5 @@ def _calculate_tfidf(tokenized_data, vectorizer_output):
 
 
 @register
-def tfidf(tokenized_data):
-    return VectorizerOutput(tokenized_data, _calculate_tfidf)
+def tfidf(tokenized_corpora):
+    return VectorizerOutput(tokenized_corpora, _calculate_tfidf)

@@ -9,6 +9,6 @@ def test__simple_document():
                                                    "dog", "cat"])
 
 def test_simple():
-    tokenized_data = simple(sample_data)
-    assert(next(tokenized_data) == ("doc1", ["frank", "frank", "frank", "dog", "cat"]))
-    assert(next(tokenized_data) == ("doc2", ["frank", "dog", "llama"]))
+    tokenized_corpora = simple(sample_data)
+    assert(next(tokenized_corpora) == ("doc1", ["frank", "frank", "frank", "dog", "cat"]))
+    assert(next(tokenized_corpora) == ("doc2", ["frank", "dog", "llama"]))

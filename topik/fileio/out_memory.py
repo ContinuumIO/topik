@@ -1,11 +1,12 @@
-from ._registry import register_input, register_output
+from ._registry import register_output
 from .base_output import OutputInterface
+
 
 @register_output
 class InMemoryOutput(OutputInterface):
     def __init__(self, iterable=None, content_field=None, from_existing_corpus=False,
-                 content_filter=None, vectorized_data=None, tokenized_data=None,
-                 model_data=None):
+                 content_filter=None, tokenized_corpora=None,
+                 vectorized_corpora=None, modeled_corpora=None):
         super(InMemoryOutput, self).__init__()
         self.corpus = {}
         self.content_field = content_field
@@ -16,9 +17,9 @@ class InMemoryOutput(OutputInterface):
         #else:
         #    raise ValueError("Output must be instantiated with iterable and ")
         self.content_filter = content_filter
-        self.tokenized_data = tokenized_data if tokenized_data else {}
-        self.vectorized_data = vectorized_data if vectorized_data else {}
-        self.model_data = model_data if model_data else {}
+        self.tokenized_corpora = tokenized_corpora if tokenized_corpora else {}
+        self.vectorized_corpora = vectorized_corpora if vectorized_corpora else {}
+        self.modeled_corpora = modeled_corpora if modeled_corpora else {}
 
     def get_generator_without_id(self, field=None):
         if not field:
@@ -68,8 +69,8 @@ class InMemoryOutput(OutputInterface):
     def save(self, filename):
         saved_data = {"iterable": self.corpus,
                       "from_existing_corpus": True,
-                      "models": self.models,
-                      "vectorized_data": self.vectorized_data,
-                      "tokenized_data": self.tokenized_data,
+                      "modeled_corpora": self.modeled_corpora,
+                      "vectorized_corpora": self.vectorized_corpora,
+                      "tokenized_corpora": self.tokenized_corpora,
                       "content_filter": self.content_filter}
         return super(InMemoryOutput, self).save(filename, saved_data)

@@ -30,8 +30,8 @@ to model:
 .. code-block:: python
 
    >>> from topik.models import registered_models, LDA
-   >>> model = registered_models["LDA"](tokenized_data, 4)
-   >>> model = LDA(tokenized_data, 4)
+   >>> model = registered_models["LDA"](tokenized_corpora, 4)
+   >>> model = LDA(tokenized_corpora, 4)
 
 
 Presently, training the model is implicit in its instantiation. In other words,

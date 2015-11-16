@@ -13,13 +13,13 @@ class OutputInterface(with_metaclass(ABCMeta)):
         self.corpus = None
         # should be a dictionary-like structure, with string ids for tokenizer used and parameters
         #     passed and dictionaries mapping doc id to list of tokens
-        self.tokenized_data = None
+        self.tokenized_corpus = None
         # should be a dictionary-like structure, with string ids for vectorizer used and parameters
         #     passed and dictionaries mapping doc id to list of tokens
-        self.vectorized_data = None
+        self.vectorized_corpus = None
         # should be a dictionary-like structure, with string ids for model used and parameters passed
         #     and dictionaries mapping doc id to list of tokens
-        self.model_data = None
+        self.modeled_corpus = None
 
     @abstractmethod
     def get_generator_without_id(self, field=None):
@@ -45,7 +45,7 @@ class OutputInterface(with_metaclass(ABCMeta)):
 
         """
         with open(filename, "w") as f:
-            json.dump({"class": self.__class__.class_key(), "saved_data": saved_data}, f)
+            json.dump({"class": self.__class__.__name__, "saved_data": saved_data}, f)
 
     def synchronize(self, max_wait, field):
         """By default, operations are synchronous and no additional wait is

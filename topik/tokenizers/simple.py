@@ -48,8 +48,8 @@ def simple(raw_corpus, min_length=1, stopwords=None):
     --------
     >>> sample_corpus = [("doc1", "frank FRANK the frank dog cat"),
     ...               ("doc2", "frank a dog of the llama")]
-    >>> tokenized_data = simple(sample_corpus)
-    >>> next(tokenized_data) == ("doc1",
+    >>> tokenized_corpora = simple(sample_corpus)
+    >>> next(tokenized_corpora) == ("doc1",
     ... ["frank", "frank", "frank", "dog", "cat"])
     True
     """

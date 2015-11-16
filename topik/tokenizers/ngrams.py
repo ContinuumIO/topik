@@ -131,8 +131,8 @@ def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=No
 
     Examples
     --------
-    >>> tokenized_data = ngrams(sample_corpus, freq_bounds=[(2,100),(2,100)])
-    >>> next(tokenized_data) == ('doc1',
+    >>> tokenized_corpora = ngrams(sample_corpus, freq_bounds=[(2,100),(2,100)])
+    >>> next(tokenized_corpora) == ('doc1',
     ...     [u'frank_swank', u'tank', u'walked', u'sassy', u'unicorn', u'brony',
     ...     u'prancercise', u'class', u'daily', u'prancercise', u'tremendously',
     ...     u'popular', u'pastime', u'sassy_unicorns', u'retirees', u'alike'])

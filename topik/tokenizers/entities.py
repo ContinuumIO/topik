@@ -154,8 +154,8 @@ def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
 
     Examples
     --------
-    >>> tokenized_data = entities(sample_corpus)
-    >>> next(tokenized_data) == ('doc1',
+    >>> tokenized_corpora = entities(sample_corpus)
+    >>> next(tokenized_corpora) == ('doc1',
     ...     [u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns'])
     True
     """
@@ -184,8 +184,8 @@ def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
 
     Examples
     --------
-    >>> tokenized_data = entities(sample_corpus)
-    >>> next(tokenized_data) == ('doc1',
+    >>> tokenized_corpora = entities(sample_corpus)
+    >>> next(tokenized_corpora) == ('doc1',
     ...     [u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns'])
     True
     """

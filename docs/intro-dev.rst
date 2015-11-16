@@ -50,14 +50,14 @@ example,
 .. code-block:: python
 
    >>> # one-shot, but autocompletion of function arguments doesn't work
-   >>> model = registered_models["LDA"](tokenized_data, 5)
+   >>> model = registered_models["LDA"](tokenized_corpora, 5)
 
 
 .. code-block:: python
 
    >>> model_class = registered_models["LDA"]
    >>> # Autocompletion of class arguments should work here
-   >>> model = model_class(tokenized_data, 5)
+   >>> model = model_class(tokenized_corpora, 5)
 
  
 .. code-block:: python
@@ -65,4 +65,4 @@ example,
    >>> # import model implementation directly:
    >>> from topik.models import LDA
    >>> # Autocompletion of class arguments should work here
-   >>> model = LDA(tokenized_data, 5)
+   >>> model = LDA(tokenized_corpora, 5)

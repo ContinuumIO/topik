@@ -9,7 +9,7 @@ from ._registry import register
 
 
 
-def termite_data(tokenized_data, model_data, topn_words=15):
+def termite_data(tokenized_corpora, model_data, topn_words=15):
     """Generate the pandas dataframe input for the termite plot.
 
     Parameters

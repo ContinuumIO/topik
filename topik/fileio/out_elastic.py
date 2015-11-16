@@ -48,7 +48,7 @@ class ElasticCorpus(dict):
 class ElasticSearchOutput(OutputInterface):
     def __init__(self, source, index, content_field, doc_type='continuum',
                  query=None, iterable=None, filter_expression="",
-                 vectorized_data=None, tokenized_data=None, models=None,
+                 vectorized_corpora=None, tokenized_corpora=None, modeled_corpora=None,
                  **kwargs):
         from elasticsearch import Elasticsearch
         super(ElasticSearchOutput, self).__init__()
@@ -62,11 +62,11 @@ class ElasticSearchOutput(OutputInterface):
             self.import_from_iterable(iterable, content_field)
         self.filter_expression = filter_expression
 
-        self.tokenized_data = tokenized_data if tokenized_data else \
+        self.tokenized_corpora = tokenized_corpora if tokenized_corpora else \
             ElasticCorpus(self.instance, self.index, 'tokenized', self.query)
-        self.vectorized_data = vectorized_data if vectorized_data else \
+        self.vectorized_corpora = vectorized_corpora if vectorized_corpora else \
             ElasticCorpus(self.instance, self.index, 'tokenized', self.query)
-        self.models = models if models else \
+        self.modeled_corpora = modeled_corpora if modeled_corpora else \
             ElasticCorpus(self.instance, self.index, "models", self.query)
 
 

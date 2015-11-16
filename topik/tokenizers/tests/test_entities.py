@@ -35,18 +35,18 @@ def test_tokenize_mixed_document():
         u'prancercise', u'sassy_unicorns', u'frank', u'swank_tank'])
 
 def test_entities():
-    tokenized_data = entities(sample_data)
-    assert(next(tokenized_data) == \
+    tokenized_corpora = entities(sample_data)
+    assert(next(tokenized_corpora) == \
         ('doc1', [u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns']))
-    assert(next(tokenized_data) == \
+    assert(next(tokenized_corpora) == \
         ('doc2', [u'prancercise', u'sassy_unicorns', u'frank', u'swank_tank']))
 
 def test_mixed():
-    tokenized_data = mixed(sample_data)
-    assert(next(tokenized_data) == \
+    tokenized_corpora = mixed(sample_data)
+    assert(next(tokenized_corpora) == \
            ('doc1', [u'frank', u'swank_tank', u'sassy', u'unicorn', u'brony',
                      u'prancercise', u'class', u'prancercise', u'popular',
                      u'pastime', u'sassy_unicorns']))
-    assert(next(tokenized_data) == \
+    assert(next(tokenized_corpora) == \
            ('doc2', [u'prancercise', u'sassy_unicorns', u'frank',
                      u'swank_tank']))

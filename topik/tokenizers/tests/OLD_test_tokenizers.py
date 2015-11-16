@@ -70,8 +70,8 @@ class TestTokenizers(unittest.TestCase):
                 source=self.data_json_stream_path,
                 content_field="abstract",
                 output_type="dictionary")
-        tokenized_data = raw_data.tokenize()
-        ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+        tokenized_corpora = raw_data.tokenize()
+        ids, tokenized_texts = zip(*list(iter(tokenized_corpora._corpus)))
         self.assertTrue(self.solution_simple_tokenizer_test_data_json_stream in\
                         tokenized_texts)
 
@@ -82,9 +82,9 @@ class TestTokenizers(unittest.TestCase):
                 output_type="dictionary")
         patterns = collect_bigrams_and_trigrams(raw_data, min_bigram_freq=2,
                                                 min_trigram_freq=2)
-        tokenized_data = raw_data.tokenize(method="collocation",
+        tokenized_corpora = raw_data.tokenize(method="collocation",
                                            patterns=patterns)
-        ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+        ids, tokenized_texts = zip(*list(iter(tokenized_corpora._corpus)))
         self.assertTrue(self.solution_collocations_tokenizer_test_data_json_stream in\
                         tokenized_texts)
 
@@ -94,9 +94,9 @@ class TestTokenizers(unittest.TestCase):
                 content_field="abstract",
                 output_type="dictionary")
         entities = collect_entities(raw_data, freq_min=1)
-        tokenized_data = raw_data.tokenize(method="entities",
+        tokenized_corpora = raw_data.tokenize(method="entities",
                                            entities=entities)
-        ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+        ids, tokenized_texts = zip(*list(iter(tokenized_corpora._corpus)))
         self.assertTrue(self.solution_entities_tokenizer_test_data_json_stream in\
                         tokenized_texts)
 
@@ -106,9 +106,9 @@ class TestTokenizers(unittest.TestCase):
                 content_field="abstract",
                 output_type="dictionary")
         entities = collect_entities(raw_data)
-        tokenized_data = raw_data.tokenize(method="mixed",
+        tokenized_corpora = raw_data.tokenize(method="mixed",
                                            entities=entities)
-        ids, tokenized_texts = zip(*list(iter(tokenized_data._corpus)))
+        ids, tokenized_texts = zip(*list(iter(tokenized_corpora._corpus)))
         self.assertTrue(self.solution_mixed_tokenizer_test_data_json_stream in\
                         tokenized_texts)
 

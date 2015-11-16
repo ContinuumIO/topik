@@ -24,7 +24,6 @@ sample_tokenized_doc = (2318580746137828354,
 
 test_data_path = os.path.join(test_data_path, "test_data_json_stream.json")
 
-
 class BaseOutputTest(object):
     def test_context_manager(self):
         with TopikProject("context_output", self.output_type, self.output_args) as project:
@@ -37,9 +36,9 @@ class BaseOutputTest(object):
         # load output here.
         with TopikProject("context_output") as project:
             assert(len(list(project.get_filtered_corpus_iterator())) == 100)
-            assert(sample_tokenized_doc in project.tokenized_data)
-            assert(project.vectorized_data.global_term_count == 2434)
-            assert(len(project.vectorized_data) == 100)  # All documents processed
+            assert(sample_tokenized_doc in project.tokenized_corpora)
+            assert(project.vectorized_corpora.global_term_count == 2434)
+            assert(len(project.vectorized_corpora) == 100)  # All documents processed
 
     def test_read_input(self):
         print(list(self.project.get_filtered_corpus_iterator()))
@@ -56,20 +55,60 @@ class BaseOutputTest(object):
 
     def test_tokenize(self):
         self.project.tokenize('simple')
-        assert(sample_tokenized_doc in self.project.output.tokenized_data.values()[0])
+        assert(sample_tokenized_doc in self.project.output.tokenized_corpora.values()[0])
 
     def test_vectorize(self):
         self.project.tokenize()
         self.project.vectorize()
-        assert(self.project.vectorized_data.global_term_count == 2434)
-        assert(len(self.project.vectorized_data) == 100)  # All documents processed
+        assert(self.project.vectorized_corpora.global_term_count == 2434)
+        assert(len(self.project.vectorized_corpora) == 100)  # All documents processed
 
     def test_model(self):
         self.project.tokenize()
         self.project.vectorize()
         self.project.run_model(ntopics=3)
-        assert(self.project.model_data.doc_topic_dists)
-        assert(self.project.model_data.term_topic_matrix)
+        # TODO: these are not real tests.  Do we have numerical properties that are more meaningful?
+        #   - Do weights for a given doc in doc-topic matrix sum to 1?
+        #   - Do weights for all terms in a given topic sum to 1?
+        assert(self.project.modeled_corpora.doc_topic_dists)
+        assert(self.project.modeled_corpora.term_topic_matrix)
+
+
+'''
+def test_transform(self):
+    raise NotImplementedError
+
+def test_vectorize(self):
+    raise NotImplementedError
+
+def test_run_model(self):
+    raise NotImplementedError
+
+def visualize(self):
+    raise NotImplementedError
+
+def test_select_tokenized_corpora(self):
+    raise NotImplementedError
+
+def test_select_vectorized_corpora(self):
+    raise NotImplementedError
+
+def test_select_model_data(self):
+    raise NotImplementedError
+
+def test_filtered_corpus(self):
+    raise NotImplementedError
+
+def test_tokenized_corpora(self):
+    raise NotImplementedError
+
+def test_vectorized_corpora(self):
+    raise NotImplementedError
+
+def test_modeled_corpus(self):
+    raise NotImplementedError
+
+'''
 
 
 class TestInMemoryOutput(unittest.TestCase, BaseOutputTest):
@@ -92,3 +131,4 @@ class TestInMemoryOutput(unittest.TestCase, BaseOutputTest):
 #                                 synchronous_wait=30)
 #
 #     def tearDown(self):
+

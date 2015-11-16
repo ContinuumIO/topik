@@ -37,15 +37,15 @@ def test__collocation_document():
 
 def test_ngrams():
     freq_bounds=[(2,100),(2,100)]
-    tokenized_data = ngrams(sample_data, freq_bounds=freq_bounds)
+    tokenized_corpora = ngrams(sample_data, freq_bounds=freq_bounds)
     assert(len(freq_bounds) == 2)
-    assert(next(tokenized_data) == (
+    assert(next(tokenized_corpora) == (
         'doc1', [
             u'frank_swank', u'tank', u'walked', u'sassy', u'unicorn', u'brony',
             u'prancercise', u'class', u'daily', u'prancercise', u'tremendously',
             u'popular', u'pastime', u'sassy_unicorns', u'retirees', u'alike'
                  ]))
-    assert(next(tokenized_data) == (
+    assert(next(tokenized_corpora) == (
         'doc2', [
             u'prancercise', u'form', u'art', u'fitniss', u'originally',
             u'invented', u'sassy_unicorns', u'recently', u'popularized',
