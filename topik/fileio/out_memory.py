@@ -5,7 +5,7 @@ from .base_output import OutputInterface
 class InMemoryOutput(OutputInterface):
     def __init__(self, iterable=None, content_field=None, from_existing_corpus=False,
                  content_filter=None, vectorized_data=None, tokenized_data=None,
-                 models=None):
+                 model_data=None):
         super(InMemoryOutput, self).__init__()
         self.corpus = {}
         self.content_field = content_field
@@ -18,7 +18,7 @@ class InMemoryOutput(OutputInterface):
         self.content_filter = content_filter
         self.tokenized_data = tokenized_data if tokenized_data else {}
         self.vectorized_data = vectorized_data if vectorized_data else {}
-        self.models = models if models else {}
+        self.model_data = model_data if model_data else {}
 
     def get_generator_without_id(self, field=None):
         if not field:

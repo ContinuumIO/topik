@@ -57,6 +57,9 @@ class OutputInterface(with_metaclass(ABCMeta)):
     def get_filtered_data(self, filter=""):
         raise NotImplementedError
 
+    def close(self):
+        pass
+
 
 def load_output(filename):
     output_details = json.load(filename)

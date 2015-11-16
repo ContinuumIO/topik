@@ -5,12 +5,14 @@ from .reader import read_input
 
 def _get_parameters_string(**kwargs):
     """Used to create identifiers for output"""
-    id = ''.join('{}={}_'.format(key, val) for key, val in sorted(kwargs.items()))
-    return id[:-1]
+    id=""
+    if kwargs:
+        id = "_" + ''.join('{}={}_'.format(key, val) for key, val in sorted(kwargs.items()))[:-1]
+    return id
 
 
 class TopikProject(object):
-    def __init__(self, output_type="InMemoryOutput", output_args=None, **kwargs):
+    def __init__(self, name, output_type="InMemoryOutput", output_args=None, **kwargs):
         """Class that abstracts persistence.  Drives different output types, and handles
         storing intermediate results to given output type.
 
@@ -24,6 +26,7 @@ class TopikProject(object):
              output type.  Only relevant for some output types ("ElasticSearchOutput", not "InMemoryOutput")
         **kwargs : passed through to superclass __init__.  Not passed to output.
         """
+        self.name = name
         if output_args is None:
             output_args = {}
         # loading the output here is sufficient to restore all results: the output is responsible for loading them as
@@ -44,8 +47,7 @@ class TopikProject(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
-        #self.output.persist()
-        #self.output.close()  # close any open file handles or network connections
+        self.output.close()  # close any open file handles or network connections
 
     def read_input(self, source, content_field, source_type="auto", **kwargs):
         self.output.import_from_iterable(read_input(source,
@@ -59,17 +61,15 @@ class TopikProject(object):
             filter_expression = self.corpus_filter
         return self.output.get_filtered_data(filter_expression)
 
-    def tokenize(self, method, **kwargs):
+    def tokenize(self, method="simple", **kwargs):
         # tokenize, and store the results on this object somehow
         tokenized_data = tokenizers.tokenize(self.filtered_corpus,
                                              method=method, **kwargs)
-        tokenize_parameter_string="tk_{method}_{params}".format(
+        tokenize_parameter_string = "tk_{method}{params}".format(
             method=method,
             params=_get_parameters_string(**kwargs))
 
         # store this
-        #self.output.append_from_iterable(tokenized_data,
-        #                                 tokenize_parameter_string)
         self.output.tokenized_data[tokenize_parameter_string] = tokenized_data
         # set _tokenizer_id internal handle to point to this data
         self._tokenizer_id = tokenize_parameter_string
@@ -83,7 +83,7 @@ class TopikProject(object):
         # set _tokenizer_id internal handle to point to this data
         self._tokenizer_id = tokenize_parameter_string
 
-    def vectorize(self, method="", **kwargs):
+    def vectorize(self, method="bag_of_words", **kwargs):
         vectorized_data = vectorizers.vectorize(self.tokenized_data,
                                                 method=method, **kwargs)
         vectorize_parameter_string = "_".join([method, _get_parameters_string(**kwargs)])
@@ -92,7 +92,7 @@ class TopikProject(object):
         # set _vectorizer_id internal handle to point to this data
         self._vectorizer_id = vectorize_parameter_string
 
-    def run_model(self, model_name, **kwargs):
+    def run_model(self, model_name="PLSA", **kwargs):
         model_output = models.run_model(self.vectorized_data,
                                         model_name=model_name, **kwargs)
         model_id = "_".join([model_name, _get_parameters_string(**kwargs)])
@@ -155,7 +155,7 @@ class TopikProject(object):
         return self.output.vectorized_data[self._vectorizer_id]
 
     @property
-    def model_output(self):
+    def model_data(self):
         """matrices representing the model derived.
 
         Output from modeling step.

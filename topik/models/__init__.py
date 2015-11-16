@@ -4,5 +4,3 @@ from .lda import LDA
 from .plsa import PLSA
 
 from ._registry import registered_models, register, run_model
-
-from .base_model_output import load_model

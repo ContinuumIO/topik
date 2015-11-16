@@ -1,3 +1,5 @@
+import itertools
+
 def _accumulate_terms(tokenized_data):
     global_terms=set()
     document_term_counts = {}
@@ -10,10 +12,18 @@ def _accumulate_terms(tokenized_data):
 
 class VectorizerOutput(object):
     def __init__(self, tokenized_data, vectorizer_func):
-        self._global_terms, self._document_term_counts = _accumulate_terms(tokenized_data)
+        iter1, iter2 = itertools.tee(tokenized_data)
+        self._global_terms, self._document_term_counts = _accumulate_terms(iter1)
         self._id_term_map = {id: term for id, term in enumerate(self._global_terms)}
         self._term_id_map = {term: id for id, term in enumerate(self._global_terms)}
-        self._vectors = vectorizer_func(tokenized_data, self)
+        self._vectors = vectorizer_func(iter2, self)
+
+    def __iter__(self):
+        for id, vector in self._vectors.items():
+            yield id, vector
+
+    def __len__(self):
+        return len(self._vectors)
 
     @property
     def global_term_count(self):
