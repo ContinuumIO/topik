@@ -25,39 +25,67 @@ test_data_path = os.path.join(test_data_path, "test_data_json_stream.json")
 
 class ProjectTest(unittest.TestCase):
     def setUp(self):
-        test_project = TopikProject()
-
-
-    def test_in_memory_project_read(self):
-        with TopikProject() as project:
-            project.read_input(source=test_data_path, content_field='abstract')
-            print(list(project.filtered_corpus))
-            assert(len(list(project.get_filtered_corpus_iterator())) == 100)
+        self.test_project = TopikProject()
 
     def test_read_input(self):
-        with TopikProject() as project:
-            project.read_input(source=test_data_path, content_field='abstract')
-            print(list(project.get_filtered_corpus_iterator()))
-            assert(len(list(project.get_filtered_corpus_iterator())) == 100)
+        self.test_project.read_input(source=test_data_path, content_field='abstract')
+        print(list(self.test_project.get_filtered_corpus_iterator()))
+        assert(len(list(self.test_project.get_filtered_corpus_iterator())) == 100)
 
     def test_get_filtered_corpus_iterator(self):
-        with TopikProject() as project:
-            project.read_input(source=test_data_path, content_field='abstract')
-            doc_list = list(project.get_filtered_corpus_iterator())
-            print(doc_list)
-            assert(type(doc_list[0]) == type(('123','text')))
-            assert(len(doc_list) == 100)
+        self.test_project.read_input(source=test_data_path, content_field='abstract')
+        doc_list = list(self.test_project.get_filtered_corpus_iterator())
+        print(doc_list)
+        assert(type(doc_list[0]) == type(('123','text')))
+        assert(len(doc_list) == 100)
 
     def test_tokenize(self):
-        with TopikProject() as project:
-            project.read_input(source=test_data_path, content_field='abstract')
-            project.tokenize('simple')
-            print('+'*20)
-            tokenized_corpus = list(project.output.get_filtered_data(project._tokenizer_id))
-            print(tokenized_corpus)
-            assert(sample_tokenized_doc in tokenized_corpus)
-            print('+'*20)
+        self.test_project.read_input(source=test_data_path, content_field='abstract')
+        self.test_project.tokenize('simple')
+        print('+'*20)
+        tokenized_corpus = list(self.test_project.output.get_filtered_data(
+            self.test_project._selected_tokenizer))
+        print(tokenized_corpus)
+        assert(sample_tokenized_doc in tokenized_corpus)
+        print('+'*20)
+'''
+    def test_transform(self):
+        raise NotImplementedError
 
+    def test_vectorize(self):
+        raise NotImplementedError
+
+    def test_run_model(self):
+        raise NotImplementedError
+
+    def visualize(self):
+        raise NotImplementedError
+
+    def test_select_tokenized_data(self):
+        raise NotImplementedError
+
+    def test_select_vectorized_data(self):
+        raise NotImplementedError
+
+    def test_select_model_data(self):
+        raise NotImplementedError
+
+    def test_filtered_corpus(self):
+        raise NotImplementedError
+
+    def test_tokenized_data(self):
+        raise NotImplementedError
+
+    def test_vectorized_data(self):
+        raise NotImplementedError
+
+    def test_modeled_corpus(self):
+        raise NotImplementedError
+
+'''
+
+
+    '''
     def test_read_input_elastic(self):
         elastic_output_args = {'source':'localhost','index':'topik_unittest',
                                 'content_field':'abstract'}
@@ -66,4 +94,10 @@ class ProjectTest(unittest.TestCase):
             project.read_input(source=test_data_path, content_field='abstract')
             print(list(project.get_filtered_corpus_iterator()))
             assert(len(list(project.get_filtered_corpus_iterator())) == 100)
+    '''
 
+def test_in_memory_project_read():
+    with TopikProject() as test_project:
+        test_project.read_input(source=test_data_path, content_field='abstract')
+        print(list(test_project.filtered_corpus))
+        assert(len(list(test_project.get_filtered_corpus_iterator())) == 100)

@@ -32,11 +32,11 @@ class TopikProject(object):
         # None or a string expression in Elasticsearch query format
         self.corpus_filter = kwargs["corpus_filter"] if "corpus_filter" in kwargs else None
         # Initially None, set to string value when tokenize or transform method called
-        self._tokenizer_id = kwargs["_tokenizer_id"] if "_tokenizer_id" in kwargs else None
+        self._selected_tokenized_corpus = kwargs["_selected_tokenized_corpus"] if "_selected_tokenized_corpus" in kwargs else None
         # Initially None, set to string value when vectorize method called
-        self._vectorizer_id = kwargs["_vectorizer_id"] if "_vectorizer_id" in kwargs else None
+        self._selected_vectorized_corpus = kwargs["_selected_vectorized_corpus"] if "_selected_vectorized_corpus" in kwargs else None
         # Initially None, set to string value when run_model method called
-        self._model_id = kwargs["_model_id"] if "_model_id" in kwargs else None
+        self._selected_modeled_corpus = kwargs["_selected_modeled_corpus"] if "_selected_modeled_corpus" in kwargs else None
         super(TopikProject, self).__init__(**kwargs)
 
     def __enter__(self):
@@ -72,7 +72,7 @@ class TopikProject(object):
         #                                 tokenize_parameter_string)
         self.output.tokenized_data[tokenize_parameter_string] = tokenized_data
         # set _tokenizer_id internal handle to point to this data
-        self._tokenizer_id = tokenize_parameter_string
+        self._selected_tokenizer = tokenize_parameter_string
 
     def transform(self, method, **kwargs):
         transformed_data = transformers.transform(method=method, **kwargs)
@@ -81,7 +81,7 @@ class TopikProject(object):
         # store this
         self.output.tokenized_data[tokenize_parameter_string] = transformed_data
         # set _tokenizer_id internal handle to point to this data
-        self._tokenizer_id = tokenize_parameter_string
+        self._selected_tokenizer = tokenize_parameter_string
 
     def vectorize(self, method="", **kwargs):
         vectorized_data = vectorizers.vectorize(self.tokenized_data,
@@ -90,7 +90,7 @@ class TopikProject(object):
         # store this internally
         self.output.vectorized_data[vectorize_parameter_string] = vectorized_data
         # set _vectorizer_id internal handle to point to this data
-        self._vectorizer_id = vectorize_parameter_string
+        self._selected_vectorizer = vectorize_parameter_string
 
     def run_model(self, model_name, **kwargs):
         model_output = models.run_model(self.vectorized_data,
@@ -99,7 +99,7 @@ class TopikProject(object):
         # store this internally
         self.output.model_data[model_id] = model_output
         # set _model_id internal handle to point to this data
-        self._model_id = model_id
+        self._selected_model = model_id
 
     def visualize(self, model_id=None, **kwargs):
         if not model_id:
@@ -109,20 +109,20 @@ class TopikProject(object):
         return visualizers.visualize(model, **kwargs)
 
     def select_tokenized_data(self, id):
-        if id in self.tokenizer_ids:
-            self.selected_tokenizer = id
+        if id in self.output.tokenized_corpuses:
+            self._selected_tokenized_corpus = id
         else:
             raise ValueError("tokenized data {} not found in storage.".format(id))
 
     def select_vectorized_data(self, id):
-        if id in self.output.vectorized_data:
-            self.selected_vectorizer = id
+        if id in self.output.vectorized_corpuses:
+            self._selected_vectorized_corpus = id
         else:
             raise ValueError("vectorized data {} not found in storage.".format(id))
 
     def select_model_data(self, id):
-        if id in self.output.model_data:
-            self.selected_model = id
+        if id in self.output.modeled_corpus:
+            self._selected_modeled_corpus = id
         else:
             raise ValueError("model {} not found in storage.".format(id))
 
@@ -136,30 +136,30 @@ class TopikProject(object):
         return self.output.get_filtered_data(self.corpus_filter)
 
     @property
-    def tokenized_data(self):
+    def tokenized_corpus(self):
         """Documents broken into component words.  May also be transformed.
 
         Output from tokenization and/or transformation steps.
         Input to vectorization step.
         """
-        return self.output.tokenized_data[self._tokenizer_id]
+        return self.output.tokenizers[self._selected_tokenized_corpus]
 
     @property
-    def vectorized_data(self):
+    def vectorized_corpus(self):
         """Data that has been vectorized into term frequencies, TF/IDF, or
         other vector representation.
 
         Output from vectorization step.
         Input to modeling step.
         """
-        return self.output.vectorized_data[self._vectorizer_id]
+        return self.output.vectorizers[self._selected_vectorized_corpus]
 
     @property
-    def model_output(self):
+    def modeled_corpus(self):
         """matrices representing the model derived.
 
         Output from modeling step.
         Input to visualization step.
         """
-        return self.output.model_data[self._model_id]
+        return self.output.models[self._selected_modeled_corpus]
 
