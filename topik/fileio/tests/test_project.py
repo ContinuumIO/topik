@@ -27,6 +27,7 @@ class ProjectTest(unittest.TestCase):
     def setUp(self):
         test_project = TopikProject()
 
+
     def test_in_memory_project_read(self):
         with TopikProject() as project:
             project.read_input(source=test_data_path, content_field='abstract')

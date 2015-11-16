@@ -4,7 +4,8 @@ from .base_output import OutputInterface
 @register_output
 class InMemoryOutput(OutputInterface):
     def __init__(self, iterable=None, content_field=None, from_existing_corpus=False,
-                 content_filter=None, models=None, vectorized_data=None, tokenized_data=None):
+                 content_filter=None, vectorized_data=None, tokenized_data=None,
+                 models=None):
         super(InMemoryOutput, self).__init__()
         self.corpus = {}
         self.content_field = content_field
@@ -15,9 +16,9 @@ class InMemoryOutput(OutputInterface):
         #else:
         #    raise ValueError("Output must be instantiated with iterable and ")
         self.content_filter = content_filter
-        self.models = models if models else {}
         self.tokenized_data = tokenized_data if tokenized_data else {}
         self.vectorized_data = vectorized_data if vectorized_data else {}
+        self.models = models if models else {}
 
     def get_generator_without_id(self, field=None):
         if not field:

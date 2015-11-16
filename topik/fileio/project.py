@@ -68,9 +68,9 @@ class TopikProject(object):
             params=_get_parameters_string(**kwargs))
 
         # store this
-        self.output.append_from_iterable(tokenized_data,
-                                         tokenize_parameter_string)
-        #self.output.token_data[tokenize_parameter_string] = tokenized_data
+        #self.output.append_from_iterable(tokenized_data,
+        #                                 tokenize_parameter_string)
+        self.output.tokenized_data[tokenize_parameter_string] = tokenized_data
         # set _tokenizer_id internal handle to point to this data
         self._tokenizer_id = tokenize_parameter_string
 

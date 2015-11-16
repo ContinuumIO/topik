@@ -4,10 +4,52 @@ import time
 from ._registry import register_output
 from .base_output import OutputInterface
 
+class ElasticCorpus(dict):
+    def __init__(self, instance, index, corpus_type, query=None,
+                 batch_size=1000):
+        self.instance = instance
+        self.index = index
+        self.corpus_type = corpus_type
+        self.query = query
+        self.batch_size = batch_size
+        pass
+    def __setitem__(self, field, iterable_values):
+        """load an iterable of (id, value) pairs to the specified new or
+           new or existing field within existing documents."""
+        from elasticsearch import helpers
+        batch = []
+        for doc_id, value in iterable_values:
+            action = {'_op_type': 'update',
+                      '_index': self.index,
+                      '_type': self.corpus_type,
+                      '_id': doc_id,
+                      'doc': {field: value},
+                      'doc_as_upsert': "true",
+                      }
+            batch.append(action)
+            if len(batch) >= self.batch_size:
+                helpers.bulk(client=self.instance, actions=batch,
+                             index=self.index)
+                batch = []
+        if batch:
+            helpers.bulk(client=self.instance, actions=batch, index=self.index)
+        self.instance.indices.refresh(self.index)
+
+    def __getitem__(self, field):
+        #return ElasticSearchOutput(self.hosts, self.index, field,
+        #                           self.corpus_type, self.query)
+        from elasticsearch import helpers
+        results = helpers.scan(self.instance, index=self.index,
+                               query=self.query, doc_type=self.corpus_type)
+        for result in results:
+            yield result["_id"], result['_source'][field]
+
 @register_output
 class ElasticSearchOutput(OutputInterface):
     def __init__(self, source, index, content_field, doc_type='continuum',
-                 query=None, iterable=None, filter_expression="", **kwargs):
+                 query=None, iterable=None, filter_expression="",
+                 vectorized_data=None, tokenized_data=None, models=None,
+                 **kwargs):
         from elasticsearch import Elasticsearch
         super(ElasticSearchOutput, self).__init__()
         self.hosts = source
@@ -19,6 +61,14 @@ class ElasticSearchOutput(OutputInterface):
         if iterable:
             self.import_from_iterable(iterable, content_field)
         self.filter_expression = filter_expression
+
+        self.tokenized_data = tokenized_data if tokenized_data else \
+            ElasticCorpus(self.instance, self.index, 'tokenized', self.query)
+        self.vectorized_data = vectorized_data if vectorized_data else \
+            ElasticCorpus(self.instance, self.index, 'tokenized', self.query)
+        self.models = models if models else \
+            ElasticCorpus(self.instance, self.index, "models", self.query)
+
 
     @property
     def filter_string(self):
@@ -44,7 +94,7 @@ class ElasticSearchOutput(OutputInterface):
         self.instance.update(index=self.index, id=record_id, doc_type=self.doc_type,
                              body={"doc": {field_name: field_value}})
 
-    def append_from_iterable(self, iterable, field):
+    def append_from_iterable(self, iterable, field, batch_size=1000):
         """load an iterable of (id, value) pairs to the specified new or
            new or existing field within existing documents."""
         from elasticsearch import helpers
