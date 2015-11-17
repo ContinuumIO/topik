@@ -46,7 +46,7 @@ class ElasticCorpus(dict):
 
 @register_output
 class ElasticSearchOutput(OutputInterface):
-    def __init__(self, source, index, content_field, doc_type='continuum',
+    def __init__(self, source, index, hash_field=None, doc_type='continuum',
                  query=None, iterable=None, filter_expression="",
                  vectorized_corpora=None, tokenized_corpora=None, modeled_corpora=None,
                  **kwargs):
@@ -55,11 +55,10 @@ class ElasticSearchOutput(OutputInterface):
         self.hosts = source
         self.instance = Elasticsearch(hosts=source, **kwargs)
         self.index = index
-        self.content_field = content_field
         self.doc_type = doc_type
         self.query = query
         if iterable:
-            self.import_from_iterable(iterable, content_field)
+            self.import_from_iterable(iterable, hash_field)
         self.filter_expression = filter_expression
 
         self.tokenized_corpora = tokenized_corpora if tokenized_corpora else \
@@ -74,85 +73,41 @@ class ElasticSearchOutput(OutputInterface):
     def filter_string(self):
         return self.filter_expression
 
-    def __iter__(self):
-        from elasticsearch import helpers
-        results = helpers.scan(self.instance, index=self.index,
-                               query=self.query, doc_type=self.doc_type)
-        for result in results:
-            yield result["_id"], result['_source'][self.content_field]
-
-    def __len__(self):
-        return self.instance.count(index=self.index, doc_type=self.doc_type)["count"]
-
-    def get_generator_without_id(self, field=None):
-        if not field:
-            field = self.content_field
-        for (_, result) in ElasticSearchOutput(self.hosts, self.index, field, self.doc_type, self.query):
-            yield result
-
-    def append_to_record(self, record_id, field_name, field_value):
-        self.instance.update(index=self.index, id=record_id, doc_type=self.doc_type,
-                             body={"doc": {field_name: field_value}})
-
-    def append_from_iterable(self, iterable, field, batch_size=1000):
-        """load an iterable of (id, value) pairs to the specified new or
-           new or existing field within existing documents."""
-        from elasticsearch import helpers
-        batch = []
-        for doc_id, value in iterable:
-            action = {'_op_type': 'update',
-                      '_index': self.index,
-                      '_type': self.doc_type,
-                      '_id': doc_id,
-                      'doc': {field: value},
-                      'doc_as_upsert': "true",
-                      }
-            batch.append(action)
-            if len(batch) >= batch_size:
-                helpers.bulk(client=self.instance, actions=batch, index=self.index)
-                batch = []
-        if batch:
-            helpers.bulk(client=self.instance, actions=batch, index=self.index)
-        self.instance.indices.refresh(self.index)
-
-    def get_field(self, field=None):
-        """Get a different field to iterate over, keeping all other
-           connection details."""
-        if not field:
-            field = self.content_field
-        return ElasticSearchOutput(self.hosts, self.index, field, self.doc_type, self.query)
-
-    def import_from_iterable(self, iterable, content_field='text', batch_size=500):
+    def import_from_iterable(self, iterable, field_to_hash='text', batch_size=500):
         """Load data into Elasticsearch from iterable.
 
         iterable: generally a list of dicts, but possibly a list of strings
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
-        content_field: string identifier of field to hash for content ID.  For
+        field_to_hash: string identifier of field to hash for content ID.  For
             list of dicts, a valid key value in the dictionary is required. For
             list of strings, a dictionary with one key, "text" is created and
             used.
         """
-        from elasticsearch import helpers
-        batch = []
-        for item in iterable:
-            if isinstance(item, basestring):
-                item = {content_field: item}
-            id = hash(item[content_field])
-            action = {'_op_type': 'update',
-                      '_index': self.index,
-                      '_type': self.doc_type,
-                      '_id': id,
-                      'doc': item,
-                      'doc_as_upsert': "true",
-                      }
-            batch.append(action)
-            if len(batch) >= batch_size:
+        if field_to_hash:
+            self.hash_field = field_to_hash
+            from elasticsearch import helpers
+            batch = []
+            for item in iterable:
+                if isinstance(item, basestring):
+                    item = {field_to_hash: item}
+                id = hash(item[field_to_hash])
+                action = {'_op_type': 'update',
+                          '_index': self.index,
+                          '_type': self.doc_type,
+                          '_id': id,
+                          'doc': item,
+                          'doc_as_upsert': "true",
+                          }
+                batch.append(action)
+                if len(batch) >= batch_size:
+                    helpers.bulk(client=self.instance, actions=batch, index=self.index)
+                    batch = []
+            if batch:
                 helpers.bulk(client=self.instance, actions=batch, index=self.index)
-                batch = []
-        if batch:
-            helpers.bulk(client=self.instance, actions=batch, index=self.index)
-        self.instance.indices.refresh(self.index)
+            self.instance.indices.refresh(self.index)
+        else:
+            raise ValueError("A field_to_hash is required for import_from_iterable")
 
     def convert_date_field_and_reindex(self, field):
         index = self.index
@@ -176,25 +131,36 @@ class ElasticSearchOutput(OutputInterface):
         return index
 
     # TODO: validate input data to ensure that it has valid year data
-    def get_date_filtered_data(self, start, end, filter_field="date"):
+    def get_date_filtered_data(self, field_to_get, start, end, filter_field="date"):
+        from elasticsearch import helpers
         converted_index = self.convert_date_field_and_reindex(field=filter_field)
-        return ElasticSearchOutput(self.hosts, converted_index, self.content_field, self.doc_type,
+
+        results = helpers.scan(self.instance, index=converted_index,
+                               doc_type=self.doc_type, query={
+            "query": {"filtered": {"filter": {"range": {filter_field: {
+                "gte": start,"lte": end}}}}}})
+        for result in results:
+            yield result["_id"], result['_source'][field_to_get]
+        '''
+        return ElasticSearchOutput(self.hosts, converted_index, field_to_get, self.doc_type,
                                    query={"query": {"filtered": {"filter": {"range": {filter_field: {"gte": start,
                                                                                               "lte": end}}}}}},
                                    filter_expression=self.filter_expression + "_date_{}_{}".format(start, end))
+        '''
 
-    def get_filtered_data(self, field=None, filter=""):
-        if not field:
-            field = self.content_field
+    def get_filtered_data(self, field_to_get, filter=""):
+        from elasticsearch import helpers
         if not filter:
-            for (doc_id, doc_text) in ElasticSearchOutput(self.hosts, self.index, field, self.doc_type, self.query):
-                yield doc_id, doc_text
+            results = helpers.scan(self.instance, index=self.index,
+                               query=self.query, doc_type=self.doc_type)
+            for result in results:
+                yield result["_id"], result['_source'][field_to_get]
         else:
             raise NotImplementedError
 
     def save(self, filename, saved_data=None):
         if saved_data is None:
-            saved_data = {"source": self.hosts, "index": self.index, "content_field": self.content_field,
+            saved_data = {"source": self.hosts, "index": self.index, "hash_field": self.hash_field,
                           "doc_type": self.doc_type, "query": self.query}
         return super(ElasticSearchOutput, self).save(filename, saved_data)
 
@@ -213,3 +179,4 @@ class ElasticSearchOutput(OutputInterface):
             logging.debug("Count not yet updated: {}".format(count_not_yet_updated))
             time.sleep(0.01)
         pass
+
