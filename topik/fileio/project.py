@@ -1,4 +1,5 @@
-import json
+import itertools
+import jsonpickle
 import os
 
 from topik import tokenizers, transformers, vectorizers, models, visualizers
@@ -29,17 +30,19 @@ class TopikProject(object):
              output type.  Only relevant for some output types ("ElasticSearchOutput", not "InMemoryOutput")
         **kwargs : passed through to superclass __init__.  Not passed to output.
         """
-        # None here prevents infinite recursion.  Only the first pass through should have default None output_type.
+        if output_args is None:
+            output_args = {}
         if os.path.exists(project_name + ".topikproject") and output_type is None:
             with open(project_name + ".topikproject") as f:
-                project_data = json.load(f)
-            # danger: potential infinite loop here
-            return TopikProject(**project_data)
+                project_data = jsonpickle.decode(f.read())
+            kwargs.update(project_data)
+            with open(project_name + ".topikdata") as f:
+                loaded_data = jsonpickle.decode(f.read())
+                output_type = loaded_data["class"]
+                output_args.update(loaded_data["saved_data"])
         self.project_name = project_name
         if output_type is None:
             output_type = "InMemoryOutput"
-        if output_args is None:
-            output_args = {}
         # loading the output here is sufficient to restore all results: the output is responsible for loading them as
         #    necessary, and returning iterators or output objects appropriately.
         self.output = registered_outputs[output_type](**output_args)
@@ -47,14 +50,15 @@ class TopikProject(object):
         self._output_type = output_type
         self._output_args = output_args
         # None or a string expression in Elasticsearch query format
-        self.corpus_filter = kwargs["corpus_filter"] if "corpus_filter" in kwargs else None
+        self.corpus_filter = kwargs["corpus_filter"] if "corpus_filter" in kwargs else ""
+        # None or a string name
+        self.content_field = kwargs["content_field"] if "content_field" in kwargs else ""
         # Initially None, set to string value when tokenize or transform method called
         self._selected_tokenized_corpus = kwargs["_selected_tokenized_corpus"] if "_selected_tokenized_corpus" in kwargs else None
         # Initially None, set to string value when vectorize method called
         self._selected_vectorized_corpus = kwargs["_selected_vectorized_corpus"] if "_selected_vectorized_corpus" in kwargs else None
         # Initially None, set to string value when run_model method called
         self._selected_modeled_corpus = kwargs["_selected_modeled_corpus"] if "_selected_modeled_corpus" in kwargs else None
-        super(TopikProject, self).__init__(**kwargs)
 
     def __enter__(self):
         return self
@@ -68,14 +72,15 @@ class TopikProject(object):
 
     def save(self):
         with open(self.project_name + ".topikproject", "w") as f:
-            json.dump({"_selected_tokenized_corpus": self._selected_tokenized_corpus,
+            f.write(jsonpickle.encode({"_selected_tokenized_corpus": self._selected_tokenized_corpus,
                        "_selected_vectorized_corpus": self._selected_vectorized_corpus,
                        "_selected_modeled_corpus": self._selected_modeled_corpus,
                        "corpus_filter": self.corpus_filter,
                        "project_name": self.project_name,
                        "output_type": self._output_type,
-                       "output_args": self._output_args},
-                      f)
+                       "output_args": self._output_args,
+                       "content_field": self.content_field},
+                      f))
         self.output.save(self.project_name)
 
     def read_input(self, source, content_field, source_type="auto", **kwargs):
@@ -84,6 +89,7 @@ class TopikProject(object):
                                                     source_type=source_type,
                                                     **kwargs),
                                          content_field=content_field)
+        self.content_field = content_field
 
     def get_filtered_corpus_iterator(self, filter_expression=None):
         if filter_expression is None:
@@ -94,7 +100,7 @@ class TopikProject(object):
         # tokenize, and store the results on this object somehow
         tokenized_corpora = tokenizers.tokenize(self.filtered_corpora,
                                              method=method, **kwargs)
-        tokenize_parameter_string = "tk_{method}{params}".format(
+        tokenize_parameter_string = self.corpus_filter + "_tk_{method}{params}".format(
             method=method,
             params=_get_parameters_string(**kwargs))
 
@@ -113,9 +119,10 @@ class TopikProject(object):
         self._selected_tokenized_corpus = tokenize_parameter_string
 
     def vectorize(self, method="bag_of_words", **kwargs):
-        vectorized_corpora = vectorizers.vectorize(self.tokenized_corpora,
+        tokenizer_iterators = itertools.tee(self.tokenized_corpora)
+        vectorized_corpora = vectorizers.vectorize(tokenizer_iterators[0],
                                                 method=method, **kwargs)
-        vectorize_parameter_string = "_".join([method, _get_parameters_string(**kwargs)])
+        vectorize_parameter_string = self.corpus_filter + self._selected_tokenized_corpus + "_".join([method, _get_parameters_string(**kwargs)])
         # store this internally
         self.output.vectorized_corpora[vectorize_parameter_string] = vectorized_corpora
         # set _vectorizer_id internal handle to point to this data

@@ -11,12 +11,26 @@ def _accumulate_terms(tokenized_corpora):
 
 
 class VectorizerOutput(object):
-    def __init__(self, tokenized_corpora, vectorizer_func):
-        iter1, iter2 = itertools.tee(tokenized_corpora)
-        self._global_terms, self._document_term_counts = _accumulate_terms(iter1)
-        self._id_term_map = {id: term for id, term in enumerate(self._global_terms)}
-        self._term_id_map = {term: id for id, term in enumerate(self._global_terms)}
-        self._vectors = vectorizer_func(iter2, self)
+    def __init__(self, tokenized_corpora=None, vectorizer_func=None, global_terms=None,
+                 document_term_counts=None, vectors=None):
+        if tokenized_corpora and vectorizer_func:
+            iter1, iter2 = itertools.tee(tokenized_corpora)
+            self._global_terms, self._document_term_counts = _accumulate_terms(iter1)
+        elif global_terms and document_term_counts and vectors:
+            self._global_terms = global_terms
+            self._document_term_counts = document_term_counts
+            self._vectors = vectors
+        else:
+            raise ValueError("Must provide either tokenized corpora and vectorizer func, "
+                             "or global term collection, document term counts, and vectors.")
+            self._global_terms = []
+        self.id_term_map = {id: term for id, term in enumerate(self._global_terms)}
+        self.term_id_map = {term: id for id, term in enumerate(self._global_terms)}
+        # Needs to be here because term map may be used in vectorization
+        if not vectors and vectorizer_func:
+            self._vectors = vectorizer_func(iter2, self)
+        else:
+            raise ValueError("Need to provide either vectors or vectorizer_func")
 
     def __iter__(self):
         for id, vector in self._vectors.items():
@@ -28,14 +42,6 @@ class VectorizerOutput(object):
     @property
     def global_term_count(self):
         return len(self._global_terms)
-
-    @property
-    def term_id_map(self):
-        return self._term_id_map
-
-    @property
-    def id_term_map(self):
-        return self._id_term_map
 
     @property
     def document_term_counts(self):

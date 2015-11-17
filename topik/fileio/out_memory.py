@@ -1,6 +1,13 @@
+import types
+
 from ._registry import register_output
 from .base_output import OutputInterface
 
+class GreedyDict(dict):
+    def __setitem__(self, key, value):
+        if isinstance(value, types.GeneratorType):
+            value = [val for val in value]
+        super(GreedyDict, self).__setitem__(key, value)
 
 @register_output
 class InMemoryOutput(OutputInterface):
@@ -8,7 +15,7 @@ class InMemoryOutput(OutputInterface):
                  content_filter=None, tokenized_corpora=None,
                  vectorized_corpora=None, modeled_corpora=None):
         super(InMemoryOutput, self).__init__()
-        self.corpus = {}
+        self.corpus = GreedyDict()
         self.content_field = content_field
         if from_existing_corpus:
             self.corpus = iterable
@@ -17,9 +24,9 @@ class InMemoryOutput(OutputInterface):
         #else:
         #    raise ValueError("Output must be instantiated with iterable and ")
         self.content_filter = content_filter
-        self.tokenized_corpora = tokenized_corpora if tokenized_corpora else {}
-        self.vectorized_corpora = vectorized_corpora if vectorized_corpora else {}
-        self.modeled_corpora = modeled_corpora if modeled_corpora else {}
+        self.tokenized_corpora = tokenized_corpora if tokenized_corpora else GreedyDict()
+        self.vectorized_corpora = vectorized_corpora if vectorized_corpora else GreedyDict()
+        self.modeled_corpora = modeled_corpora if modeled_corpora else GreedyDict()
 
     def get_generator_without_id(self, field=None):
         if not field:
@@ -72,5 +79,6 @@ class InMemoryOutput(OutputInterface):
                       "modeled_corpora": self.modeled_corpora,
                       "vectorized_corpora": self.vectorized_corpora,
                       "tokenized_corpora": self.tokenized_corpora,
-                      "content_filter": self.content_filter}
-        return super(InMemoryOutput, self).save(filename, saved_data)
+                      "content_filter": self.content_filter,
+                      "content_field": self.content_field}
+        return super(InMemoryOutput, self).save(filename+".topikdata", saved_data)
