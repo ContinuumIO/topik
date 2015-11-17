@@ -1,6 +1,13 @@
+import types
+
 from ._registry import register_output
 from .base_output import OutputInterface
 
+class GreedyDict(dict):
+    def __setitem__(self, key, value):
+        if isinstance(value, types.GeneratorType):
+            value = [val for val in value]
+        super(GreedyDict, self).__setitem__(key, value)
 
 @register_output
 class InMemoryOutput(OutputInterface):
@@ -8,17 +15,15 @@ class InMemoryOutput(OutputInterface):
                  tokenized_corpora=None,
                  vectorized_corpora=None, modeled_corpora=None):
         super(InMemoryOutput, self).__init__()
-        self.corpus = {}
 
-        #if from_existing_corpus:
-        #    self.corpus = iterable
+        self.corpus = GreedyDict()
+
         if iterable:
             self.import_from_iterable(iterable, hash_field)
 
-        #self.content_filter = content_filter
-        self.tokenized_corpora = tokenized_corpora if tokenized_corpora else {}
-        self.vectorized_corpora = vectorized_corpora if vectorized_corpora else {}
-        self.modeled_corpora = modeled_corpora if modeled_corpora else {}
+        self.tokenized_corpora = tokenized_corpora if tokenized_corpora else GreedyDict()
+        self.vectorized_corpora = vectorized_corpora if vectorized_corpora else GreedyDict()
+        self.modeled_corpora = modeled_corpora if modeled_corpora else GreedyDict()
 
     def import_from_iterable(self, iterable, field_to_hash):
         """
@@ -58,4 +63,4 @@ class InMemoryOutput(OutputInterface):
                       "modeled_corpora": self.modeled_corpora,
                       "vectorized_corpora": self.vectorized_corpora,
                       "tokenized_corpora": self.tokenized_corpora}
-        return super(InMemoryOutput, self).save(filename, saved_data)
+        return super(InMemoryOutput, self).save(filename+".topikdata", saved_data)

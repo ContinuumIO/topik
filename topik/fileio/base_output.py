@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 from six import with_metaclass
-import json
+import jsonpickle
 
 from ._registry import registered_outputs
 
@@ -46,7 +46,7 @@ class OutputInterface(with_metaclass(ABCMeta)):
 
         """
         with open(filename, "w") as f:
-            json.dump({"class": self.__class__.__name__, "saved_data": saved_data}, f)
+            f.write(jsonpickle.encode({"class": self.__class__.__name__, "saved_data": saved_data}, f))
 
     def synchronize(self, max_wait, field):
         """By default, operations are synchronous and no additional wait is
@@ -64,5 +64,5 @@ class OutputInterface(with_metaclass(ABCMeta)):
 
 def load_output(filename):
     with open(filename) as f:
-        output_details = json.load(f)
-        return registered_outputs[output_details['class']](**output_details["saved_data"])
+        output_details = jsonpickle.decode(f.read())
+    return registered_outputs[output_details['class']](**output_details["saved_data"])

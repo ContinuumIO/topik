@@ -1,7 +1,15 @@
-from collections import Counter
-
+import json
 import numpy as np
-import pandas as pd
+
+
+def get_top_words(doc_topic_matrix, vectorized_output, topn):
+    top_words = []
+    # each "topic" is a row of the dz matrix
+    for topic in doc_topic_matrix:
+        word_ids = np.argpartition(topic, -topn)[-topn:]
+        word_ids = reversed(word_ids[np.argsort(topic[word_ids])])
+        top_words.append([(topic[word_id], vectorized_output.id_term_map[word_id]) for word_id in word_ids])
+    return top_words
 
 
 class TopicModelResultBase(object):
@@ -18,15 +26,6 @@ class TopicModelResultBase(object):
     def __init__(self, doc_topic_matrix, topic_term_matrix):
         self._doc_topic_matrix = doc_topic_matrix
         self._topic_term_matrix = topic_term_matrix
-
-    def get_top_words(self, topn):
-        top_words = []
-        # each "topic" is a row of the dz matrix
-        for topic in self._doc_topic_matrix.T:
-            word_ids = np.argpartition(topic, -topn)[-topn:]
-            word_ids = reversed(word_ids[np.argsort(topic[word_ids])])
-            top_words.append([(topic[word_id], self._corpus.get_id2word_dict()[word_id]) for word_id in word_ids])
-        return top_words
 
     def term_topic_matrix(self):
         self._corpus.term_topic_matrix
