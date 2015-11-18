@@ -16,16 +16,16 @@ class ElasticCorpus(dict):
         self.batch_size = batch_size
         pass
 
-    def __setitem__(self, field, iterable_values):
+    def __setitem__(self, key, value):
         """load an iterable of (id, value) pairs to the specified new or
            new or existing field within existing documents."""
         batch = []
-        for doc_id, value in iterable_values:
+        for doc_id, val in value:
             action = {'_op_type': 'update',
                       '_index': self.index,
                       '_type': self.corpus_type,
                       '_id': doc_id,
-                      'doc': {field: value},
+                      'doc': {key: val},
                       'doc_as_upsert': "true",
                       }
             batch.append(action)
