@@ -7,7 +7,7 @@ from topik.fileio._registry import register_input
 from topik.fileio.tests import test_data_path
 
 @register_input
-def read_json_stream(filename, json_prefix='item'):
+def read_json_stream(filename, json_prefix='item', **kwargs):
     # TODO: decide between:
     #   a) allow this unused json_prefix argument so that current check in read_input works
     #   b) allow **kwargs instead
@@ -60,7 +60,7 @@ def __is_iterable(obj):
 
 
 @register_input
-def read_large_json(filename, json_prefix='item'):
+def read_large_json(filename, json_prefix='item', **kwargs):
     # TODO: add the script to automatically find the json_prefix based on a key
     # Also should still have the option to manually specify a prefix for complex
     # json structures.

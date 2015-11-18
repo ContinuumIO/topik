@@ -1,6 +1,8 @@
 import logging
 import time
 
+from elasticsearch import Elasticsearch, helpers
+
 from ._registry import register_output
 from .base_output import OutputInterface
 
@@ -13,10 +15,10 @@ class ElasticCorpus(dict):
         self.query = query
         self.batch_size = batch_size
         pass
+
     def __setitem__(self, field, iterable_values):
         """load an iterable of (id, value) pairs to the specified new or
            new or existing field within existing documents."""
-        from elasticsearch import helpers
         batch = []
         for doc_id, value in iterable_values:
             action = {'_op_type': 'update',
@@ -36,9 +38,6 @@ class ElasticCorpus(dict):
         self.instance.indices.refresh(self.index)
 
     def __getitem__(self, field):
-        #return ElasticSearchOutput(self.hosts, self.index, field,
-        #                           self.corpus_type, self.query)
-        from elasticsearch import helpers
         results = helpers.scan(self.instance, index=self.index,
                                query=self.query, doc_type=self.corpus_type)
         for result in results:
@@ -50,7 +49,6 @@ class ElasticSearchOutput(OutputInterface):
                  query=None, iterable=None, filter_expression="",
                  vectorized_corpora=None, tokenized_corpora=None, modeled_corpora=None,
                  **kwargs):
-        from elasticsearch import Elasticsearch
         super(ElasticSearchOutput, self).__init__()
         self.hosts = source
         self.instance = Elasticsearch(hosts=source, **kwargs)
@@ -86,7 +84,6 @@ class ElasticSearchOutput(OutputInterface):
         """
         if field_to_hash:
             self.hash_field = field_to_hash
-            from elasticsearch import helpers
             batch = []
             for item in iterable:
                 if isinstance(item, basestring):
@@ -132,7 +129,6 @@ class ElasticSearchOutput(OutputInterface):
 
     # TODO: validate input data to ensure that it has valid year data
     def get_date_filtered_data(self, field_to_get, start, end, filter_field="date"):
-        from elasticsearch import helpers
         converted_index = self.convert_date_field_and_reindex(field=filter_field)
 
         results = helpers.scan(self.instance, index=converted_index,
@@ -141,22 +137,12 @@ class ElasticSearchOutput(OutputInterface):
                 "gte": start,"lte": end}}}}}})
         for result in results:
             yield result["_id"], result['_source'][field_to_get]
-        '''
-        return ElasticSearchOutput(self.hosts, converted_index, field_to_get, self.doc_type,
-                                   query={"query": {"filtered": {"filter": {"range": {filter_field: {"gte": start,
-                                                                                              "lte": end}}}}}},
-                                   filter_expression=self.filter_expression + "_date_{}_{}".format(start, end))
-        '''
 
     def get_filtered_data(self, field_to_get, filter=""):
-        from elasticsearch import helpers
-        if not filter:
-            results = helpers.scan(self.instance, index=self.index,
+        results = helpers.scan(self.instance, index=self.index,
                                query=self.query, doc_type=self.doc_type)
-            for result in results:
-                yield result["_id"], result['_source'][field_to_get]
-        else:
-            raise NotImplementedError
+        for result in results:
+            yield result["_id"], result['_source'][field_to_get]
 
     def save(self, filename, saved_data=None):
         if saved_data is None:

@@ -129,7 +129,7 @@ class TestInMemoryOutput(unittest.TestCase, ProjectTest):
         self.project.read_input(test_data_path, content_field="abstract")
 
 class TestElasticSearchOutput(unittest.TestCase, ProjectTest):
-    INDEX = "TEST_INDEX"
+    INDEX = "test_index"
     def setUp(self):
         self.output_type = "ElasticSearchOutput"
         self.output_args = {'source': 'localhost',

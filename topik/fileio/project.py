@@ -90,7 +90,7 @@ class TopikProject(object):
                                                     content_field=content_field,
                                                     source_type=source_type,
                                                     **kwargs),
-                                         content_field=content_field)
+                                         field_to_hash=content_field)
         self.content_field = content_field
 
     def get_filtered_corpus_iterator(self, field=None, filter_expression=None):
@@ -173,7 +173,8 @@ class TopikProject(object):
         Output from read_input step.
         Input to tokenization step.
         """
-        return self.output.get_filtered_data(self.corpus_filter)
+        return self.output.get_filtered_data(field_to_get=self.content_field,
+                                             filter=self.corpus_filter)
 
     @property
     def tokenized_corpora(self):
