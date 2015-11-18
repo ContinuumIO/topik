@@ -83,7 +83,7 @@ class TopikProject(object):
                        "output_args": self._output_args,
                        "content_field": self.content_field},
                       f))
-        self.output.save(self.project_name)
+        self.output.save(self.project_name + ".topikdata")
 
     def read_input(self, source, content_field, source_type="auto", **kwargs):
         self.output.import_from_iterable(read_input(source,

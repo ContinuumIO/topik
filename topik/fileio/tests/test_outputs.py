@@ -1,5 +1,4 @@
 import os
-import time
 import unittest
 
 import elasticsearch
@@ -11,7 +10,7 @@ from topik.fileio.out_elastic import ElasticSearchOutput
 from topik.fileio.out_memory import InMemoryOutput
 
 INDEX = "topik_unittest"
-SAVE_FILENAME = "test_save"
+SAVE_FILENAME = "test_save.topikdata"
 CONTENT_FIELD = "abstract"
 
 class BaseOutputTest(object):
@@ -25,12 +24,14 @@ class BaseOutputTest(object):
     def test_save_file(self):
         self.test_raw_data.save(SAVE_FILENAME)
         self.assertTrue(os.path.exists(SAVE_FILENAME))
+        os.remove(SAVE_FILENAME)
 
     def test_load_file(self):
         self.test_raw_data.save(SAVE_FILENAME)
         self.test_raw_data = load_output(SAVE_FILENAME)
         data = list(self.test_raw_data.get_filtered_data(CONTENT_FIELD))
         self.assertEqual(len(data), 100)
+        os.remove(SAVE_FILENAME)
 
     def test_get_date_filtered_data(self):
         result_list = list(self.test_raw_data.get_date_filtered_data(field_to_get=CONTENT_FIELD,
@@ -43,15 +44,10 @@ class BaseOutputTest(object):
 
 class TestInMemoryOutput(unittest.TestCase, BaseOutputTest):
     def setUp(self):
-        #self.output_type = "InMemoryOutput"
-        #self.output_args = {}
         self.test_raw_data = InMemoryOutput()
         self.test_raw_data.import_from_iterable(read_input(
             '{}/test_data_json_stream.json'.format(test_data_path)),
             field_to_hash=CONTENT_FIELD)
-        #self.test_raw_data = read_input('{}/test_data_json_stream.json'.format(
-        #    test_data_path), content_field="abstract")
-
 
 class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
     def setUp(self):
@@ -69,6 +65,4 @@ class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
         instance.indices.delete(INDEX)
         if instance.indices.exists("{}_year_alias_date".format(INDEX)):
             instance.indices.delete("{}_year_alias_date".format(INDEX))
-        time.sleep(1)
-        # TODO: delete the file from disk
 

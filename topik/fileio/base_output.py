@@ -21,21 +21,6 @@ class OutputInterface(with_metaclass(ABCMeta)):
         #     and dictionaries mapping doc id to list of tokens
         self.modeled_corpora = None
 
-    '''
-    @abstractmethod
-    def get_generator_without_id(self, field=None):
-        """Returns a generator that yields field content without doc_id associate"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def append_to_record(self, record_id, field_name, field_value):
-        self.corpus[record_id][field_name] = field_value
-
-    def append_from_iterable(self, iterable, field):
-        """load an iterable of (id, value) pairs to the specified new or
-           new or existing field within existing documents."""
-        raise NotImplementedError
-    '''
     def save(self, filename, saved_data=None):
         """Persist this object to disk somehow.
 

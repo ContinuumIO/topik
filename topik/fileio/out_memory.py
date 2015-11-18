@@ -63,4 +63,4 @@ class InMemoryOutput(OutputInterface):
                       "modeled_corpora": self.modeled_corpora,
                       "vectorized_corpora": self.vectorized_corpora,
                       "tokenized_corpora": self.tokenized_corpora}
-        return super(InMemoryOutput, self).save(filename+".topikdata", saved_data)
+        return super(InMemoryOutput, self).save(filename, saved_data)
