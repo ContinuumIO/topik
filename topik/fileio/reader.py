@@ -5,7 +5,7 @@ from topik.fileio._registry import registered_inputs
 from topik.fileio.tests import test_data_path
 
 # this function is the primary API for people using any registered functions.
-def read_input(source, source_type="auto", content_field='text',
+def read_input(source, source_type="auto", folder_content_field='text',
                output_args=None, synchronous_wait=0, **kwargs):
     """
     Read data from given source into Topik's internal data structures.
@@ -14,8 +14,9 @@ def read_input(source, source_type="auto", content_field='text',
     ----------
     source : str
         input data.  Can be file path, directory, or server address.
-    content_field : str
-        Which field contains your data to be analyzed.  Hash of this is used as id.
+    folder_content_field : str
+        Only used for document_folder source. This argument is used as the key
+        (field name), where each document represents the value of that field.
     source_type : str
         "auto" tries to figure out data type of source.  Can be manually specified instead.
         options for manual specification are ['solr', 'elastic', 'json_stream', 'large_json', 'folder']
@@ -77,7 +78,8 @@ def read_input(source, source_type="auto", content_field='text',
         data_iterator = registered_inputs["read_large_json"](source, **kwargs)
     # folder paths are simple strings that don't end in an extension (.+3-4 characters), or end in a /
     elif (source_type == "auto" and os.path.splitext(source)[1] == "") or source_type == "folder":
-        data_iterator = registered_inputs["read_document_folder"](source, content_field=content_field)
+        data_iterator = registered_inputs["read_document_folder"](source,
+                                            content_field=folder_content_field)
     else:
         raise ValueError("Unrecognized source type: {}.  Please either manually specify the type, or convert your input"
                          " to a supported type.".format(source))

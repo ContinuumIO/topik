@@ -13,14 +13,15 @@ class OutputInterface(with_metaclass(ABCMeta)):
         self.corpus = None
         # should be a dictionary-like structure, with string ids for tokenizer used and parameters
         #     passed and dictionaries mapping doc id to list of tokens
-        self.tokenized_corpus = None
+        self.tokenized_corpora = None
         # should be a dictionary-like structure, with string ids for vectorizer used and parameters
         #     passed and dictionaries mapping doc id to list of tokens
-        self.vectorized_corpus = None
+        self.vectorized_corpora = None
         # should be a dictionary-like structure, with string ids for model used and parameters passed
         #     and dictionaries mapping doc id to list of tokens
-        self.modeled_corpus = None
+        self.modeled_corpora = None
 
+    '''
     @abstractmethod
     def get_generator_without_id(self, field=None):
         """Returns a generator that yields field content without doc_id associate"""
@@ -34,7 +35,7 @@ class OutputInterface(with_metaclass(ABCMeta)):
         """load an iterable of (id, value) pairs to the specified new or
            new or existing field within existing documents."""
         raise NotImplementedError
-
+    '''
     def save(self, filename, saved_data=None):
         """Persist this object to disk somehow.
 

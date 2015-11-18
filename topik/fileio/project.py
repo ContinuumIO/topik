@@ -54,6 +54,8 @@ class TopikProject(object):
         # None or a string name
         self.content_field = kwargs["content_field"] if "content_field" in kwargs else ""
         # Initially None, set to string value when tokenize or transform method called
+        self._selected_source_field = kwargs["_selected_content_field"] if "_selected_content_field" in kwargs else None
+        # Initially None, set to string value when tokenize or transform method called
         self._selected_tokenized_corpus = kwargs["_selected_tokenized_corpus"] if "_selected_tokenized_corpus" in kwargs else None
         # Initially None, set to string value when vectorize method called
         self._selected_vectorized_corpus = kwargs["_selected_vectorized_corpus"] if "_selected_vectorized_corpus" in kwargs else None

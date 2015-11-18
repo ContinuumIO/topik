@@ -8,7 +8,7 @@ import elasticsearch
 from topik.fileio import TopikProject
 from topik.fileio.tests import test_data_path
 
-SAVE_FILENAME = "test_project.topikproject"
+SAVE_FILENAME = "test_project"
 
 sample_tokenized_doc = (2318580746137828354,
  [u'nano', u'sized', u'tio', u'particles', u'applications', u'including',
@@ -28,7 +28,7 @@ sample_tokenized_doc = (2318580746137828354,
 
 test_data_path = os.path.join(test_data_path, "test_data_json_stream.json")
 
-class BaseOutputTest(object):
+class ProjectTest(object):
     def test_context_manager(self):
         [os.remove(f) for f in glob.glob("context_output*")]
         with TopikProject("context_output", self.output_type, self.output_args) as project:
@@ -49,7 +49,6 @@ class BaseOutputTest(object):
         [os.remove(f) for f in glob.glob("context_output*")]
 
     def test_read_input(self):
-        print(list(self.project.get_filtered_corpus_iterator()))
         assert(len(list(self.project.get_filtered_corpus_iterator())) == 100)
 
     def test_get_filtered_corpus_iterator(self):
@@ -120,15 +119,16 @@ def test_modeled_corpus(self):
 '''
 
 
-class TestInMemoryOutput(unittest.TestCase, BaseOutputTest):
+class TestInMemoryOutput(unittest.TestCase, ProjectTest):
     def setUp(self):
         self.output_type = "InMemoryOutput"
         self.output_args = {}
-        self.project = TopikProject("test_project", output_type=self.output_type,
+        self.project = TopikProject("test_project",
+                                    output_type=self.output_type,
                                     output_args=self.output_args)
         self.project.read_input(test_data_path, content_field="abstract")
 
-class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
+class TestElasticSearchOutput(unittest.TestCase, ProjectTest):
     INDEX = "TEST_INDEX"
     def setUp(self):
         self.output_type = "ElasticSearchOutput"
