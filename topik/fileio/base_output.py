@@ -40,7 +40,7 @@ class OutputInterface(with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def get_filtered_data(self, filter=""):
+    def get_filtered_data(self, field_to_get, filter=""):
         raise NotImplementedError
 
     def close(self):

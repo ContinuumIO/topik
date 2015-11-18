@@ -44,18 +44,18 @@ class InMemoryOutput(OutputInterface):
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
     def get_date_filtered_data(self, field_to_get, start, end, filter_field="year"):
-        return self.get_filtered_data(field_to_get, filter_field,
-                                      "{}<=int({})<={}".format(start, "{}", end))
+        return self.get_filtered_data(field_to_get,
+                                      "{}<=int({}['_source'']['{}'])<={}".format(start, "{}",
+                                                                                 filter_field, end))
 
-    def get_filtered_data(self, field_to_get, filter_field=None, filter=""):
+    def get_filtered_data(self, field_to_get, filter=""):
         if not filter:
             for doc_id, doc in self.corpus.items():
                 yield doc_id, doc["_source"][field_to_get]
         else:
             for doc_id, doc in self.corpus.items():
-                if eval(filter.format(doc["_source"][filter_field])):
+                if eval(filter.format(doc)):
                     yield doc_id, doc["_source"][field_to_get]
-            #raise NotImplementedError
 
     def save(self, filename):
         saved_data = {"iterable": self.corpus,

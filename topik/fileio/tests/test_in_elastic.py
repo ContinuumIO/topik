@@ -12,7 +12,7 @@ def test_elastic_import():
                    'index': INDEX,
                    'content_field': 'abstract'}
     # import data from file into known elastic server
-    project = TopikProject(output_type='ElasticSearchOutput',
+    project = TopikProject("test_project", output_type='ElasticSearchOutput',
                            output_args=output_args)
 
     project.read_input('{}/test_data_json_stream.json'.format(

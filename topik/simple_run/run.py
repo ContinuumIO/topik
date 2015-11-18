@@ -5,9 +5,9 @@ import os
 
 import numpy as np
 
-from topik.fileio.readers import read_input
+from topik.fileio import read_input
 import topik.models
-from topik.visualizers.viz import plot_lda_vis, Termite
+import topik.visualizers
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -66,10 +66,10 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         os.mkdir(dir_path)
 
     if termite_plot:
-        termite = Termite(model.termite_data(n_topics), "Termite Plot")
+        termite = topik.visualizers["termite"](model.termite_data(n_topics), "Termite Plot")
         termite.plot(os.path.join(dir_path, 'termite.html'))
 
     if ldavis:
-        plot_lda_vis(model.to_py_lda_vis())
+        topik.visualizers["lda_vis"](model.to_py_lda_vis())
 
 
