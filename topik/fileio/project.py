@@ -91,10 +91,12 @@ class TopikProject(object):
                                          content_field=content_field)
         self.content_field = content_field
 
-    def get_filtered_corpus_iterator(self, filter_expression=None):
+    def get_filtered_corpus_iterator(self, field=None, filter_expression=None):
+        if field is None:
+            field = self.content_field
         if filter_expression is None:
             filter_expression = self.corpus_filter
-        return self.output.get_filtered_data(filter_expression)
+        return self.output.get_filtered_data(field, filter_expression)
 
     def tokenize(self, method="simple", **kwargs):
         # tokenize, and store the results on this object somehow

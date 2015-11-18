@@ -67,11 +67,9 @@ class InMemoryOutput(OutputInterface):
     def get_filtered_data(self, field=None, filter=""):
         if not field:
             field = self.content_field
-        if not filter:
-            for doc_id, doc in self.corpus.items():
+        for doc_id, doc in self.corpus.items():
+            if not filter or eval(filter.format(doc)):
                 yield doc_id, doc["_source"][field]
-        else:
-            raise NotImplementedError
 
     def save(self, filename):
         saved_data = {"iterable": self.corpus,

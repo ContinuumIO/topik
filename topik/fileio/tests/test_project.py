@@ -1,6 +1,9 @@
 import glob
 import os
+import time
 import unittest
+
+import elasticsearch
 
 from topik.fileio import TopikProject
 from topik.fileio.tests import test_data_path
@@ -51,16 +54,17 @@ class BaseOutputTest(object):
 
     def test_get_filtered_corpus_iterator(self):
         doc_list = list(self.project.get_filtered_corpus_iterator())
-        print(doc_list)
         assert(type(doc_list[0]) == type(('123', 'text')))
         assert(len(doc_list) == 100)
 
     def test_filter_by_year(self):
-        raise NotImplementedError
+        results = list(self.project.get_filtered_corpus_iterator(field="abstract",
+                                                                 filter_expression="1970<int({}['_source']['year'])<2000"))
+        assert(len(results) == 29)
 
     def test_tokenize(self):
         self.project.tokenize('simple')
-        assert(sample_tokenized_doc in self.project.output.tokenized_corpora.values()[0])
+        assert(sample_tokenized_doc in self.project.tokenized_corpora)
 
     def test_vectorize(self):
         self.project.tokenize()
@@ -124,15 +128,21 @@ class TestInMemoryOutput(unittest.TestCase, BaseOutputTest):
                                     output_args=self.output_args)
         self.project.read_input(test_data_path, content_field="abstract")
 
-# class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
-#     INDEX = "TEST_INDEX"
-#     def setUp(self):
-#         self.output_type = "ElasticSearchOutput"
-#         self.output_args={'source': 'localhost',
-#                           'index': TestElasticSearchOutput.INDEX},
-#         self.project = TopikProject(output_type=self.output_type, output_args=self.output_args)
-#         self.project.read_input(test_data_path, content_field="abstract",
-#                                 synchronous_wait=30)
-#
-#     def tearDown(self):
+class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
+    INDEX = "TEST_INDEX"
+    def setUp(self):
+        self.output_type = "ElasticSearchOutput"
+        self.output_args = {'source': 'localhost',
+                            'index': TestElasticSearchOutput.INDEX,
+                            'content_field': "abstract"}
+        self.project = TopikProject("test_project", output_type=self.output_type,
+                                    output_args=self.output_args)
+        self.project.read_input(test_data_path, content_field="abstract",
+                                synchronous_wait=30)
 
+    def tearDown(self):
+        instance = elasticsearch.Elasticsearch("localhost")
+        instance.indices.delete(TestElasticSearchOutput.INDEX)
+        if instance.indices.exists("{}_year_alias_date".format(TestElasticSearchOutput.INDEX)):
+            instance.indices.delete("{}_year_alias_date".format(TestElasticSearchOutput.INDEX))
+        time.sleep(1)
