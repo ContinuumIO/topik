@@ -42,9 +42,9 @@ class ProjectTest(object):
         with TopikProject("context_output") as project:
             assert(len(list(project.get_filtered_corpus_iterator())) == 100)
             # tests both contents being stored and selection of content after save/load cycle
-            assert(sample_tokenized_doc in project.tokenized_corpora)
-            assert(project.vectorized_corpora.global_term_count == 2434)
-            assert(len(project.vectorized_corpora) == 100)  # All documents processed
+            assert(sample_tokenized_doc in project.selected_tokenized_corpus)
+            assert(project.selected_vectorized_corpus.global_term_count == 2434)
+            assert(len(project.selected_vectorized_corpus) == 100)  # All documents processed
 
         [os.remove(f) for f in glob.glob("context_output*")]
 
@@ -63,13 +63,13 @@ class ProjectTest(object):
 
     def test_tokenize(self):
         self.project.tokenize('simple')
-        assert(sample_tokenized_doc in self.project.tokenized_corpora)
+        assert(sample_tokenized_doc in self.project.selected_tokenized_corpus)
 
     def test_vectorize(self):
         self.project.tokenize()
         self.project.vectorize()
-        assert(self.project.vectorized_corpora.global_term_count == 2434)
-        assert(len(self.project.vectorized_corpora) == 100)  # All documents processed
+        assert(self.project.selected_vectorized_corpus.global_term_count == 2434)
+        assert(len(self.project.selected_vectorized_corpus) == 100)  # All documents processed
 
     def test_model(self):
         self.project.tokenize()
@@ -78,8 +78,8 @@ class ProjectTest(object):
         # TODO: these are not real tests.  Do we have numerical properties that are more meaningful?
         #   - Do weights for a given doc in doc-topic matrix sum to 1?
         #   - Do weights for all terms in a given topic sum to 1?
-        assert(self.project.modeled_corpora.doc_topic_matrix)
-        assert(self.project.modeled_corpora.topic_term_matrix)
+        assert(self.project.selected_modeled_corpus.doc_topic_matrix)
+        assert(self.project.selected_modeled_corpus.topic_term_matrix)
 
 
 '''
