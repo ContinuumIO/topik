@@ -5,15 +5,8 @@ from .base_output import OutputInterface
 
 class GreedyDict(dict):
     def __setitem__(self, key, value):
-        print('memorysetitem')
-        print(key)
-        print(type(value))
-        #print(value)
         if isinstance(value, types.GeneratorType):
             value = [val for val in value]
-            #for val in value:
-            #    if type(val) == type(('a',3)):
-            #        print('mem '+str(key)+' | '+str(type(val[1]))+' | '+' | '+str(val))
         super(GreedyDict, self).__setitem__(key, value)
 
 @register_output
