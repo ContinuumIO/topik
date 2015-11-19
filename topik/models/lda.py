@@ -5,6 +5,7 @@ import pandas as pd
 import gensim
 from .base_model_output import TopicModelResultBase
 from ._registry import register
+from .tests.test_data import test_vectorized_output
 
 
 @register
@@ -33,9 +34,7 @@ class LDA(TopicModelResultBase):
 
     Examples
     --------
-    >>> raw_data = read_input('{}/test_data_json_stream.json'.format(test_data_path), "abstract")
-    >>> processed_data = raw_data.tokenize()  # preprocess returns a TokenizedCorpus
-    >>> model = LDA(processed_data, ntopics=3)
+    >>> model = LDA(test_vectorized_output, ntopics=3)
 
     """
     def __init__(self, corpus_input=None, ntopics=10, load_filename=None, binary_filename=None, **kwargs):

@@ -27,10 +27,11 @@ class VectorizerOutput(object):
         self.id_term_map = {id: term for id, term in enumerate(self._global_terms)}
         self.term_id_map = {term: id for id, term in enumerate(self._global_terms)}
         # Needs to be here because term map may be used in vectorization
-        if not vectors and vectorizer_func:
-            self._vectors = vectorizer_func(iter2, self)
-        else:
-            raise ValueError("Need to provide either vectors or vectorizer_func")
+        if not vectors:
+            if vectorizer_func:
+                self._vectors = vectorizer_func(iter2, self)
+            else:
+                raise ValueError("Need to provide either vectors or vectorizer_func")
 
     def __iter__(self):
         for id, vector in self._vectors.items():

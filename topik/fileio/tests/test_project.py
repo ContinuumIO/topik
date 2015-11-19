@@ -78,8 +78,8 @@ class ProjectTest(object):
         # TODO: these are not real tests.  Do we have numerical properties that are more meaningful?
         #   - Do weights for a given doc in doc-topic matrix sum to 1?
         #   - Do weights for all terms in a given topic sum to 1?
-        assert(self.project.modeled_corpora.doc_topic_dists)
-        assert(self.project.modeled_corpora.term_topic_matrix)
+        assert(self.project.modeled_corpora.doc_topic_matrix)
+        assert(self.project.modeled_corpora.topic_term_matrix)
 
 
 '''

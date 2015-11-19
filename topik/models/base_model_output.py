@@ -2,16 +2,6 @@ import json
 import numpy as np
 
 
-def get_top_words(doc_topic_matrix, vectorized_output, topn):
-    top_words = []
-    # each "topic" is a row of the dz matrix
-    for topic in doc_topic_matrix:
-        word_ids = np.argpartition(topic, -topn)[-topn:]
-        word_ids = reversed(word_ids[np.argsort(topic[word_ids])])
-        top_words.append([(topic[word_id], vectorized_output.id_term_map[word_id]) for word_id in word_ids])
-    return top_words
-
-
 class TopicModelResultBase(object):
     """Abstract base class for topic models.
 
@@ -27,8 +17,9 @@ class TopicModelResultBase(object):
         self._doc_topic_matrix = doc_topic_matrix
         self._topic_term_matrix = topic_term_matrix
 
-    def term_topic_matrix(self):
-        self._corpus.term_topic_matrix
+    @property
+    def topic_term_matrix(self):
+        return self._topic_term_matrix
 
     def _get_term_data(self):
         vocab = self._get_vocab()
@@ -44,6 +35,7 @@ class TopicModelResultBase(object):
         doc_data_df['doc_length'] = self._get_doc_lengths()
         return doc_data_df
 
-    def doc_topic_dists(self):
+    @property
+    def doc_topic_matrix(self):
         return self._doc_topic_matrix
 
