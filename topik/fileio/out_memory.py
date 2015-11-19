@@ -52,7 +52,7 @@ class InMemoryOutput(OutputInterface):
     # TODO: validate input data to ensure that it has valid year data
     def get_date_filtered_data(self, field_to_get, start, end, filter_field="year"):
         return self.get_filtered_data(field_to_get,
-                                      "{}<=int({}['_source'']['{}'])<={}".format(start, "{}",
+                                      "{}<=int({}['_source']['{}'])<={}".format(start, "{}",
                                                                                  filter_field, end))
 
     def get_filtered_data(self, field_to_get, filter=""):

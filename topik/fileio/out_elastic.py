@@ -1,10 +1,12 @@
 import logging
+
 import time
 
 from elasticsearch import Elasticsearch, helpers
 
 from ._registry import register_output
 from .base_output import OutputInterface
+from topik.vectorizers.vectorizer_output import VectorizerOutput
 
 class BaseElasticCorpus(dict):
     def __init__(self, instance, index, corpus_type, query=None,
@@ -52,12 +54,21 @@ class VectorizedElasticCorpus(BaseElasticCorpus):
         raise NotImplementedError
         #for prop in value.properties
         #   upload that
-        #super()
+        super(VectorizedElasticCorpus, self).__setitem__(key, value)
+
     def __getitem__(self, item):
-        raise NotImplementedError
-    @property
-    def global_term_count(self):
-        raise NotImplementedError
+        # TODO: each of these should be retrieved from a query.  Populate the VectorizerOutput object
+        # and return it.  These things can be iterators instead of dicts; VectorizerOutput should
+        # not care.
+        global_terms = None  # TODO: this is the set of unique terms across all docs
+        # 15
+        document_term_count = None  # TODO: this is the count of terms associated with each document
+        # {"doc1": 3, "doc2": 5}
+        vectors = None  # TODO: this is the vectorized representation of each document
+        #  {"doc1": {1: 3, 2: 1}  # word id is key, word count is value (for bag of words model)
+        return VectorizerOutput(global_terms=global_terms,
+                                document_term_counts=document_term_count,
+                                vectors=vectors)
 
 class ModeledElasticCorpus(BaseElasticCorpus):
     def __setitem__(self, key, value):
@@ -82,9 +93,9 @@ class ElasticSearchOutput(OutputInterface):
         self.tokenized_corpora = tokenized_corpora if tokenized_corpora else \
             BaseElasticCorpus(self.instance, self.index, 'tokenized', self.query)
         self.vectorized_corpora = vectorized_corpora if vectorized_corpora else \
-            BaseElasticCorpus(self.instance, self.index, 'vectorized', self.query)
+            VectorizedElasticCorpus(self.instance, self.index, 'vectorized', self.query)
         self.modeled_corpora = modeled_corpora if modeled_corpora else \
-            BaseElasticCorpus(self.instance, self.index, "models", self.query)
+            ModeledElasticCorpus(self.instance, self.index, "models", self.query)
 
 
     @property
