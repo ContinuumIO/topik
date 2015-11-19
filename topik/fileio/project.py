@@ -127,6 +127,8 @@ class TopikProject(object):
         tokenizer_iterators = itertools.tee(self.selected_tokenized_corpus)
         vectorized_corpus = vectorizers.vectorize(tokenizer_iterators[0],
                                                 method=method, **kwargs)
+        print(str(self._output_type)+str(type(vectorized_corpus)))
+        print(vectorized_corpus.global_term_count)
         vectorize_parameter_string = self.corpus_filter + self._selected_tokenized_corpus_id + "_".join([method, _get_parameters_string(**kwargs)])
         # store this internally
         self.output.vectorized_corpora[vectorize_parameter_string] = vectorized_corpus

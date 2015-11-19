@@ -9,8 +9,8 @@ def _count_document_occurences(doc_counts, total_words):
             for word_id in range(total_words)}
 
 
-def _calculate_tfidf(tokenized_corpora, vectorizer_output):
-    tokens = list(tokenized_corpora)
+def _calculate_tfidf(tokenized_corpus, vectorizer_output):
+    tokens = list(tokenized_corpus)
     doc_counts = _count_words_in_docs(tokens, vectorizer_output)
     document_occurrences = _count_document_occurences(doc_counts, vectorizer_output.global_term_count)
     idf = {word_id: log(len(tokens) / (document_occurrences[word_id]))
@@ -25,5 +25,5 @@ def _calculate_tfidf(tokenized_corpora, vectorizer_output):
 
 
 @register
-def tfidf(tokenized_corpora):
-    return VectorizerOutput(tokenized_corpora, _calculate_tfidf)
+def tfidf(tokenized_corpus):
+    return VectorizerOutput(tokenized_corpus, _calculate_tfidf)

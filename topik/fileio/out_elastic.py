@@ -6,7 +6,7 @@ from elasticsearch import Elasticsearch, helpers
 from ._registry import register_output
 from .base_output import OutputInterface
 
-class ElasticCorpus(dict):
+class BaseElasticCorpus(dict):
     def __init__(self, instance, index, corpus_type, query=None,
                  batch_size=1000):
         self.instance = instance
@@ -20,7 +20,11 @@ class ElasticCorpus(dict):
         """load an iterable of (id, value) pairs to the specified new or
            new or existing field within existing documents."""
         batch = []
+        print('elasticsetitem')
+        print(key)
+        print(type(value))
         for doc_id, val in value:
+            #print(str(key)+' | '+str(type(val))+' | '+self.corpus_type+' | '+str(val))
             action = {'_op_type': 'update',
                       '_index': self.index,
                       '_type': self.corpus_type,
@@ -43,6 +47,22 @@ class ElasticCorpus(dict):
         for result in results:
             yield result["_id"], result['_source'][field]
 
+class VectorizedElasticCorpus(BaseElasticCorpus):
+    def __setitem__(self, key, value):
+        raise NotImplementedError
+        #for prop in value.properties
+        #   upload that
+        #super()
+    def __getitem__(self, item):
+        raise NotImplementedError
+    @property
+    def global_term_count(self):
+        raise NotImplementedError
+
+class ModeledElasticCorpus(BaseElasticCorpus):
+    def __setitem__(self, key, value):
+        raise NotImplementedError
+
 @register_output
 class ElasticSearchOutput(OutputInterface):
     def __init__(self, source, index, hash_field=None, doc_type='continuum',
@@ -60,11 +80,11 @@ class ElasticSearchOutput(OutputInterface):
         self.filter_expression = filter_expression
 
         self.tokenized_corpora = tokenized_corpora if tokenized_corpora else \
-            ElasticCorpus(self.instance, self.index, 'tokenized', self.query)
+            BaseElasticCorpus(self.instance, self.index, 'tokenized', self.query)
         self.vectorized_corpora = vectorized_corpora if vectorized_corpora else \
-            ElasticCorpus(self.instance, self.index, 'tokenized', self.query)
+            BaseElasticCorpus(self.instance, self.index, 'vectorized', self.query)
         self.modeled_corpora = modeled_corpora if modeled_corpora else \
-            ElasticCorpus(self.instance, self.index, "models", self.query)
+            BaseElasticCorpus(self.instance, self.index, "models", self.query)
 
 
     @property
