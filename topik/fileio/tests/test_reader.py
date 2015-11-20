@@ -18,13 +18,13 @@ def test_read_input():
     # document folder
     documents = read_input(
         '{}/test_data_folder_files'.format(test_data_path),
-        content_field="abstract")
+        folder_content_field="abstract")
     nt.assert_true(next(documents)['abstract'] == solution_document_folder)
 
     # document folder gz
     documents = read_input(
         '{}/test_data_folder_files_gz'.format(test_data_path),
-        content_field="abstract")
+        folder_content_field="abstract")
     nt.assert_true(next(documents)['abstract'] == solution_document_folder_gz)
 
     # TODO: add elastic and solr
