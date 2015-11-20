@@ -12,11 +12,11 @@ def es_setitem(key, value, doc_type, instance, index, batch_size=1000):
     """load an iterable of (id, value) pairs to the specified new or
            new or existing field within existing documents."""
     batch = []
-    for doc_id, val in value:
+    for id, val in value:
         action = {'_op_type': 'update',
                   '_index': index,
                   '_type': doc_type,
-                  '_id': doc_id,
+                  '_id': id,
                   'doc': {key: val},
                   'doc_as_upsert': "true",
                   }
@@ -85,6 +85,30 @@ class VectorizedElasticCorpora(BaseElasticCorpora):
 
 class ModeledElasticCorpora(BaseElasticCorpora):
     def __setitem__(self, key, value):
+        print("SETTING_MODEL")
+        print("vocab")
+        print(value.vocab)
+        print(value.vocab.items())
+        es_setitem(key,value.vocab.items(),"vocab",self.instance,self.index)
+        print("term_frequency")
+        print(value.term_frequency)
+        print(value.term_frequency.items())
+        es_setitem(key,value.term_frequency.items(),"topic_term_dist",self.instance,self.index)
+        print("ttm")
+        print(value.topic_term_matrix)
+        print(value.topic_term_matrix.items())
+        es_setitem(key,value.topic_term_matrix.items(),"topic_term_dist",self.instance,self.index)
+        print("doc_lengths")
+        print(value.doc_lengths)
+        print(value.doc_lengths.items())
+        es_setitem(key,value.doc_lengths.items(),"doc_length",self.instance,self.index)
+        print("dtm")
+        print(value.doc_topic_matrix)
+        print(value.doc_topic_matrix.items())
+        es_setitem(key,value.doc_topic_matrix,"doc_topic_dist",self.instance,self.index)
+
+        raise NotImplementedError
+    def __getitem__(self, item):
         raise NotImplementedError
 
 @register_output

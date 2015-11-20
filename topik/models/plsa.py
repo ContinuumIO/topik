@@ -6,8 +6,9 @@ import math
 import random
 
 import numpy as np
+import pandas as pd
 
-from .base_model_output import TopicModelResultBase
+from .base_model_output import ModelOutput
 from ._registry import register
 
 
@@ -76,9 +77,32 @@ def _cal_likelihood(vectorized_corpus, p_dw):
             likelihood += word_ct*math.log(p_dw[d][word_id])
     return likelihood
 
+def _get_topic_term_matrix(zw, ntopics, id_term_map):
+    """
+    term_topic_df = pd.DataFrame(zw,
+                            index=['topic'+str(t)+'dist' for t in range(ntopics)]).T
+    term_topic_df.index.name = 'term_id'
+    return term_topic_df
 
-@register
-def PLSA(vectorized_corpus, ntopics=2, max_iter=100):
+    print("get PLSA TTD:")
+    for row in zw:
+        print(row)
+    """
+    labeled_zw = {"topic"+str(topicno): {term_id: zw[topicno][term_id] for term_id in id_term_map}
+                    for topicno in range(ntopics)}
+    return labeled_zw
+
+def _get_doc_topic_matrix(dz, ntopics, vectorized_corpus):
+    '''
+    for i, (doc_id, vector) in enumerate(vectorized_corpus):
+        print(doc_id,dz[i])
+    '''
+    labeled_dz = {doc_id: {"topic"+str(topicno): dz[i][topicno] for topicno in range(ntopics)}
+                  for i, (doc_id, vector) in enumerate(vectorized_corpus)}
+    return labeled_dz
+
+
+def _PLSA(vectorized_corpus, ntopics=3, max_iter=100):
     cur = 0
     topic_array = range(ntopics)
     # topic-word matrix
@@ -99,7 +123,14 @@ def PLSA(vectorized_corpus, ntopics=2, max_iter=100):
         if cur != 0 and abs((likelihood-cur)/cur) < 1e-8:
             break
         cur = likelihood
+    return _get_topic_term_matrix(zw, ntopics, vectorized_corpus.id_term_map), \
+            _get_doc_topic_matrix(dz, ntopics, vectorized_corpus)
 
-    return TopicModelResultBase(doc_topic_matrix=dz,
-                                topic_term_matrix=zw)
+@register
+def plsa(vectorized_corpus, **kwargs):
+    return ModelOutput(vectorized_corpus, _PLSA, **kwargs)
+
+        #doc_topic_matrix=dz,
+        #                        topic_term_matrix=zw,
+        #                        )
 

@@ -16,12 +16,12 @@ class VectorizerOutput(object):
                  document_term_counts=None, vectors=None):
         if tokenized_corpus and vectorizer_func and not vectors:
             iter1, iter2 = itertools.tee(tokenized_corpus)
-            self.id_term_map, self._document_term_counts = _accumulate_terms(iter1)
-            self.term_id_map = {term: term_id for term_id, term in self.id_term_map.items()}
+            self._id_term_map, self._document_term_counts = _accumulate_terms(iter1)
+            self.term_id_map = {term: term_id for term_id, term in self._id_term_map.items()}
             self._vectors = vectorizer_func(iter2, self)
         elif id_term_map and document_term_counts and vectors:
-            self.id_term_map = id_term_map
-            self.term_id_map = {term: term_id for term_id, term in self.id_term_map.items()}
+            self._id_term_map = id_term_map
+            self._term_id_map = {term: term_id for term_id, term in self._id_term_map.items()}
             self._global_terms = set(id_term_map.values())
             self._document_term_counts = document_term_counts
             self._vectors = vectors
@@ -36,6 +36,10 @@ class VectorizerOutput(object):
 
     def __len__(self):
         return len(self._vectors)
+
+    @property
+    def id_term_map(self):
+        return self._id_term_map
 
     @property
     def global_term_count(self):

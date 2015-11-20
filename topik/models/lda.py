@@ -3,13 +3,13 @@ from __future__ import absolute_import
 import pandas as pd
 
 import gensim
-from .base_model_output import TopicModelResultBase
+from .base_model_output import ModelOutput
 from ._registry import register
 from .tests.test_data import test_vectorized_output
 
 
 @register
-class LDA(TopicModelResultBase):
+def _LDA(vectorized_corpus, ntopics=3):
     """A high-level interface for an LDA (Latent Dirichlet Allocation) model.
 
 
@@ -34,7 +34,7 @@ class LDA(TopicModelResultBase):
 
     Examples
     --------
-    >>> model = LDA(test_vectorized_output, ntopics=3)
+    >>> model = _LDA(test_vectorized_output, ntopics=3)
 
     """
     def __init__(self, corpus_input=None, ntopics=10, load_filename=None, binary_filename=None, **kwargs):
@@ -57,7 +57,7 @@ class LDA(TopicModelResultBase):
     def save(self, filename):
         self._model.save(self.get_model_name_with_parameters())
         saved_data = {"load_filename": filename, "binary_filename": self.get_model_name_with_parameters()}
-        return super(LDA, self).save(filename, saved_data)
+        return super(_LDA, self).save(filename, saved_data)
 
     def get_top_words(self, topn):
         top_words = [self._model.show_topic(topicno, topn) for topicno in range(self._model.num_topics)]

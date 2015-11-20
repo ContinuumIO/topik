@@ -133,7 +133,7 @@ class TopikProject(object):
         # set _vectorizer_id internal handle to point to this data
         self._selected_vectorized_corpus_id = vectorize_parameter_string
 
-    def run_model(self, model_name="PLSA", **kwargs):
+    def run_model(self, model_name="plsa", **kwargs):
         modeled_corpus = models.run_model(self.selected_vectorized_corpus,
                                         model_name=model_name, **kwargs)
         model_id = "_".join([model_name, _get_parameters_string(**kwargs)])
