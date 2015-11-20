@@ -1,3 +1,5 @@
+import random
+
 import nose.tools as nt
 
 from topik.models import registered_models, PLSA
@@ -42,6 +44,7 @@ def test_cal_p_dw():
     raise NotImplementedError
 
 def test_train():
+    random.seed(42)
     model_output = PLSA(test_vectorized_output, ntopics=2)
     for doc in model_output.doc_topic_matrix:
         nt.assert_almost_equal(sum(doc), 1)

@@ -63,7 +63,12 @@ class ProjectTest(object):
 
     def test_tokenize(self):
         self.project.tokenize('simple')
-        assert(sample_tokenized_doc in self.project.selected_tokenized_corpus)
+        in_results = False
+        for id, doc in self.project.selected_tokenized_corpus:
+            if doc in sample_tokenized_doc:
+                in_results = True
+                break
+        assert(in_results)
 
     def test_vectorize(self):
         self.project.tokenize()

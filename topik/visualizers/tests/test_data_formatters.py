@@ -7,7 +7,8 @@ TOP_WORDS = 15
 # vectorizer output is what establishes numeric term ID to string term relationship
 words = ["a", "an", "the", "dog", "weee", "cat", "airplane", "car", "chair", "llama", "winamp",
          "supercomputing", "frank", "dave", "plastic", "fair", "boot", "latch"]
-vectorizer_output = VectorizerOutput(global_terms=set(words), document_term_counts={"dummy": True},
+vectorizer_output = VectorizerOutput(id_term_map={id: term for id, term in enumerate(words)},
+                                     document_term_counts={"dummy": True},
                                      vectors={"dummy": True})
 # randomly generated using _rand_mat function in PLSA model
 topic_term_matrix = [[0.052277337534546914, 0.1066431355086033, 0.018247175367870988, 0.09070086890894988,

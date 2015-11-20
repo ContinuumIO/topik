@@ -23,12 +23,6 @@ def termite_data(vectorized_output, topic_term_matrix, topn=15):
     --------
 
 
-    >> import random
-    >> import numpy
-    >> import os
-    >> import topik.models
-    >> random.seed(42)
-    >> numpy.random.seed(42)
     >> model = load_model(os.path.join(os.path.dirname(os.path.realpath("__file__")),
     >> model = load_model('{}/doctest.model'.format(test_data_path),
     ...                    model_name="lda_3_topics")

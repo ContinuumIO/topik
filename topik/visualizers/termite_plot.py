@@ -6,6 +6,8 @@ import bokeh.plotting as plt
 from bokeh.models.sources import ColumnDataSource
 
 from ._registry import register
+from .data_formatters import termite_data
+from topik.models.tests.test_data import test_vectorized_output, test_plsa_output
 
 
 @register
@@ -22,7 +24,8 @@ def termite(input_data, plot_title="Termite plot", output_file="termite.html"):
 
     Examples
     --------
-    >>> termite = termite("{}/termite.csv".format(test_data_path),
+    >>> plot_input = termite_data()
+    >>> termite = termite(termite_data,
     ...                   "My lda results")
 
     """

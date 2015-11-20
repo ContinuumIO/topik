@@ -152,7 +152,7 @@ class ElasticSearchOutput(OutputInterface):
 
     def convert_date_field_and_reindex(self, field):
         index = self.index
-        if self.instance.indices.get_field_mapping(field=field,
+        if self.instance.indices.get_field_mapping(fields=[field],
                                            index=index,
                                            doc_type=self.doc_type) != 'date':
             index = self.index+"_{}_alias_date".format(field)
