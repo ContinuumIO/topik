@@ -7,6 +7,7 @@ from elasticsearch import Elasticsearch, helpers
 from ._registry import register_output
 from .base_output import OutputInterface
 from topik.vectorizers.vectorizer_output import VectorizerOutput
+from topik.models.base_model_output import ModelOutput
 
 def es_setitem(key, value, doc_type, instance, index, batch_size=1000):
     """load an iterable of (id, value) pairs to the specified new or
@@ -89,11 +90,11 @@ class ModeledElasticCorpora(BaseElasticCorpora):
         print("vocab")
         print(value.vocab)
         print(value.vocab.items())
-        es_setitem(key,value.vocab.items(),"vocab",self.instance,self.index)
+        es_setitem(key,value.vocab.items(),"term",self.instance,self.index)
         print("term_frequency")
         print(value.term_frequency)
         print(value.term_frequency.items())
-        es_setitem(key,value.term_frequency.items(),"topic_term_dist",self.instance,self.index)
+        es_setitem(key,value.term_frequency.items(),"term_frequency",self.instance,self.index)
         print("ttm")
         print(value.topic_term_matrix)
         print(value.topic_term_matrix.items())
@@ -105,11 +106,34 @@ class ModeledElasticCorpora(BaseElasticCorpora):
         print("dtm")
         print(value.doc_topic_matrix)
         print(value.doc_topic_matrix.items())
-        es_setitem(key,value.doc_topic_matrix,"doc_topic_dist",self.instance,self.index)
+        es_setitem(key,value.doc_topic_matrix.items(),"doc_topic_dist",self.instance,self.index)
 
-        raise NotImplementedError
-    def __getitem__(self, item):
-        raise NotImplementedError
+    def __getitem__(self, key):
+        print("GETTING_MODEL")
+        vocab = {int(term_id): term for term_id, term in \
+                 es_getitem(key,"term",self.instance,self.index,self.query)}
+        print("vocab")
+        print(vocab)
+        term_frequency = {int(term_id): tf for term_id, tf in \
+                          es_getitem(key,"term_frequency",self.instance,self.index,self.query)}
+        print("term_frequency")
+        print(term_frequency)
+        topic_term_matrix = {topic_id: topic_term_dist for topic_id, topic_term_dist in \
+                             es_getitem(key,"topic_term_dist",self.instance,self.index,self.query)}
+        print("ttm")
+        print(topic_term_matrix)
+        doc_lengths = {topic_id: doc_length for topic_id, doc_length in \
+                       es_getitem(key,"doc_length",self.instance,self.index,self.query)}
+        print("doc_lengths")
+        print(doc_lengths)
+        doc_topic_matrix = {int(doc_id): doc_topic_dist for doc_id, doc_topic_dist in \
+                             es_getitem(key,"doc_topic_dist",self.instance,self.index,self.query)}
+        print("dtm")
+        print(doc_topic_matrix)
+        return ModelOutput(vocab=vocab, term_frequency=term_frequency,
+                           topic_term_matrix=topic_term_matrix,
+                           doc_lengths=doc_lengths,
+                           doc_topic_matrix=doc_topic_matrix)
 
 @register_output
 class ElasticSearchOutput(OutputInterface):
@@ -123,6 +147,7 @@ class ElasticSearchOutput(OutputInterface):
         self.index = index
         self.doc_type = doc_type
         self.query = query
+        self.hash_field = hash_field
         if iterable:
             self.import_from_iterable(iterable, hash_field)
         self.filter_expression = filter_expression
@@ -176,7 +201,7 @@ class ElasticSearchOutput(OutputInterface):
 
     def convert_date_field_and_reindex(self, field):
         index = self.index
-        if self.instance.indices.get_field_mapping(fields=[field],
+        if self.instance.indices.get_field_mapping(field=[field],
                                            index=index,
                                            doc_type=self.doc_type) != 'date':
             index = self.index+"_{}_alias_date".format(field)

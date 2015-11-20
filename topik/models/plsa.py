@@ -13,7 +13,7 @@ from ._registry import register
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
-                    level=logging.INFO)
+                    level=logging.WARNING)
 
 
 def _rand_mat(sizex, sizey):
@@ -48,10 +48,10 @@ def _e_step(vectorized_corpus, dw_z, topic_array, zw, dz, beta, p_dw):
     return dw_z
 
 
-def _m_step(vectorized_corpora, topic_array, zw, dw_z, dz):
-    iterators = itertools.tee(vectorized_corpora, len(topic_array)+1)
+def _m_step(vectorized_corpus, topic_array, zw, dw_z, dz):
+    iterators = itertools.tee(vectorized_corpus, len(topic_array)+1)
     for z in topic_array:
-        zw[z] = [0, ] * vectorized_corpora.global_term_count
+        zw[z] = [0, ] * vectorized_corpus.global_term_count
         for d, (doc_id, doc) in enumerate(iterators[z]):
             for word_id, word_ct in doc.items():
                 zw[z][word_id] += word_ct*dw_z[d][word_id][z]
@@ -59,6 +59,8 @@ def _m_step(vectorized_corpora, topic_array, zw, dw_z, dz):
     for topic in zw:
         total = sum(topic)
         for term in topic:
+            if total == 0.0:
+                print('pause here')
             term /= total
     for d, (doc_id, doc) in enumerate(iterators[-1]):
         dz[d] = [0, ] * len(topic_array)
@@ -66,7 +68,7 @@ def _m_step(vectorized_corpora, topic_array, zw, dw_z, dz):
             for word_id, word_ct in doc.items():
                 dz[d][z] += word_ct * dw_z[d][word_id][z]
         for z in topic_array:
-            dz[d][z] /= vectorized_corpora.document_term_counts[doc_id]
+            dz[d][z] /= vectorized_corpus.document_term_counts[doc_id]
     return zw, dz
 
 
@@ -88,8 +90,9 @@ def _get_topic_term_matrix(zw, ntopics, id_term_map):
     for row in zw:
         print(row)
     """
-    labeled_zw = {"topic"+str(topicno): {term_id: zw[topicno][term_id] for term_id in id_term_map}
-                    for topicno in range(ntopics)}
+    # labeled_zw = {"topic"+str(topicno): {term_id: zw[topicno][term_id] for term_id in id_term_map}
+    #                 for topicno in range(ntopics)}
+    labeled_zw = {"topic"+str(topicno): zw[topicno] for topicno in range(ntopics)}
     return labeled_zw
 
 def _get_doc_topic_matrix(dz, ntopics, vectorized_corpus):
@@ -97,8 +100,9 @@ def _get_doc_topic_matrix(dz, ntopics, vectorized_corpus):
     for i, (doc_id, vector) in enumerate(vectorized_corpus):
         print(doc_id,dz[i])
     '''
-    labeled_dz = {doc_id: {"topic"+str(topicno): dz[i][topicno] for topicno in range(ntopics)}
-                  for i, (doc_id, vector) in enumerate(vectorized_corpus)}
+    # labeled_dz = {doc_id: {"topic"+str(topicno): dz[i][topicno] for topicno in range(ntopics)}
+    #               for i, (doc_id, vector) in enumerate(vectorized_corpus)}
+    labeled_dz = {doc_id: dz[i] for i, (doc_id, vector) in enumerate(vectorized_corpus)}
     return labeled_dz
 
 
@@ -114,12 +118,12 @@ def _PLSA(vectorized_corpus, ntopics=3, max_iter=100):
     beta = 0.8
     for i in range(max_iter):
         iter1, iter2, iter3 = itertools.tee(vectorized_corpus, 3)
-        logging.info('%d iter' % i)
+        #logging.info('%d iter' % i)
         p_dw = _cal_p_dw(iter1, topic_array, zw, dz, beta, p_dw)
         dw_z = _e_step(iter2, dw_z, topic_array, zw, dz, beta, p_dw)
         zw, dz = _m_step(vectorized_corpus, topic_array, zw, dw_z, dz)
         likelihood = _cal_likelihood(iter3, p_dw)
-        logging.info('likelihood %f ' % likelihood)
+        #logging.info('likelihood %f ' % likelihood)
         if cur != 0 and abs((likelihood-cur)/cur) < 1e-8:
             break
         cur = likelihood
@@ -130,7 +134,4 @@ def _PLSA(vectorized_corpus, ntopics=3, max_iter=100):
 def plsa(vectorized_corpus, **kwargs):
     return ModelOutput(vectorized_corpus, _PLSA, **kwargs)
 
-        #doc_topic_matrix=dz,
-        #                        topic_term_matrix=zw,
-        #                        )
 

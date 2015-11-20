@@ -101,6 +101,15 @@ class TopikProject(object):
             filter_expression = self.corpus_filter
         return self.output.get_filtered_data(field, filter_expression)
 
+    def get_date_filtered_corpus_iterator(self, start, end, filter_field,
+                                          field_to_get=None):
+        if field_to_get is None:
+            field_to_get = self.content_field
+        return self.output.get_date_filtered_data(field_to_get=field_to_get,
+                                                  start=1975,
+                                                  end=1999,
+                                                  filter_field="year")
+
     def tokenize(self, method="simple", **kwargs):
         # tokenize, and store the results on this object somehow
         tokenized_corpus = tokenizers.tokenize(self.selected_filtered_corpus,

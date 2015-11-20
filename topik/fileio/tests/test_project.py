@@ -42,7 +42,13 @@ class ProjectTest(object):
         with TopikProject("context_output") as project:
             assert(len(list(project.get_filtered_corpus_iterator())) == 100)
             # tests both contents being stored and selection of content after save/load cycle
-            assert(sample_tokenized_doc in project.selected_tokenized_corpus)
+            # print('sample_tokenized_doc')
+            # print(sample_tokenized_doc)
+            # print('project.seleced_tokenized_corpus')
+            # print(project.selected_tokenized_corpus[0])
+            # print(sample_tokenized_doc == project.selected_tokenized_corpus[0])
+            # print(project.selected_tokenized_corpus)
+            assert(sample_tokenized_doc in list(iter(project.selected_tokenized_corpus)))
             assert(project.selected_vectorized_corpus.global_term_count == 2434)
             assert(len(project.selected_vectorized_corpus) == 100)  # All documents processed
 
@@ -56,10 +62,13 @@ class ProjectTest(object):
         assert(type(doc_list[0]) == type(('123', 'text')))
         assert(len(doc_list) == 100)
 
-    def test_filter_by_year(self):
-        results = list(self.project.get_filtered_corpus_iterator(field="abstract",
-                                                                 filter_expression="1970<int({}['_source']['year'])<2000"))
-        assert(len(results) == 29)
+    def test_get_date_filtered_corpus_iterator(self):
+        results = list(self.project.get_date_filtered_corpus_iterator(
+            field_to_get="abstract", start=1975, end=1999, filter_field='year'))
+            #filter_expression="1970<int({}['_source']['year'])<2000"))
+        print('yearfilterlen:')
+        print(len(results))
+        assert(len(results) == 25)
 
     def test_tokenize(self):
         self.project.tokenize('simple')

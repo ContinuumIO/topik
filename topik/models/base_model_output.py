@@ -5,18 +5,17 @@ import numpy as np
 import pandas as pd
 
 def _get_vocab(vectorized_corpus):
-    return pd.Series(vectorized_corpus.id_term_map)
+    return vectorized_corpus.id_term_map
 
 def _get_term_frequency(vectorized_corpus):
     tf = Counter()
     print("TF:")
-    print(list(iter(vectorized_corpus)))
     [tf.update(dict(doc)) for doc_id, doc in vectorized_corpus]
     print(dict(tf))
     return dict(tf)
 
 def _get_doc_lengths(vectorized_corpus):
-    return pd.Series(vectorized_corpus.document_term_counts)
+    return vectorized_corpus.document_term_counts
 
 class ModelOutput(object):
     """Abstract base class for topic models.
@@ -30,22 +29,29 @@ class ModelOutput(object):
     _topic_term_matrix : mapping of terms to each topic
     """
     def __init__(self, vectorized_corpus=None, model_func=None,
-                 term_data=None, doc_data=None):
+                 vocab=None, term_frequency=None, topic_term_matrix=None,
+                 doc_lengths=None, doc_topic_matrix=None, **kwargs):
                  #doc_topic_matrix, topic_term_matrix):
         #self._doc_topic_matrix = doc_topic_matrix
         #self._topic_term_matrix = topic_term_matrix
         if vectorized_corpus and model_func:
-            self._vocab = vectorized_corpus.id_term_map
+            self._vocab = _get_vocab(vectorized_corpus)
             self._term_frequency = _get_term_frequency(vectorized_corpus)
-            self._topic_term_matrix, self._doc_topic_matrix = model_func(vectorized_corpus)
+            self._topic_term_matrix, self._doc_topic_matrix = model_func(
+                                                    vectorized_corpus, **kwargs)
 
             #self._term_data = self._get_term_data()
 
             self._doc_lengths = _get_doc_lengths(vectorized_corpus)
 
             #self._doc_data = self._get_doc_data()
-        elif term_data and doc_data:
-            pass
+        elif (vocab and term_frequency and topic_term_matrix and doc_lengths and
+                     doc_topic_matrix):
+            self._vocab = vocab
+            self._term_frequency = term_frequency
+            self._topic_term_matrix = topic_term_matrix
+            self._doc_lengths = doc_lengths
+            self._doc_topic_matrix = doc_topic_matrix
         else:
             raise ValueError("Must provide either vectorized corpus and model func, "
                              "or term data and doc data.")
