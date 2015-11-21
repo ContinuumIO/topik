@@ -56,12 +56,12 @@ def _cal_likelihood(words_in_docs, word_cts_in_docs, p_dw):
 
 
 def _get_topic_term_matrix(zw, ntopics, id_term_map):
-    labeled_zw = {"topic"+str(topicno): zw[topicno] for topicno in range(ntopics)}
+    labeled_zw = {"topic"+str(topicno): zw[topicno].tolist() for topicno in range(ntopics)}
     return labeled_zw
 
 
 def _get_doc_topic_matrix(dz, ntopics, vectorized_corpus):
-    labeled_dz = {doc_id: dz[i] for i, (doc_id, vector) in enumerate(vectorized_corpus.get_vectors())}
+    labeled_dz = {doc_id: dz[i].tolist() for i, (doc_id, vector) in enumerate(vectorized_corpus.get_vectors())}
     return labeled_dz
 
 

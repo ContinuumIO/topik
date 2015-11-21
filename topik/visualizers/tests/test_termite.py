@@ -14,8 +14,8 @@ def test_top_words():
     nt.assert_equal(len(top_words), 2)  # each entry is a topic
     nt.assert_equal(len(top_words[1]), TOP_WORDS)
     # ensure that word list is sorted prooperly, with descending weights
-    nt.assert_less(top_words[0][1][0], top_words[0][0][0])
-    nt.assert_less(top_words[0][-1][0], top_words[0][-2][0])
+    nt.assert_less_equal(top_words[0][1][0], top_words[0][0][0])
+    nt.assert_less_equal(top_words[0][-1][0], top_words[0][-2][0])
 
 
 def test_termite_pandas_output():
@@ -25,8 +25,7 @@ def test_termite_pandas_output():
     nt.assert_equal(len(data), TOP_WORDS * 2)
 
 def test_termite():
-    data = _termite_data(test_model_output, topn=TOP_WORDS)
-    termite_plot = termite(data, "My lda results")
+    termite_plot = termite(test_model_output, "My lda results", topn=TOP_WORDS)
     termite_plot.save(os.path.join(module_path, 'termite_plot.html'))
     nt.assert_true(os.path.isfile(os.path.join(module_path, 'termite_plot.html')))
     os.remove(os.path.join(module_path, 'termite_plot.html'))

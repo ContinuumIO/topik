@@ -45,6 +45,11 @@ class ProjectTest(object):
             assert(sample_tokenized_doc in list(iter(project.selected_tokenized_corpus)))
             assert(project.selected_vectorized_corpus.global_term_count == 2434)
             assert(len(project.selected_vectorized_corpus) == 100)  # All documents processed
+            for doc in project.selected_modeled_corpus.doc_topic_matrix.values():
+                nt.assert_almost_equal(sum(doc), 1)
+            for topic in project.selected_modeled_corpus.topic_term_matrix.values():
+                nt.assert_almost_equal(sum(topic), 1)
+
 
         [os.remove(f) for f in glob.glob("context_output*")]
 

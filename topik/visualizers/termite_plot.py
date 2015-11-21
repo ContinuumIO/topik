@@ -27,7 +27,7 @@ def _termite_data(modeled_corpus, topn):
     return top_words_df.sort('topic')
 
 @register
-def termite(modeled_corpus, plot_title="Termite plot", output_file="termite.html", topn=15):
+def termite(modeled_corpus, plot_title="Termite plot", topn=15):
     """A Bokeh Termite Visualization for LDA results analysis.
 
     Parameters
@@ -62,8 +62,6 @@ def termite(modeled_corpus, plot_title="Termite plot", output_file="termite.html
 
     source = into(pd.DataFrame, t)
 
-    plt.output_file(output_file)
-
     data_source = ColumnDataSource(source)
 
     p = plt.figure(x_range=TOPICS, y_range=WORDS,
@@ -71,5 +69,5 @@ def termite(modeled_corpus, plot_title="Termite plot", output_file="termite.html
                    title=plot_title)
 
     p.circle(x="topic", y="word", size="size", fill_alpha=0.6, source=data_source)
-    plt.show(p)
+    return p
 
