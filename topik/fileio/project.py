@@ -151,12 +151,12 @@ class TopikProject(object):
         # set _model_id internal handle to point to this data
         self._selected_modeled_corpus_id = model_id
 
-    def visualize(self, model_id=None, **kwargs):
+    def visualize(self, vis_name='termite', model_id=None, **kwargs):
         if not model_id:
-            model = self.selected_modeled_corpus
+            modeled_corpus = self.selected_modeled_corpus
         else:
-            model = self.output.model_data[model_id]
-        return visualizers.visualize(model, **kwargs)
+            modeled_corpus = self.output.model_data[model_id]
+        return visualizers.visualize(modeled_corpus, vis_name, **kwargs)
 
     def select_tokenized_corpus(self, id):
         if id in self.output.tokenized_corpora:
