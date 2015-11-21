@@ -1,52 +1,13 @@
 from __future__ import absolute_import
 
-import pandas as pd
-
 import gensim
 from .base_model_output import ModelOutput
 from ._registry import register
 from .tests.test_data import test_vectorized_output
 
 
-# def save(self, filename):
-#     self._model.save(self.get_model_name_with_parameters())
-#     saved_data = {"load_filename": filename, "binary_filename": self.get_model_name_with_parameters()}
-#     return super(_LDA, self).save(filename, saved_data)
-
-def get_top_words(self, topn):
-    top_words = [self._model.show_topic(topicno, topn) for topicno in range(self._model.num_topics)]
-    return top_words
-
-def get_model_name_with_parameters(self):
-    return "LDA_{}_topics{}".format(self._model.num_topics, self._corpus.filter_string)
-
-def _get_topic_term_dists(self):
-    term_topic_df = pd.DataFrame([
-            pd.DataFrame.from_records(self._model.show_topic(topic_no, None),
-                                     columns=['topic' + str(topic_no) + 'dist', 'token'],
-                                     index='token')['topic' + str(topic_no) + 'dist']
-            for topic_no in range(self._model.num_topics)]).T
-    term_topic_df['term_id'] = pd.Series(dict(self._corpus._dict.token2id.items()))
-    term_topic_df = term_topic_df.set_index('term_id')
-    return term_topic_df
-
-def _get_doc_topic_dists(self):
-    id_index, bow_corpus = zip(*[(id, self._corpus._dict.doc2bow(doc_tokens))
-                          for id, doc_tokens in self._corpus._corpus])
-
-    doc_topic = list(self._model[bow_corpus])
-
-    for i, doc in enumerate(doc_topic):
-        for j, topic in enumerate(doc):
-            doc_topic[i][j] = doc_topic[i][j][1]
-
-    doc_topic_df = pd.DataFrame(doc_topic, index=id_index)
-    doc_topic_df.columns = ['topic'+str(i)+'dist' for i in range(
-                                            doc_topic_df.shape[1])]
-    doc_topic_df.index.name = 'doc_id'
-    return doc_topic_df
-
-def _LDA(vectorized_corpus, ntopics=3):
+@register
+def lda(vectorized_output, ntopics, **kwargs):
     """A high-level interface for an LDA (Latent Dirichlet Allocation) model.
 
 
@@ -74,23 +35,18 @@ def _LDA(vectorized_corpus, ntopics=3):
     >>> model = _LDA(test_vectorized_output, ntopics=3)
 
     """
-def __init__(self, corpus_input=None, ntopics=10, load_filename=None, binary_filename=None, **kwargs):
-    if corpus_input is not None:
-        # the minimum_probability=0 argument is necessary in order for
-        # gensim to return the full document-topic-distribution matrix.  If
-        # this argument is omitted and left to the gensim default of 0.01,
-        # then all document-topic weights below that threshold will be
-        # returned as NaN, violating the subsequent LDAvis assumption that
-        # all rows (documents) in the document-topic-distribution matrix sum
-        # to 1.
+    # the minimum_probability=0 argument is necessary in order for
+    # gensim to return the full document-topic-distribution matrix.  If
+    # this argument is omitted and left to the gensim default of 0.01,
+    # then all document-topic weights below that threshold will be
+    # returned as NaN, violating the subsequent LDAvis assumption that
+    # all rows (documents) in the document-topic-distribution matrix sum
+    # to 1.
 
-        self._model = gensim.models.LdaModel(list(iter(corpus_input)), num_topics=ntopics,
-                                             id2word=corpus_input.get_id2word_dict(),
-                                             minimum_probability=0, **kwargs)
-        self._corpus = corpus_input
-    elif load_filename is not None and binary_filename is not None:
-        self._model = gensim.models.LdaModel.load(binary_filename)
+    _model = gensim.models.LdaModel([vector for vector in vectorized_output.vectors.values()],
+                                    num_topics=ntopics,
+                                    id2word=vectorized_output.id_term_map,
+                                    minimum_probability=0, **kwargs)
+    return ModelOutput(_model.get_document_topics(vectorized_output.vectors, 0),
+                       _model.show_topics(ntopics, len(vectorized_output.id_term_map)))
 
-@register
-def lda(vectorized_corpus, **kwargs):
-    return ModelOutput(vectorized_corpus, _LDA, **kwargs)
