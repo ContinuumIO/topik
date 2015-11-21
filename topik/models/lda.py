@@ -6,8 +6,7 @@ from ._registry import register
 from .tests.test_data import test_vectorized_output
 
 
-@register
-def lda(vectorized_output, ntopics, **kwargs):
+def _LDA(vectorized_output, ntopics, **kwargs):
     """A high-level interface for an LDA (Latent Dirichlet Allocation) model.
 
 
@@ -47,6 +46,10 @@ def lda(vectorized_output, ntopics, **kwargs):
                                     num_topics=ntopics,
                                     id2word=vectorized_output.id_term_map,
                                     minimum_probability=0, **kwargs)
-    return ModelOutput(_model.get_document_topics(vectorized_output.vectors, 0),
-                       _model.show_topics(ntopics, len(vectorized_output.id_term_map)))
+    return (_model.show_topics(ntopics, len(vectorized_output.id_term_map)),
+            _model.get_document_topics(vectorized_output.vectors, 0))
 
+
+@register
+def lda(vectorized_output, ntopics, **kwargs):
+    return ModelOutput(vectorized_output, _LDA, ntopics=ntopics, **kwargs)
