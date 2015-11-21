@@ -4,6 +4,7 @@ import time
 import unittest
 
 import elasticsearch
+import nose.tools as nt
 
 from topik.fileio import TopikProject
 from topik.fileio.tests import test_data_path
@@ -35,23 +36,13 @@ class ProjectTest(object):
             project.read_input(source=test_data_path, content_field='abstract')
             project.tokenize()
             project.vectorize()
-            project.run_model()
+            project.run_model(ntopics=2)
 
         # above runs through a whole workflow (minus plotting.)  At end, it closes file.
         # load output here.
         with TopikProject("context_output") as project:
             assert(len(list(project.get_filtered_corpus_iterator())) == 100)
-            # tests both contents being stored and selection of content after save/load cycle
-            print('sample_tokenized_doc')
-            print(sample_tokenized_doc)
-            print('project.selected_tokenized_corpus')
-            print(type(list(project.selected_tokenized_corpus)))
-            print(list(project.selected_tokenized_corpus))
-            print(type(list(iter(project.selected_tokenized_corpus))))
-            print(list(iter(project.selected_tokenized_corpus)))
-            print(list(iter(project.selected_tokenized_corpus))[0])
-            print(sample_tokenized_doc in list(iter(project.selected_tokenized_corpus)))
-            #assert(sample_tokenized_doc in list(iter(project.selected_tokenized_corpus)))
+            assert(sample_tokenized_doc in list(iter(project.selected_tokenized_corpus)))
             assert(project.selected_vectorized_corpus.global_term_count == 2434)
             assert(len(project.selected_vectorized_corpus) == 100)  # All documents processed
 
@@ -88,29 +79,16 @@ class ProjectTest(object):
     def test_model(self):
         self.project.tokenize()
         self.project.vectorize()
-        self.project.run_model()
-        # TODO: these are not real tests.  Do we have numerical properties that are more meaningful?
-        #   - Do weights for a given doc in doc-topic matrix sum to 1?
-        #   - Do weights for all terms in a given topic sum to 1?
-        print(self.project.selected_modeled_corpus.doc_topic_matrix)
-        print("Testing DTM SUMS")
-        # assert([sum(self.project.selected_modeled_corpus.doc_topic_matrix[doc_id]) == 1 \
-        #     for doc_id in self.project.selected_modeled_corpus.doc_topic_matrix])
-        for doc_id in self.project.selected_modeled_corpus.doc_topic_matrix:
-            print('SUMMING_DOC')
-            print(doc_id,sum(self.project.selected_modeled_corpus.doc_topic_matrix[doc_id]))
-            # assert(sum(self.project.selected_modeled_corpus.doc_topic_matrix[doc_id])==1)
-
-        print("TESTING TTM SUMS")
-        for topic_id in self.project.selected_modeled_corpus.topic_term_matrix:
-            print('SUMMING_TERM')
-            print(topic_id,sum(self.project.selected_modeled_corpus.topic_term_matrix[topic_id]))
-            # assert(sum(self.project.selected_modeled_corpus.topic_term_matrix[topic_id])==1)
+        self.project.run_model(ntopics=2)
+        for doc in self.project.selected_modeled_corpus.doc_topic_matrix.values():
+            nt.assert_almost_equal(sum(doc), 1)
+        for topic in self.project.selected_modeled_corpus.topic_term_matrix.values():
+            nt.assert_almost_equal(sum(topic), 1)
 
     def test_visualize(self):
         self.project.tokenize()
         self.project.vectorize()
-        self.project.run_model()
+        self.project.run_model(ntopics=2)
         self.project.visualize(topn=5)
 
 

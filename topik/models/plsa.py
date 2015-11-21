@@ -65,7 +65,7 @@ def _get_doc_topic_matrix(dz, ntopics, vectorized_corpus):
     return labeled_dz
 
 
-def _PLSA(vectorized_corpus, ntopics=3, max_iter=100):
+def _PLSA(vectorized_corpus, ntopics, max_iter):
     cur = 0
     topic_array = range(ntopics)
     # topic-word matrix
@@ -89,7 +89,7 @@ def _PLSA(vectorized_corpus, ntopics=3, max_iter=100):
         _get_doc_topic_matrix(dz, ntopics, vectorized_corpus)
 
 @register
-def plsa(vectorized_corpus, **kwargs):
-    return ModelOutput(vectorized_corpus, _PLSA, **kwargs)
+def plsa(vectorized_corpus, ntopics, max_iter=100, **kwargs):
+    return ModelOutput(vectorized_corpus, _PLSA, ntopics=ntopics, max_iter=max_iter, **kwargs)
 
 
