@@ -86,50 +86,35 @@ class VectorizedElasticCorpora(BaseElasticCorpora):
 
 class ModeledElasticCorpora(BaseElasticCorpora):
     def __setitem__(self, key, value):
-        print("SETTING_MODEL")
-        print("vocab")
-        print(value.vocab)
-        print(value.vocab.items())
         es_setitem(key,value.vocab.items(),"term",self.instance,self.index)
-        print("term_frequency")
-        print(value.term_frequency)
-        print(value.term_frequency.items())
         es_setitem(key,value.term_frequency.items(),"term_frequency",self.instance,self.index)
-        print("ttm")
-        print(value.topic_term_matrix)
-        print(value.topic_term_matrix.items())
         es_setitem(key,value.topic_term_matrix.items(),"topic_term_dist",self.instance,self.index)
-        print("doc_lengths")
-        print(value.doc_lengths)
-        print(value.doc_lengths.items())
         es_setitem(key,value.doc_lengths.items(),"doc_length",self.instance,self.index)
-        print("dtm")
+        print("setting doc_topic_matrix...")
+        print(key,value)
         print(value.doc_topic_matrix)
         print(value.doc_topic_matrix.items())
         es_setitem(key,value.doc_topic_matrix.items(),"doc_topic_dist",self.instance,self.index)
+        print('done setting doc_topic_matrix')
+
+    def __lt__(self, y):
+        return super(ModeledElasticCorpora, self).__lt__(y)
 
     def __getitem__(self, key):
-        print("GETTING_MODEL")
         vocab = {int(term_id): term for term_id, term in \
                  es_getitem(key,"term",self.instance,self.index,self.query)}
-        print("vocab")
-        print(vocab)
         term_frequency = {int(term_id): tf for term_id, tf in \
                           es_getitem(key,"term_frequency",self.instance,self.index,self.query)}
-        print("term_frequency")
-        print(term_frequency)
         topic_term_matrix = {topic_id: topic_term_dist for topic_id, topic_term_dist in \
                              es_getitem(key,"topic_term_dist",self.instance,self.index,self.query)}
-        print("ttm")
-        print(topic_term_matrix)
         doc_lengths = {topic_id: doc_length for topic_id, doc_length in \
                        es_getitem(key,"doc_length",self.instance,self.index,self.query)}
-        print("doc_lengths")
-        print(doc_lengths)
+        print("getting doc_topic_matrix...")
         doc_topic_matrix = {int(doc_id): doc_topic_dist for doc_id, doc_topic_dist in \
                              es_getitem(key,"doc_topic_dist",self.instance,self.index,self.query)}
-        print("dtm")
+        print(key)
         print(doc_topic_matrix)
+        print("done getting doc_topic_matrix")
         return ModelOutput(vocab=vocab, term_frequency=term_frequency,
                            topic_term_matrix=topic_term_matrix,
                            doc_lengths=doc_lengths,

@@ -30,7 +30,7 @@ class VectorizerOutput(object):
                              "or global term collection, document term counts, and vectors.")
             self._global_terms = []
 
-    def __iter__(self):
+    def get_vectors(self):
         for doc_id, vector in self._vectors.items():
             yield doc_id, vector
 
