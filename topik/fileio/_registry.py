@@ -1,24 +1,27 @@
 from functools import partial
+from six.moves import UserDict
 
 from topik.singleton_registry import _base_register_decorator
 
 
-class InputRegistry(dict):
+class InputRegistry(UserDict, object):
     """Uses Borg design pattern.  Core idea is that there is a global registry for each step's
     possible methods
     """
     __shared_state = {}
     def __init__(self):
         self.__dict__ = self.__shared_state
+        super(InputRegistry, self).__init__()
 
 
-class OutputRegistry(dict):
+class OutputRegistry(UserDict, object):
     """Uses Borg design pattern.  Core idea is that there is a global registry for each step's
     possible methods
     """
     __shared_state = {}
     def __init__(self):
         self.__dict__ = self.__shared_state
+        super(OutputRegistry, self).__init__()
 
 
 # a nicer, more pythonic handle to our singleton instance

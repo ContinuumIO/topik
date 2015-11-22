@@ -1,13 +1,20 @@
+from six.moves import UserDict
 import types
 
 from ._registry import register_output
 from .base_output import OutputInterface
 
-class GreedyDict(dict):
+
+class GreedyDict(UserDict, object):
     def __setitem__(self, key, value):
         if isinstance(value, types.GeneratorType):
             value = [val for val in value]
         super(GreedyDict, self).__setitem__(key, value)
+
+    def __iter__(self):
+        for val in self.data.values():
+            yield val
+
 
 @register_output
 class InMemoryOutput(OutputInterface):
@@ -31,31 +38,30 @@ class InMemoryOutput(OutputInterface):
             This is your data.  Your dictionary structure defines the schema
             of the elasticsearch index.
         """
-        if field_to_hash:
-            self.hash_field=field_to_hash
-            for item in iterable:
-                if isinstance(item, basestring):
-                    item = {field_to_hash: item}
-                id = hash(item[field_to_hash])
-                self.corpus[id] = {"_source": item}
-        else:
-            raise ValueError("A field_to_hash is required for import_from_iterable")
+        self.hash_field=field_to_hash
+        for item in iterable:
+            if isinstance(item, basestring):
+                item = {field_to_hash: item}
+            elif field_to_hash not in item and field_to_hash in item.values()[0]:
+                item = item.values()[0]
+            id = hash(item[field_to_hash])
+            self.corpus[id] = item
 
     # TODO: generalize for datetimes
     # TODO: validate input data to ensure that it has valid year data
     def get_date_filtered_data(self, field_to_get, start, end, filter_field="year"):
         return self.get_filtered_data(field_to_get,
-                                      "{}<=int({}['_source']['{}'])<={}".format(start, "{}",
-                                                                                 filter_field, end))
+                                      "{}<=int({}['{}'])<={}".format(start, "{}",
+                                                                     filter_field, end))
 
     def get_filtered_data(self, field_to_get, filter=""):
         if not filter:
             for doc_id, doc in self.corpus.items():
-                yield doc_id, doc["_source"][field_to_get]
+                yield doc_id, doc[field_to_get]
         else:
             for doc_id, doc in self.corpus.items():
                 if eval(filter.format(doc)):
-                    yield doc_id, doc["_source"][field_to_get]
+                    yield doc_id, doc[field_to_get]
 
     def save(self, filename):
         saved_data = {"iterable": self.corpus,

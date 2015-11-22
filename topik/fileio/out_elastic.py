@@ -1,5 +1,5 @@
+from six.moves import UserDict
 import logging
-
 import time
 
 from elasticsearch import Elasticsearch, helpers
@@ -36,7 +36,7 @@ def es_getitem(key, doc_type, instance, index, query=None):
     for result in results:
         yield result["_id"], result['_source'][key]
 
-class BaseElasticCorpora(dict):
+class BaseElasticCorpora(UserDict):
     def __init__(self, instance, index, corpus_type, query=None,
                  batch_size=1000):
         self.instance = instance

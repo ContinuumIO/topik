@@ -42,12 +42,13 @@ def _LDA(vectorized_output, ntopics, **kwargs):
     # all rows (documents) in the document-topic-distribution matrix sum
     # to 1.
 
-    _model = gensim.models.LdaModel([vector for vector in vectorized_output.vectors.values()],
+    bow = [[(k, v) for k, v in vector.items()] for vector in vectorized_output.vectors.values()]
+    _model = gensim.models.LdaModel(bow,
                                     num_topics=ntopics,
                                     id2word=vectorized_output.id_term_map,
                                     minimum_probability=0, **kwargs)
     return (_model.show_topics(ntopics, len(vectorized_output.id_term_map)),
-            _model.get_document_topics(vectorized_output.vectors, 0))
+            _model.get_document_topics(bow, 0))
 
 
 @register

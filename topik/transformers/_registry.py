@@ -1,9 +1,10 @@
+from six.moves import UserDict
 from functools import partial
 
 from topik.singleton_registry import _base_register_decorator
 
 
-class TransformerRegistry(dict):
+class TransformerRegistry(UserDict):
     """Uses Borg design pattern.  Core idea is that there is a global registry for each step's
     possible methods
     """

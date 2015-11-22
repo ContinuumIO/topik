@@ -1,3 +1,4 @@
+from six.moves import UserDict
 from functools import partial
 
 from topik.singleton_registry import _base_register_decorator
@@ -5,7 +6,7 @@ from topik.singleton_registry import _base_register_decorator
 
 # This subclass serves to establish a new singleton instance of functions
 #    for this particular step in topic modeling.  No implementation necessary.
-class ModelRegistry(dict):
+class ModelRegistry(UserDict, object):
     """Uses Borg design pattern.  Core idea is that there is a global registry for each step's
     possible methods
     """
