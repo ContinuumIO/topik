@@ -34,7 +34,11 @@ def es_getitem(key, doc_type, instance, index, query=None):
     results = helpers.scan(instance, index=index,
                                query=query, doc_type=doc_type)
     for result in results:
-        yield result["_id"], result['_source'][key]
+        try:
+            id = int(result["_id"])
+        except ValueError:
+            id = result["_id"]
+        yield id, result['_source'][key]
 
 class BaseElasticCorpora(UserDict):
     def __init__(self, instance, index, corpus_type, query=None,
