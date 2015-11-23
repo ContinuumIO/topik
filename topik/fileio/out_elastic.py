@@ -62,8 +62,12 @@ class VectorizedElasticCorpora(BaseElasticCorpora):
     def __setitem__(self, key, value):
         #id_term_map
         es_setitem(key,value.id_term_map.items(),"term",self.instance,self.index)
-        #document_term_count
+        #document_term_counts
         es_setitem(key,value.document_term_counts.items(),"document_term_count",self.instance,self.index)
+        #doc_lengths
+        es_setitem(key,value.doc_lengths.items(),"document_length",self.instance,self.index)
+        #global term_frequency
+        es_setitem(key,value.term_frequency.items(),"term_frequency",self.instance,self.index)
         #vectors
         es_setitem(key,value.vectors.items(),"vector",self.instance,self.index)
         # could either upload vectors explicitly here (above) or using Super (below)
@@ -79,6 +83,8 @@ class VectorizedElasticCorpora(BaseElasticCorpora):
         # TODO: this is the count of terms associated with each document
         document_term_count = {int(doc_id): doc_term_count for doc_id, doc_term_count in es_getitem(key,"document_term_count",self.instance,self.index,self.query)}
         # {"doc1": 3, "doc2": 5}
+        doc_lengths = {int(doc_id): doc_length for doc_id, doc_length in es_getitem(key,"document_length",self.instance,self.index,self.query)}
+        term_frequency = {int(term_id): global_frequency for term_id, global_frequency in es_getitem(key,"term_frequency",self.instance,self.index,self.query)}
         # TODO: this is the vectorized representation of each document
         vectors = {int(doc_id): {int(term_id): term_weight for term_id, term_weight in doc_term_weights.items()} for doc_id, doc_term_weights in es_getitem(key,"vector",self.instance,self.index,self.query)}
         #vectors = {int(doc_id): {doc_term_weights for doc_id, doc_term_weights in es_getitem(key,"vector",self.instance,self.index,self.query)}
@@ -86,6 +92,8 @@ class VectorizedElasticCorpora(BaseElasticCorpora):
         #  {"doc1": {1: 3, 2: 1}  # word id is key, word count is value (for bag of words model)
         return VectorizerOutput(id_term_map=id_term_map,
                                 document_term_counts=document_term_count,
+                                doc_lengths=doc_lengths,
+                                term_frequency=term_frequency,
                                 vectors=vectors)
 
 class ModeledElasticCorpora(BaseElasticCorpora):

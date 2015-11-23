@@ -187,10 +187,8 @@ class TopikProject(object):
         else:
             raise ValueError("vectorized data {} not found in storage.".format(_id))
 
-    def select_model_data(self, _id):
-        """Assign active model corpus.
-
-        When more than one model output available (ran modeling more than once with different
+    def select_modeled_corpus(self, _id):
+        """When more than one model output available (ran modeling more than once with different
         methods), this allows you to switch to a different data set.
         """
         if _id in self.output.modeled_corpus:
