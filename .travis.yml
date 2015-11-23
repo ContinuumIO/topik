@@ -17,7 +17,7 @@ install:
   - source activate topik
   - conda install -c wakari1 pandoc
   - python -m textblob.download_corpora
-  - pip install coverage
+  - pip install coverage jsonpickle
   - pip install .
 
 services:
