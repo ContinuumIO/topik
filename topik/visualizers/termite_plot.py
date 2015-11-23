@@ -3,8 +3,8 @@ import blaze as blz
 from odo import into
 import numpy as np
 import pandas as pd
-import bokeh.plotting as plt
-from bokeh.models.sources import ColumnDataSource
+from bokeh import plotting as plt
+from bokeh.models import sources
 
 from ._registry import register
 from topik.models.tests.test_data import test_model_output
@@ -62,7 +62,7 @@ def termite(modeled_corpus, plot_title="Termite plot", topn=15):
 
     source = into(pd.DataFrame, t)
 
-    data_source = ColumnDataSource(source)
+    data_source = sources.ColumnDataSource(source)
 
     p = plt.figure(x_range=TOPICS, y_range=WORDS,
                    plot_width=1000, plot_height=1700,

@@ -45,11 +45,8 @@ def read_input(source, source_type="auto", folder_content_field='text', **kwargs
     """
     json_extensions = [".js", ".json"]
 
-    # solr defaults to port 8983
-    if (source_type == "auto" and "8983" in source) or source_type == "solr":
-        data_iterator = registered_inputs["read_solr"](source, **kwargs)
     # web addresses default to elasticsearch
-    elif (source_type == "auto" and "9200" in source) or source_type == "elastic":
+    if (source_type == "auto" and "9200" in source) or source_type == "elastic":
         data_iterator = registered_inputs["read_elastic"](source, **kwargs)
     # files must end in .json.  Try json parser first, try large_json parser next.  Fail otherwise.
     elif (source_type == "auto" and os.path.splitext(source)[1] in json_extensions) or source_type == "json_stream":

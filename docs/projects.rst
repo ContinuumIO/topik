@@ -4,6 +4,7 @@ Topik Projects
 Topik can be run by chaining the output of one step directly to the input of another:
 
 .. code-block:: python
+
     >>> from topik.file_io import read_input
     >>> from topik.tokenizers import tokenize
     >>> from topik.vectorizers import vectorize
@@ -20,7 +21,8 @@ However, this does not handle any kind of persistence to disk.  Your changes wil
 
 
 .. code-block:: python
-    >>> with TopikProject() as project:
+
+    >>> with TopikProject("my_project") as project:
     >>>     project.read_input("test_data.json")
     >>>     project.tokenize()
     >>>     project.vectorize()
@@ -31,8 +33,10 @@ However, this does not handle any kind of persistence to disk.  Your changes wil
 
 Projects create files on disk when instantiated if none already exist.  When project files already exist, the contents of those files are loaded:
 
+
 .. code-block:: python
-    >>> with TopikProject() as project:
+
+    >>> with TopikProject("my_project") as project:
     >>>     project.plot()
 
 
