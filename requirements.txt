@@ -14,3 +14,5 @@ pysolr
 ijson
 versioneer
 setuptools-markdown
+jsonpickle
+
