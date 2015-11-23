@@ -19,6 +19,6 @@ setup(name='topik',
       long_description_markdown_filename='README.md',
       install_requires=list(open('requirements.txt').read().strip().split('\n')),
       entry_points= {
-          'console_scripts': ['topik = topik.cli:run']
+          'console_scripts': ['topik = topik.simple_run.cli:run']
       },
       zip_safe=False)

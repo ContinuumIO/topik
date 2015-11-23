@@ -2,7 +2,7 @@ Development Guide
 #################
 
 
-Topik has been designed to be extensible at each of the four steps of topic
+Topik has been designed to be extensible at each of the five steps of topic
 modeling:
 
   * data import
@@ -39,12 +39,12 @@ package's __init__.py. This decorator will execute when the foreign code is
 first run, so make sure that you import your module before requesting the
 dictionary of registered classes for a given step.
 
-For general command line usage, it is probably easier to directly import
-functions from the folder structure, rather than depending on the function
-registry. The registered dictionary approach makes dynamic UI creation easier,
-but it hinders autocompletion. An intermediate approach would be to assign the
-results of dictionary access to a variable before instantiating the class. For
-example,
+For general command line or IPython notebook usage, it is probably easier to
+directly import functions from the folder structure, rather than depending on
+the function registry. The registered dictionary approach makes dynamic UI
+creation easier, but it hinders autocompletion. An intermediate approach would
+be to assign the results of dictionary access to a variable before instantiating
+the class. For example,
 
 
 .. code-block:: python
@@ -63,6 +63,6 @@ example,
 .. code-block:: python
 
    >>> # import model implementation directly:
-   >>> from topik.models import LDA
+   >>> from topik.models import lda
    >>> # Autocompletion of class arguments should work here
-   >>> model = LDA(tokenized_corpora, 5)
+   >>> model = lda(vectorized_corpus, 5)

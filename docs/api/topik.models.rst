@@ -1,21 +1,28 @@
 topik.models package
 ====================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    topik.models.tests
+
 Submodules
 ----------
+
+topik.models.base_model_output module
+-------------------------------------
+
+.. automodule:: topik.models.base_model_output
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 topik.models.lda module
 -----------------------
 
 .. automodule:: topik.models.lda
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-topik.models.model_base module
-------------------------------
-
-.. automodule:: topik.models.model_base
     :members:
     :undoc-members:
     :show-inheritance:
