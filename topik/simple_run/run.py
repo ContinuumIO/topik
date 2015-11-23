@@ -6,8 +6,8 @@ import os
 import numpy as np
 
 from topik.fileio import read_input
-import topik.models
-import topik.visualizers
+from topik import tokenizers, vectorizers, models, visualizers
+from topik.visualizers.termite_plot import termite_html
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -16,8 +16,9 @@ BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def run_model(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
-              content_field=None, tokenizer='simple', n_topics=10, dir_path='./topic_model', model='LDA',
-              termite_plot=True, output_file=False, ldavis=False, seed=42, **kwargs):
+              content_field=None, tokenizer='simple', vectorizer='bag_of_words', ntopics=10,
+              dir_path='./topic_model', model='lda', termite_plot=True, output_file=False,
+              ldavis=False, seed=42, **kwargs):
 
     """Run your data through all topik functionality and save all results to a specified directory.
 
@@ -39,7 +40,9 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         The primary text field to parse.
     tokenizer : {'simple', 'collocations', 'entities', 'mixed'}
         The type of tokenizer to use. Default is 'simple'.
-    n_topics : int
+    vectorizer : {'bag_of_words', 'tfidf'}
+        The type of vectorizer to use.  Default is 'bag_of_words'.
+    ntopics : int
         Number of topics to find in your data
     dir_path : str
         Directory path to store all topic modeling results files. Default is `./topic_model`.
@@ -47,8 +50,6 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         Statistical modeling algorithm to use. Default 'LDA'.
     termite_plot : bool
         Generate termite plot of your model if True. Default is True.
-    output_file : bool
-        Generate a final summary csv file of your results. For each document: text, tokens, lda_probabilities and topic.
     ldavis : bool
         Generate an interactive data visualization of your topics. Default is False.
     seed : int
@@ -60,16 +61,17 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
 
     raw_data = read_input(data_source, content_field=content_field,
                           source_type=source_type, **kwargs)
-    processed_data = raw_data.tokenize(method=tokenizer, **kwargs)
-    model = topik.models.registered_models[model](processed_data, n_topics, **kwargs)
+    raw_data = ((hash(item[content_field]), item[content_field]) for item in raw_data)
+    tokenized_data = tokenizers.registered_tokenizers[tokenizer](raw_data, **kwargs)
+    vectorized_data = vectorizers.registered_vectorizers[vectorizer](tokenized_data, **kwargs)
+    model = models.registered_models[model](vectorized_data, ntopics=ntopics, **kwargs)
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)
 
     if termite_plot:
-        termite = topik.visualizers["termite"](model.termite_data(n_topics), "Termite Plot")
-        termite.plot(os.path.join(dir_path, 'termite.html'))
+        termite_html(model, filename="termite.html", plot_title="Termite plot", topn=15)
 
     if ldavis:
-        topik.visualizers["lda_vis"](model.to_py_lda_vis())
+        visualizers["lda_vis"](model)
 
 
