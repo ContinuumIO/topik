@@ -4,7 +4,7 @@ import nose.tools as nt
 import numpy as np
 
 from topik.models import registered_models
-from .test_data import test_vectorized_output
+from topik.models.tests.test_data import test_vectorized_output
 
 from topik.models.plsa import _rand_mat, _e_step, _m_step, _cal_likelihood, _cal_p_dw, plsa
 

@@ -53,11 +53,14 @@ def _LDA(vectorized_output, ntopics, **kwargs):
     topic_term_matrix = {"topic{}".format(topic_no): _topic_term_to_array(vectorized_output.id_term_map,
                                                                           _model.show_topic(topic_no, None))
                          for topic_no in range(ntopics)}
-    doc_topic_matrix = list(_model[bow])
+    unlabeled_doc_topic_matrix = list(_model[bow])
+    doc_topic_matrix = {}
+    doc_ids, _ = list(zip(*list(vectorized_output.get_vectors())))
 
-    for i, doc in enumerate(doc_topic_matrix):
-        for j, topic in enumerate(doc):
-            doc_topic_matrix[i][j] = doc_topic_matrix[i][j][1]
+    for i, doc in enumerate(unlabeled_doc_topic_matrix):
+        doc_topic_matrix[doc_ids[i]] = []
+        for topic in doc:
+            doc_topic_matrix[doc_ids[i]].append(topic[1]) # topic[0] is the topic_id, topic[1] is the weight
     return topic_term_matrix, doc_topic_matrix
 
 

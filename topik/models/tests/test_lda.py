@@ -1,6 +1,6 @@
 import nose.tools as nt
 
-from .test_data import test_vectorized_output
+from topik.models.tests.test_data import test_vectorized_output
 from topik.models.lda import lda
 
 
