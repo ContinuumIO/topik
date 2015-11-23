@@ -84,7 +84,7 @@ class ProjectTest(object):
     def test_model(self):
         self.project.tokenize()
         self.project.vectorize()
-        self.project.run_model(ntopics=2)
+        self.project.run_model(model_name='lda', ntopics=2)
         for doc in self.project.selected_modeled_corpus.doc_topic_matrix.values():
             nt.assert_almost_equal(sum(doc), 1)
         for topic in self.project.selected_modeled_corpus.topic_term_matrix.values():
