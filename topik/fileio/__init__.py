@@ -4,7 +4,6 @@
 from .in_json import read_json_stream, read_large_json
 from .in_document_folder import read_document_folder
 from .in_elastic import read_elastic
-from .in_solr import read_solr
 from .out_elastic import ElasticSearchOutput
 from .out_memory import InMemoryOutput
 
