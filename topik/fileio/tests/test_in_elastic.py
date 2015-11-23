@@ -21,7 +21,6 @@ def test_elastic_import():
                #output_args=output_args, synchronous_wait=30)
 
     loaded_corpus = read_elastic("localhost", index=INDEX)
-    print(next(iter(loaded_corpus)))
     solution_found = False
     for doc in list(iter(loaded_corpus)):
         if solution_elastic == doc['abstract']:

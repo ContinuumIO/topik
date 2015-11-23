@@ -1,12 +1,10 @@
-import itertools
 import os
 
 from topik.fileio._registry import registered_inputs
 from topik.fileio.tests import test_data_path
 
 # this function is the primary API for people using any registered functions.
-def read_input(source, source_type="auto", folder_content_field='text',
-               output_args=None, synchronous_wait=0, **kwargs):
+def read_input(source, source_type="auto", folder_content_field='text', **kwargs):
     """
     Read data from given source into Topik's internal data structures.
 
@@ -14,20 +12,12 @@ def read_input(source, source_type="auto", folder_content_field='text',
     ----------
     source : str
         input data.  Can be file path, directory, or server address.
-    folder_content_field : str
-        Only used for document_folder source. This argument is used as the key
-        (field name), where each document represents the value of that field.
     source_type : str
         "auto" tries to figure out data type of source.  Can be manually specified instead.
         options for manual specification are ['solr', 'elastic', 'json_stream', 'large_json', 'folder']
-    output_type : str
-        Internal format for handling user data.  Current options are in the registered_outputs dictionary.
-        Default is DictionaryCorpus class.  Specify alternatives using string key from dictionary.
-    output_args : dict
-        Configuration to pass through to output
-    synchronous_wait : positive, real number
-        Time in seconds to wait for data to finish uploading to output (this happens
-        asynchronously.)  Only relevant for some output types ("elastic", not "dictionary")
+    folder_content_field : str
+        Only used for document_folder source. This argument is used as the key
+        (field name), where each document represents the value of that field.
     kwargs : any other arguments to pass to input parsers
 
     Returns
@@ -66,20 +56,17 @@ def read_input(source, source_type="auto", folder_content_field='text',
         try:
             data_iterator = registered_inputs["read_json_stream"](source, **kwargs)
             # tee the iterator and try to get the first element.  If it fails, this is actually a large_json file.
-            #next(itertools.tee(data_iterator)[0])
             next(data_iterator)
-            # reset the iterator after this check so that it starts at
-            # document 0 rather than document 1
+            # reset the iterator after this check so that it starts at document 0 rather than document 1
             data_iterator = registered_inputs["read_json_stream"](source, **kwargs)
-        except ValueError as e:
-            print('dang. large json')
+        except ValueError:
             data_iterator = registered_inputs["read_large_json"](source, **kwargs)
     elif source_type == "large_json":
         data_iterator = registered_inputs["read_large_json"](source, **kwargs)
     # folder paths are simple strings that don't end in an extension (.+3-4 characters), or end in a /
     elif (source_type == "auto" and os.path.splitext(source)[1] == "") or source_type == "folder":
         data_iterator = registered_inputs["read_document_folder"](source,
-                                            content_field=folder_content_field)
+                                                                  content_field=folder_content_field)
     else:
         raise ValueError("Unrecognized source type: {}.  Please either manually specify the type, or convert your input"
                          " to a supported type.".format(source))

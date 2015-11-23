@@ -102,12 +102,7 @@ class ModeledElasticCorpora(BaseElasticCorpora):
         es_setitem(key,value.term_frequency.items(),"term_frequency",self.instance,self.index)
         es_setitem(key,value.topic_term_matrix.items(),"topic_term_dist",self.instance,self.index)
         es_setitem(key,value.doc_lengths.items(),"doc_length",self.instance,self.index)
-        print("setting doc_topic_matrix...")
-        print(key,value)
-        print(value.doc_topic_matrix)
-        print(value.doc_topic_matrix.items())
         es_setitem(key,value.doc_topic_matrix.items(),"doc_topic_dist",self.instance,self.index)
-        print('done setting doc_topic_matrix')
 
     def __lt__(self, y):
         return super(ModeledElasticCorpora, self).__lt__(y)
@@ -121,12 +116,8 @@ class ModeledElasticCorpora(BaseElasticCorpora):
                              es_getitem(key,"topic_term_dist",self.instance,self.index,self.query)}
         doc_lengths = {topic_id: doc_length for topic_id, doc_length in \
                        es_getitem(key,"doc_length",self.instance,self.index,self.query)}
-        print("getting doc_topic_matrix...")
         doc_topic_matrix = {int(doc_id): doc_topic_dist for doc_id, doc_topic_dist in \
                              es_getitem(key,"doc_topic_dist",self.instance,self.index,self.query)}
-        print(key)
-        print(doc_topic_matrix)
-        print("done getting doc_topic_matrix")
         return ModelOutput(vocab=vocab, term_frequency=term_frequency,
                            topic_term_matrix=topic_term_matrix,
                            doc_lengths=doc_lengths,

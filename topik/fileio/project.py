@@ -9,10 +9,10 @@ from .reader import read_input
 
 def _get_parameters_string(**kwargs):
     """Used to create identifiers for output"""
-    id=""
+    _id = ""
     if kwargs:
-        id = "_" + ''.join('{}={}_'.format(key, val) for key, val in sorted(kwargs.items()))[:-1]
-    return id
+        _id = "_" + ''.join('{}={}_'.format(key, val) for key, val in sorted(kwargs.items()))[:-1]
+    return _id
 
 
 class TopikProject(object):
@@ -33,11 +33,11 @@ class TopikProject(object):
         if output_args is None:
             output_args = {}
         if os.path.exists(project_name + ".topikproject") and output_type is None:
-            with open(project_name + ".topikproject") as f:
-                project_data = jsonpickle.decode(f.read())
+            with open(project_name + ".topikproject") as project_meta:
+                project_data = jsonpickle.decode(project_meta.read())
             kwargs.update(project_data)
-            with open(project_name + ".topikdata") as f:
-                loaded_data = jsonpickle.decode(f.read())
+            with open(project_name + ".topikdata") as project_data:
+                loaded_data = jsonpickle.decode(project_data.read())
                 output_type = loaded_data["class"]
                 output_args.update(loaded_data["saved_data"])
         self.project_name = project_name
@@ -73,6 +73,7 @@ class TopikProject(object):
         self.output.close()  # close any open file handles or network connections
 
     def save(self):
+        """Save project as .topikproject metafile and some number of sidecar data files."""
         with open(self.project_name + ".topikproject", "w") as f:
             f.write(jsonpickle.encode({
                "_selected_tokenized_corpus_id": self._selected_tokenized_corpus_id,
@@ -87,6 +88,7 @@ class TopikProject(object):
         self.output.save(self.project_name + ".topikdata")
 
     def read_input(self, source, content_field, source_type="auto", **kwargs):
+        """Import data from external source into Topik's internal format"""
         self.output.import_from_iterable(read_input(source,
                                                     content_field=content_field,
                                                     source_type=source_type,
@@ -106,11 +108,12 @@ class TopikProject(object):
         if field_to_get is None:
             field_to_get = self.content_field
         return self.output.get_date_filtered_data(field_to_get=field_to_get,
-                                                  start=1975,
-                                                  end=1999,
-                                                  filter_field="year")
+                                                  start=start,
+                                                  end=end,
+                                                  filter_field=filter_field)
 
     def tokenize(self, method="simple", **kwargs):
+        """Break raw text into substituent terms (or collections of terms)"""
         # tokenize, and store the results on this object somehow
         tokenized_corpus = tokenizers.tokenize(self.selected_filtered_corpus,
                                              method=method, **kwargs)
@@ -124,6 +127,7 @@ class TopikProject(object):
         self._selected_tokenized_corpus_id = tokenize_parameter_string
 
     def transform(self, method, **kwargs):
+        """Stem or lemmatize input text that has already been tokenized"""
         transformed_data = transformers.transform(method=method, **kwargs)
         tokenize_parameter_string = "_".join([self.tokenizer_id, "xform", method,
                                               _get_parameters_string(**kwargs)])
@@ -133,6 +137,7 @@ class TopikProject(object):
         self._selected_tokenized_corpus_id = tokenize_parameter_string
 
     def vectorize(self, method="bag_of_words", **kwargs):
+        """Convert tokenized text to vector form - mathematical representation used for modeling."""
         tokenizer_iterators = itertools.tee(self.selected_tokenized_corpus)
         vectorized_corpus = vectorizers.vectorize(tokenizer_iterators[0],
                                                 method=method, **kwargs)
@@ -143,6 +148,7 @@ class TopikProject(object):
         self._selected_vectorized_corpus_id = vectorize_parameter_string
 
     def run_model(self, model_name="plsa", **kwargs):
+        """Analyze vectorized text; determine topics and assign document probabilities"""
         modeled_corpus = models.run_model(self.selected_vectorized_corpus,
                                         model_name=model_name, **kwargs)
         model_id = "_".join([model_name, _get_parameters_string(**kwargs)])
@@ -152,29 +158,43 @@ class TopikProject(object):
         self._selected_modeled_corpus_id = model_id
 
     def visualize(self, vis_name='termite', model_id=None, **kwargs):
+        """Plot model output"""
         if not model_id:
             modeled_corpus = self.selected_modeled_corpus
         else:
             modeled_corpus = self.output.model_data[model_id]
         return visualizers.visualize(modeled_corpus, vis_name, **kwargs)
 
-    def select_tokenized_corpus(self, id):
-        if id in self.output.tokenized_corpora:
-            self._selected_tokenized_corpus_id = id
+    def select_tokenized_corpus(self, _id):
+        """Assign active tokenized corpus.
+
+        When more than one tokenized corpus available (ran tokenization more than once with different
+        methods), this allows you to switch to a different data set.
+        """
+        if _id in self.output.tokenized_corpora:
+            self._selected_tokenized_corpus_id = _id
         else:
             raise ValueError("tokenized data {} not found in storage.".format(id))
 
-    def select_vectorized_corpus(self, id):
-        if id in self.output.vectorized_corpora:
-            self._selected_vectorized_corpus_id = id
-        else:
-            raise ValueError("vectorized data {} not found in storage.".format(id))
+    def select_vectorized_corpus(self, _id):
+        """Assign active vectorized corpus.
 
-    def select_modeled_corpus(self, id):
-        if id in self.output.modeled_corpus:
-            self._selected_modeled_corpus_id = id
+        When more than one vectorized corpus available (ran tokenization more than once with different
+        methods), this allows you to switch to a different data set.
+        """
+        if _id in self.output.vectorized_corpora:
+            self._selected_vectorized_corpus_id = _id
         else:
-            raise ValueError("model {} not found in storage.".format(id))
+            raise ValueError("vectorized data {} not found in storage.".format(_id))
+
+    def select_modeled_corpus(self, _id):
+        """When more than one model output available (ran modeling more than once with different
+        methods), this allows you to switch to a different data set.
+        """
+        if _id in self.output.modeled_corpus:
+            self._selected_modeled_corpus_id = _id
+        else:
+            raise ValueError("model {} not found in storage.".format(_id))
 
     @property
     def selected_filtered_corpus(self):

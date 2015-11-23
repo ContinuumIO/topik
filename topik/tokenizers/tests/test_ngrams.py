@@ -12,8 +12,8 @@ sample_data = [
                     u"celebrities as Frank The Swank-Tank."))]
 
 
-x = ngrams(sample_data, freq_bounds=[(2,100),(2,100)])
-#print(list(x))
+x = ngrams(sample_data, freq_bounds=[(2, 100), (2, 100)])
+
 
 def test__collect_bigrams_and_trigrams():
     bigrams_and_trigrams = _collect_bigrams_and_trigrams(sample_data, min_freqs=[2,2])

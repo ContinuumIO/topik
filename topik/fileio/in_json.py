@@ -73,7 +73,7 @@ def read_large_json(filename, json_prefix='item', **kwargs):
         The filename of the large json file
 
     json_prefix : str
-        The string representation of the hierarchical prefix where the items of 
+        The string representation of the hierarchical prefix where the items of
         interest may be located within the larger json object.
 
         Try the following script if you need help determining the desired prefix:
@@ -117,8 +117,8 @@ def read_large_json(filename, json_prefix='item', **kwargs):
     True
     """
 
-    with open(filename, 'r') as f:
-        for item in ijson.items(f, json_prefix):
+    with open(filename, 'r') as handle:
+        for item in ijson.items(handle, json_prefix):
             if hasattr(item, 'keys'): # check if item is a dictionary
                 item['filename'] = filename
                 yield item
