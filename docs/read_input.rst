@@ -112,6 +112,9 @@ refer to `Elasticsearch's DSL docs
 Output formats
 ==============
 
+
+# TODO: fix this
+
 Output formats are how your data are represented to further processing and
 modeling. To ensure a uniform interface, output formats implement the interface
 described by :class:`~.CorpusInterface`. Presently,
