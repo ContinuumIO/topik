@@ -31,7 +31,8 @@ test_data_path = os.path.join(test_data_path, "test_data_json_stream.json")
 
 class ProjectTest(object):
     def test_context_manager(self):
-        [os.remove(f) for f in glob.glob("context_output*")]
+        for filename in glob.glob("context_output*"):
+            os.remove(filename)
         with TopikProject("context_output", self.output_type, self.output_args) as project:
             project.read_input(source=test_data_path, content_field='abstract')
             project.tokenize()
@@ -41,30 +42,30 @@ class ProjectTest(object):
         # above runs through a whole workflow (minus plotting.)  At end, it closes file.
         # load output here.
         with TopikProject("context_output") as project:
-            assert(len(list(project.get_filtered_corpus_iterator())) == 100)
-            assert(sample_tokenized_doc in list(iter(project.selected_tokenized_corpus)))
-            assert(project.selected_vectorized_corpus.global_term_count == 2434)
-            assert(len(project.selected_vectorized_corpus) == 100)  # All documents processed
+            nt.assert_equal(len(list(project.get_filtered_corpus_iterator())), 100)
+            nt.assert_true(sample_tokenized_doc in list(iter(project.selected_tokenized_corpus)))
+            nt.assert_equal(project.selected_vectorized_corpus.global_term_count, 2434)
+            nt.assert_equal(len(project.selected_vectorized_corpus), 100)  # All documents processed
             for doc in project.selected_modeled_corpus.doc_topic_matrix.values():
                 nt.assert_almost_equal(sum(doc), 1)
             for topic in project.selected_modeled_corpus.topic_term_matrix.values():
                 nt.assert_almost_equal(sum(topic), 1)
 
-
-        [os.remove(f) for f in glob.glob("context_output*")]
+        for filename in glob.glob("context_output*"):
+            os.remove(filename)
 
     def test_read_input(self):
-        assert(len(list(self.project.get_filtered_corpus_iterator())) == 100)
+        nt.assert_equal(len(list(self.project.get_filtered_corpus_iterator())), 100)
 
     def test_get_filtered_corpus_iterator(self):
         doc_list = list(self.project.get_filtered_corpus_iterator())
-        assert(type(doc_list[0]) == type(('123', 'text')))
-        assert(len(doc_list) == 100)
+        nt.assert_equal(type(doc_list[0]), type(('123', 'text')))
+        nt.assert_equal(len(doc_list), 100)
 
     def test_get_date_filtered_corpus_iterator(self):
         results = list(self.project.get_date_filtered_corpus_iterator(
             field_to_get="abstract", start=1975, end=1999, filter_field='year'))
-        assert(len(results) == 25)
+        nt.assert_equal(len(results), 25)
 
     def test_tokenize(self):
         self.project.tokenize('simple')
@@ -73,13 +74,13 @@ class ProjectTest(object):
             if doc in sample_tokenized_doc:
                 in_results = True
                 break
-        assert(in_results)
+        nt.assert_true(in_results)
 
     def test_vectorize(self):
         self.project.tokenize()
         self.project.vectorize()
-        assert(self.project.selected_vectorized_corpus.global_term_count == 2434)
-        assert(len(self.project.selected_vectorized_corpus) == 100)  # All documents processed
+        nt.assert_equal(self.project.selected_vectorized_corpus.global_term_count, 2434)
+        nt.assert_equal(len(self.project.selected_vectorized_corpus), 100)  # All documents processed
 
     def test_model(self):
         self.project.tokenize()
@@ -95,32 +96,6 @@ class ProjectTest(object):
         self.project.vectorize()
         self.project.run_model(ntopics=2)
         self.project.visualize(topn=5)
-
-
-
-    # def test_transform(self):
-    #     raise NotImplementedError
-    #
-    # def test_select_tokenized_corpora(self):
-    #     raise NotImplementedError
-    #
-    # def test_select_vectorized_corpora(self):
-    #     raise NotImplementedError
-    #
-    # def test_select_model_data(self):
-    #     raise NotImplementedError
-    #
-    # def test_filtered_corpus(self):
-    #     raise NotImplementedError
-    #
-    # def test_tokenized_corpora(self):
-    #     raise NotImplementedError
-    #
-    # def test_vectorized_corpora(self):
-    #     raise NotImplementedError
-    #
-    # def test_modeled_corpus(self):
-    #     raise NotImplementedError
 
 
 class TestInMemoryOutput(unittest.TestCase, ProjectTest):
