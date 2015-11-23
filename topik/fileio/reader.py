@@ -1,4 +1,3 @@
-import itertools
 import os
 
 from topik.fileio._registry import registered_inputs
@@ -60,7 +59,7 @@ def read_input(source, source_type="auto", folder_content_field='text', **kwargs
             next(data_iterator)
             # reset the iterator after this check so that it starts at document 0 rather than document 1
             data_iterator = registered_inputs["read_json_stream"](source, **kwargs)
-        except ValueError as e:
+        except ValueError:
             data_iterator = registered_inputs["read_large_json"](source, **kwargs)
     elif source_type == "large_json":
         data_iterator = registered_inputs["read_large_json"](source, **kwargs)
