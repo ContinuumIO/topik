@@ -28,17 +28,24 @@ class VectorizerOutput(object):
                  term_frequency=None, vectors=None):
         if tokenized_corpus and vectorizer_func and not vectors:
             iter1, iter2 = itertools.tee(tokenized_corpus)
-            self._id_term_map, self._document_term_counts, self._doc_lengths, self._term_frequency = _accumulate_terms(iter1)
+            self._id_term_map, self._document_term_counts, self._doc_lengths, \
+                self._term_frequency = _accumulate_terms(iter1)
+            self._term_id_map = {term: id
+                                 for id, term in self._id_term_map.items()}
             self._vectors = vectorizer_func(iter2, self)
-        elif id_term_map and document_term_counts and doc_lengths and term_frequency and vectors:
+        elif id_term_map and document_term_counts and doc_lengths and \
+                term_frequency and vectors:
             self._id_term_map = id_term_map
+            self._term_id_map = {term: id
+                                 for id, term in self._id_term_map.items()}
             self._document_term_counts = document_term_counts
             self._doc_lengths = doc_lengths
             self._term_frequency = term_frequency
             self._vectors = vectors
         else:
-            raise ValueError("Must provide either tokenized corpora and vectorizer func, "
-                             "or global term collection, document term counts, and vectors.")
+            raise ValueError(
+                "Must provide either tokenized corpora and vectorizer func, "
+                "or global term collection, document term counts, and vectors.")
 
     def get_vectors(self):
         for doc_id, vector in self._vectors.items():
@@ -53,7 +60,7 @@ class VectorizerOutput(object):
 
     @property
     def term_id_map(self):
-        return {term: id for id, term in self._id_term_map.items()}
+        return self._term_id_map
 
     @property
     def global_term_count(self):

@@ -90,7 +90,6 @@ class TopikProject(object):
     def read_input(self, source, content_field, source_type="auto", **kwargs):
         """Import data from external source into Topik's internal format"""
         self.output.import_from_iterable(read_input(source,
-                                                    content_field=content_field,
                                                     source_type=source_type,
                                                     **kwargs),
                                          field_to_hash=content_field)
