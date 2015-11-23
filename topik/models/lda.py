@@ -1,13 +1,23 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import gensim
+import numpy
+
 from .base_model_output import ModelOutput
 from ._registry import register
 from .tests.test_data import test_vectorized_output
 
+
 def _topic_term_to_array(id_term_map, topic):
     term_scores = {term: score for score, term in topic}
     return [term_scores[id_term_map[id]] for id in range(len(id_term_map))]
+
+
+def _doc_topic_to_array(vectors_for_ids, doc_topic_output):
+    ids = [id for id in vectors_for_ids]
+    collapsed_output = [[weight for topic, weight in doc] for doc in doc_topic_output]
+    return {id: vector for id, vector in zip(ids, collapsed_output)}
+
 
 def _LDA(vectorized_output, ntopics, **kwargs):
     """A high-level interface for an LDA (Latent Dirichlet Allocation) model.
@@ -34,8 +44,15 @@ def _LDA(vectorized_output, ntopics, **kwargs):
 
     Examples
     --------
-    >>> model = _LDA(test_vectorized_output, ntopics=3)
-
+    >>> numpy.random.seed(42)
+    >>> topic_term_matrix, doc_topic_matrix = _LDA(test_vectorized_output, ntopics=3)
+    >>> print(doc_topic_matrix)
+    {'doc2': [0.807951743410802, 0.10476330970525315, 0.087284946883944864], \
+'doc1': [0.062042881984474524, 0.88027674977651149, 0.057680368239013936]}
+    >>> print(topic_term_matrix)
+    {'topic1': [0.060135698638034689, 0.52159283671509715, 0.21211974713774981, 0.20615171750911851], \
+'topic0': [0.29823981660082644, 0.31304629647623466, 0.30501110125388842, 0.083702785669050442], \
+'topic2': [0.2433294456376143, 0.26854719743019123, 0.25425967705367086, 0.23386367987852355]}
     """
     # the minimum_probability=0 argument is necessary in order for
     # gensim to return the full document-topic-distribution matrix.  If
@@ -54,10 +71,7 @@ def _LDA(vectorized_output, ntopics, **kwargs):
                                                                           _model.show_topic(topic_no, None))
                          for topic_no in range(ntopics)}
     doc_topic_matrix = list(_model[bow])
-
-    for i, doc in enumerate(doc_topic_matrix):
-        for j, topic in enumerate(doc):
-            doc_topic_matrix[i][j] = doc_topic_matrix[i][j][1]
+    doc_topic_matrix = _doc_topic_to_array(vectorized_output.vectors, doc_topic_matrix)
     return topic_term_matrix, doc_topic_matrix
 
 

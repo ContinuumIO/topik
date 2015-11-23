@@ -71,3 +71,8 @@ def termite(modeled_corpus, plot_title="Termite plot", topn=15):
     p.circle(x="topic", y="word", size="size", fill_alpha=0.6, source=data_source)
     return p
 
+
+def termite_html(modeled_corpus, filename, plot_title="Termite plot", topn=15):
+    plt.output_file(filename, plot_title)
+    p = termite(modeled_corpus, plot_title=plot_title, topn=topn)
+    plt.save(obj=p)

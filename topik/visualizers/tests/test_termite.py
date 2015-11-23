@@ -2,7 +2,7 @@ import os
 
 import nose.tools as nt
 
-from topik.visualizers.termite_plot import _get_top_words, _termite_data, termite
+from topik.visualizers.termite_plot import _get_top_words, _termite_data, termite_html
 from topik.models.tests.test_data import test_model_output
 
 TOP_WORDS = 5
@@ -24,8 +24,9 @@ def test_termite_pandas_output():
     nt.assert_equal(len(data.columns), 3)
     nt.assert_equal(len(data), TOP_WORDS * 2)
 
+
 def test_termite():
-    termite_plot = termite(test_model_output, "My lda results", topn=TOP_WORDS)
-    termite_plot.save(os.path.join(module_path, 'termite_plot.html'))
+    termite_html(test_model_output, filename=os.path.join(module_path, 'termite_plot.html'),
+                           plot_title="My lda results", topn=TOP_WORDS)
     nt.assert_true(os.path.isfile(os.path.join(module_path, 'termite_plot.html')))
     os.remove(os.path.join(module_path, 'termite_plot.html'))
