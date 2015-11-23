@@ -52,7 +52,7 @@ options, please run ``topik --help``
         -c, --field TEXT       the content field to extract text from, or for
                                 folders, the field to store text as  [required]
         -f, --format TEXT      Data format provided: json_stream, folder_files,
-                                large_json, solr, elastic
+                                large_json, elastic
         -m, --model TEXT       Statistical topic model: lda, plsa
         -o, --output TEXT      Topic modeling output path
         -t, --tokenizer TEXT   Tokenize method to use: simple, collocations,

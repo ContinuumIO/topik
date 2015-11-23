@@ -6,56 +6,21 @@ Subpackages
 
 .. toctree::
 
-    topik.intermediaries
+    topik.fileio
     topik.models
+    topik.simple_run
+    topik.tokenizers
+    topik.transformers
+    topik.vectorizers
+    topik.visualizers
 
 Submodules
 ----------
 
-topik.cli module
-----------------
+topik.singleton_registry module
+-------------------------------
 
-.. automodule:: topik.cli
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-topik.readers module
---------------------
-
-.. automodule:: topik.readers
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-topik.run module
-----------------
-
-.. automodule:: topik.run
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-topik.tokenizers module
------------------------
-
-.. automodule:: topik.tokenizers
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-topik.utils module
-------------------
-
-.. automodule:: topik.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-topik.viz module
-----------------
-
-.. automodule:: topik.viz
+.. automodule:: topik.singleton_registry
     :members:
     :undoc-members:
     :show-inheritance:

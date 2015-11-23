@@ -4,7 +4,6 @@ python:
   - "2.7"
   #- "3.4" # comment python 3 for now (a few upstream libs don't support it.)
 install:
-  # TODO: Use a "latest" url
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
     else
@@ -18,7 +17,7 @@ install:
   - source activate topik
   - conda install -c wakari1 pandoc
   - python -m textblob.download_corpora
-  - pip install coverage
+  - pip install coverage jsonpickle
   - pip install .
 
 services:

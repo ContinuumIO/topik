@@ -10,7 +10,8 @@ nltk
 pattern
 elasticsearch
 click
-pysolr
 ijson
 versioneer
 setuptools-markdown
+jsonpickle
+

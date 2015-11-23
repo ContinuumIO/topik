@@ -1,7 +1,10 @@
-from .readers import read_input
-from .models import registered_models, load_model
-from .intermediaries.raw_data import registered_outputs, load_persisted_corpus
+from __future__ import absolute_import, print_function
+import logging
 
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
+
+
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
+                    level=logging.WARNING)

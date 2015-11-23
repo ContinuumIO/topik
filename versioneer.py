@@ -1159,7 +1159,7 @@ def versions_from_file(filename):
 def write_to_version_file(filename, versions):
     os.unlink(filename)
     contents = json.dumps(versions, sort_keys=True,
-                          indent=1, separators=(",", ": "))
+                                  indent=1, separators=(",", ": "))
     with open(filename, "w") as f:
         f.write(SHORT_VERSION_PY % contents)
 

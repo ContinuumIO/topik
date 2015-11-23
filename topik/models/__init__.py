@@ -1,5 +1,6 @@
+# these imports register the functions with the
+# registered_models function registry.
+from .lda import lda
+from .plsa import plsa
 
-from .lda import LDA; LDA()
-from .plsa import PLSA; PLSA()
-
-from .model_base import registered_models, load_model
+from ._registry import registered_models, register, run_model
