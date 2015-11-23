@@ -170,7 +170,7 @@ class TopikProject(object):
         else:
             raise ValueError("vectorized data {} not found in storage.".format(id))
 
-    def select_model_data(self, id):
+    def select_modeled_corpus(self, id):
         if id in self.output.modeled_corpus:
             self._selected_modeled_corpus_id = id
         else:

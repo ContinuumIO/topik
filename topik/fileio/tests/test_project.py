@@ -92,7 +92,7 @@ class ProjectTest(object):
 
     def test_visualize(self):
         self.project.tokenize()
-        self.project.vectorize()
+        self.project.vectorize(method='tfidf')
         self.project.run_model(ntopics=2)
         self.project.visualize(topn=5)
 

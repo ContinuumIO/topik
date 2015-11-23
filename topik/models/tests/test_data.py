@@ -3,6 +3,8 @@ from topik.models.base_model_output import ModelOutput
 
 test_vectorized_output = VectorizerOutput(id_term_map={0:"frank", 1:"dog", 2:"cat", 3:"llama"},
                                           document_term_counts={"doc1": 5, "doc2": 3},
+                                          doc_lengths={'doc1': 5, 'doc2': 3},
+                                          term_frequency={0:1, 1:1, 2:2, 3:10},
                                           vectors={"doc1": {1: 3, 2: 1, 3: 1},
                                                    "doc2": {0: 1, 1: 1, 2: 1}})
 

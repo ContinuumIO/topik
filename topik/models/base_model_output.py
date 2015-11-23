@@ -1,17 +1,3 @@
-from collections import Counter
-
-def _get_vocab(vectorized_corpus):
-    return vectorized_corpus.id_term_map
-
-def _get_term_frequency(vectorized_corpus):
-    tf = Counter()
-    # TODO: think this should actually be iterating over tokenized_corpus because if not BOW then weights aren't counts.
-    [tf.update(dict(doc)) for doc_id, doc in vectorized_corpus.get_vectors()]
-    return dict(tf)
-
-def _get_doc_lengths(vectorized_corpus):
-    return vectorized_corpus.document_term_counts
-
 class ModelOutput(object):
     """Abstract base class for topic models.
 
@@ -27,11 +13,11 @@ class ModelOutput(object):
                  vocab=None, term_frequency=None, topic_term_matrix=None,
                  doc_lengths=None, doc_topic_matrix=None, **kwargs):
         if vectorized_corpus and model_func:
-            self._vocab = _get_vocab(vectorized_corpus)
-            self._term_frequency = _get_term_frequency(vectorized_corpus)
+            self._vocab = vectorized_corpus.id_term_map
+            self._doc_lengths = vectorized_corpus.doc_lengths
+            self._term_frequency = vectorized_corpus.term_frequency
             self._topic_term_matrix, self._doc_topic_matrix = model_func(
                                                     vectorized_corpus, **kwargs)
-            self._doc_lengths = _get_doc_lengths(vectorized_corpus)
 
         elif (vocab and term_frequency and topic_term_matrix and doc_lengths and
                      doc_topic_matrix):
