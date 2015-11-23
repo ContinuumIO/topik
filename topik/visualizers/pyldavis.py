@@ -1,11 +1,8 @@
-import numpy as np
 import pandas as pd
 
 from ._registry import register
 
 def _to_py_lda_vis(modeled_corpus):
-    from pyLDAvis import prepare
-
     vocab = pd.Series(modeled_corpus.vocab)
     term_frequency = pd.Series(modeled_corpus.term_frequency)
     topic_term_matrix = pd.DataFrame(modeled_corpus.topic_term_matrix)
@@ -25,14 +22,16 @@ def _to_py_lda_vis(modeled_corpus):
                             'topic_term_dists': term_data.iloc[:,:-2].T,
                             'doc_topic_dists': doc_data.iloc[:,:-1],
                             'doc_lengths': doc_data['doc_length']}
-    return prepare(**model_vis_data)
+    return model_vis_data
 
 @register
 def lda_vis(modeled_corpus, mode='show', filename=None):
     """Designed to work with to_py_lda_vis() in the model classes."""
-    prepared_model_vis_data = _to_py_lda_vis(modeled_corpus)
-    from pyLDAvis import show, save_html
-    # model_vis_data = prepare(**model_data)
+    from pyLDAvis import prepare, show, save_html
+
+    model_vis_data = _to_py_lda_vis(modeled_corpus)
+    prepared_model_vis_data = prepare(**model_vis_data)
+
     if mode == 'save_html' and filename:
         save_html(prepared_model_vis_data, filename)
     else:
