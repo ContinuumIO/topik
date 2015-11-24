@@ -9,7 +9,8 @@ from topik.models.tests.test_data import test_vectorized_output
 from topik.models.plsa import _rand_mat, _e_step, _m_step, _cal_likelihood, _cal_p_dw, plsa
 
 ntopics = 2
-words_in_docs = {doc_id: [word_id for word_id, _ in doc.items()] for doc_id, doc in test_vectorized_output.get_vectors()}
+words_in_docs = [(id, doc_id, [word_id for word_id, _ in doc.items()])
+                     for id, (doc_id, doc) in enumerate(test_vectorized_output.get_vectors())]
 word_cts_in_docs = {doc_id: [ct for _, ct in doc.items()] for doc_id, doc in test_vectorized_output.get_vectors()}
 
 def test_rand_mat():
@@ -55,3 +56,6 @@ def test_train():
 
 def test_registration():
     nt.assert_true("plsa" in registered_models)
+
+if __name__ == "__main__":
+    test_train()

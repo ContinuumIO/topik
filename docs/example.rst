@@ -75,8 +75,8 @@ accessible in python:
 
 .. code-block:: python
 
-   >>> from topik.run import run_model
-   >>> run_model("reviews", content_field="text")
+   >>> from topik.simple_run.run import run_model
+   >>> run_model("./reviews/", content_field="text")
 
 
 Custom topic modeling flow
@@ -92,11 +92,12 @@ An example complete workflow would be the following:
 
 .. code-block:: python
 
-   >>> from topik import read_input, registered_models
-   >>> raw_data = read_input("reviews", content_field="text")
-   >>> tokenized_corpus = raw_data.tokenize()
+   >>> from topik import read_input, tokenize, vectorize, run_model, visualize
+   >>> raw_data = read_input("./reviews/")
+   >>> content_field = "text"
+   >>> raw_data = ((hash(item[content_field]), item[content_field]) for item in raw_data)
+   >>> tokenized_corpus = tokenize(raw_data)
+   >>> vectorized_corpus = vectorize(tokenized_corpus)
    >>> n_topics = 10
-   >>> model = registered_models["LDA"](tokenized_corpus, n_topics)
-   >>> from topik.viz import Termite
-   >>> termite = Termite(model.termite_data(n_topics), "Termite Plot")
-   >>> termite.plot('termite.html')
+   >>> model = run_model(vectorized_corpus, n_topics)
+   >>> plot = visualize(model)

@@ -1,6 +1,6 @@
 # these imports register the functions with the
 # registered_tokenizers function registry.
-from .entities import entities
+from .entities import entities, mixed
 from .simple import simple
 from .ngrams import ngrams
 

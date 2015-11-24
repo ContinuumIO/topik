@@ -9,7 +9,7 @@ internal representation for Topik. The main front end for importing data is the
 .. code-block:: python
 
    >>> from topik import read_input
-   >>> corpus = read_input(source="data_file.json", content_field="text")
+   >>> corpus = read_input(source="./reviews/")
 
 
 :func:`~.read_input` is a front-end to several potential reader backends. Presently,
@@ -25,17 +25,12 @@ characteristics of the source string you pass in. These criteria are:
     by content_field. Files may be gzipped.
 
 Any of the backends can also be forced by passing the source_type argument with
-one of the following string arguments:
+one of the following string arguments (see the :data:`topik.fileio.registered_inputs` dictionary):
 
   * elastic
   * json_stream
   * large_json
   * folder
-
-The ``content_field`` is a mandatory argument that in most cases specifies where the
-actual content to be analyzed will be drawn from. For all hierarchical data
-sources (everything except folders), this accesses some subfield of the data you
-feed in.
 
 
 JSON additional options
@@ -56,8 +51,7 @@ You would read using the following ``json_prefix`` argument:
 
 .. code-block:: python
 
-   >>> corpus = read_input(source="data_file.json", content_field="text",
-                           json_prefix="nested.dictionary")
+   >>> corpus = read_input(source="data_file.json", json_prefix="nested.dictionary")
 
 
 `Elasticsearch` additional options and notes
@@ -70,7 +64,7 @@ contain only the contents of the '_source' field returned from the query.
 
 .. code-block:: python
 
-   >>> corpus = read_input(source="https://localhost:9200", index="test_index", content_field="text")
+   >>> corpus = read_input(source="https://localhost:9200", index="test_index")
 
 
 Extra arguments passed by keyword are passed to the `Elasticsearch` instance
@@ -80,7 +74,7 @@ use SSL:
 .. code-block:: python
 
    >>> corpus = read_input(source="https://user:secret@localhost:9200",
-                           index="test_index", content_field="text", use_ssl=True)
+                           index="test_index", use_ssl=True)
 
 
 The source argument for Elasticsearch also supports multiple servers, though
@@ -89,7 +83,7 @@ this requires that you manually specify the 'elastic' source_type:
 .. code-block:: python
 
     >>> corpus = read_input(source=["https://server1", "https://server2"],
-                            index="test_index", source_type="elastic", content_field="text")
+                            index="test_index", source_type="elastic")
 
 
 For more information on server options, please refer to `Elasticsearch's
@@ -105,108 +99,25 @@ refer to `Elasticsearch's DSL docs
 .. code-block:: python
 
    >>> query = "{"filtered": {"query": {"match": { "tweet": "full text search"}}}}"
-   >>> corpus = read_input(source="https://localhost:9200", index="test_index",
-                           content_field="tweet", query=query)
+   >>> corpus = read_input(source="https://localhost:9200", index="test_index", query=query)
 
 
-Output formats
-==============
+Tracking documents
+==================
 
-Output formats are how your data are represented to further processing and
-modeling. To ensure a uniform interface, output formats implement the interface
-described by :class:`~.CorpusInterface`. Presently,
-two such backends are implemented:
-:class:`~.DictionaryCorpus` and
-:class:`~.ElasticSearchCorpus`. Available outputs
-can be examined by checking the keys of the
-:data:`~topik.intermediaries.raw_data.registered_outputs` dictionary:
+One important aspect that hasn't come up here is that documents are tracked by hashing their
+contents.  Projects do this for you automatically:
 
 .. code-block:: python
 
-    >>> from topik import registered_outputs
-    >>> list(registered_outputs.keys())
+    >>> project = TopikProject("my_project")
+    >>> project.read_input("./reviews/", content_field="text")
 
-
-The default output is the :class:`~.DictionaryCorpus`. No additional arguments
-are necessary. :class:`~.DictionaryCorpus` stores everything in a Python
-dictionary. As such, it is memory intensive. All operations done with a
-:class:`~.DictionaryCorpus` block until complete. :class:`~.DictionaryCorpus` is
-the simplest to use, but it will ultimately limit the size of analyses that you
-can perform.
-
-The :class:`~.ElasticSearchCorpus` can be specified
-to :func:`~.read_input` using the ``output_type`` argument. It must
-be accompanied by another keyword argument, ``output_args``, which should be a
-dictionary containing connection details and any additional arguments.
+If you do not use Topik's project feature, then you need to create these id's yourself.  Tokenization
+and all subsequent steps expect data that has these id's, with the idea that any future parallelism
+will use these id's to keep track of data during and after processing.  One way to get id's is below:
 
 .. code-block:: python
 
-    >>> output_args = {"source": "localhost", "index": "destination_index"}
-    >>> raw_data = read_input("test_data.json", output_type='elastic',
-                              output_args=output_args, content_field="text")
-
-
-:class:`~.ElasticSearchCorpus` stores everything in an `Elasticsearch` instance
-that you specify. Operations do not block, and have "eventual consistency": the
-corpus will eventually have all of the documents you sent available, but not
-necessarily immediately after the read_input function returns. This lag time is
-due to `Elasticsearch` indexing the data on the server side.
-
-
-Synchronous wait
-================
-
-As mentioned above, some output formats are not immediately ready for
-consumption after loading data. For example, after sending data to
-Elasticsearch, Elasticsearch will take some time to index that data. Until that
-indexing is complete, that data will not show up in iterations over the corpus.
-To force your program to wait for this to finish, use the ``synchronous_wait``
-argument to read_input:
-
-.. code-block:: python
-
-    >>> output_args = {"source": "localhost", "index": "destination_index"}
-    >>> raw_data = read_input("test_data.json", output_type='elastic',
-                              output_args=output_args, content_field="text",
-                              synchronous_wait=30)
-
-
-This example will wait up to 30 seconds for the Elasticsearch indexing to stabilize.
-This is evaluated as the point at which the number of documents in the output has
-not changed after 1 second.  If the number of documents has not stabilized after the
-synchronous wait period, you will get a warning message, but execution will proceed.
-
-This is a property only of output formats. Input has no wait associated with it,
-because the source is assumed to be "complete" when you ask for it. Please make
-sure that this is true, or your results will be ill-defined and impossible to
-reproduce.
-
-Saving and loading corpora
-==========================
-
-The output object of any :func:`~.read_input` step is saveable and loadable.
-This allows you to quickly get back to any filtered state you may have applied
-to some larger corpus, and also ensures that the corpus you load with a model is
-consistent with the corpus that was used to create that model. To save a corpus,
-call its :meth:`~.CorpusBase.save` method:
-
-.. code-block:: python
-
-    >>> raw_data.save("output_filename")
-
-
-The file format of the saved file is JSON. Depending on the exact class that
-your corpus is, more or less data may be saved to this JSON file. For example,
-the :class:`~.DictionaryCorpus` class saves all of its corpus data to this JSON
-file, and can be quite large. The :class:`~.ElasticsearchCorpus` class saves
-only connection details and filtering metadata to this JSON file, and is much
-smaller.
-
-Loading corpora is achieved using the :func:`~.load_persisted_corpus` function.
-This function returns the appropriate Corpus object, based on metadata in the
-JSON file.
-
-.. code-block:: python
-
-    >>> from topik.intermediaries.raw_data import load_persisted_corpus >>>
-    raw_data = load_persisted_corpus("output_filename")
+    >>> content_field = "text"
+    >>> raw_data = ((hash(item[content_field]), item[content_field]) for item in corpus)

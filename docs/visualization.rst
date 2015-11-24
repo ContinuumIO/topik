@@ -3,9 +3,9 @@ Viewing results
 
 Each model supports a few standard outputs for examination of results:
 
-  * List of top N words for each topic
   * Termite plots
   * LDAvis-based plots
+
 
     * topik's LDAvis-based plots use the pyLDAvis module, which is itself a
     Python port of the R_ldavis library.  The visualization consists of two
@@ -18,34 +18,28 @@ Each model supports a few standard outputs for examination of results:
     probabilities for that topic (the red bar), whereas a value of 0 will rank
     them by their probabilities for that topic divided by their probabilities for the overall corpus (red divided by blue).
 
+
 Example syntax for these:
 
 .. code-block:: python
 
-   >>> model.get_top_words(topn=10)
+   >>> from topik.visualizers.termite_plot import termite_html
+   >>> termite = termite_html(model_output, "termite.html", "Termite Plot", topn=15)
 
-
-.. code-block:: python
-
-   >>> from topik.viz import Termite
-   >>> termite = Termite(lda.termite_data(n_topics), "Termite Plot")
-   >>> termite.plot(os.path.join(dir_path, 'termite.html'))
 
 .. raw:: html
    :file: viz/termite_open.html
 
+
 .. raw:: html
    :file: viz/reviews_termite.html
 
+
 .. code-block:: python
 
-   >>> from topik.viz import LDAvis
-   >>> raw_data = read_input("reviews", content_field=None)
-   >>> tokenized_corpus = raw_data.tokenize()
-   >>> n_topics = 10
-   >>> model = registered_models["LDA"](tokenized_corpus, n_topics)
-   >>> from topik.viz import plot_lda_vis
-   >>> plot_lda_vis(model.to_py_lda_vis())
+   >>> from topik.visualizers import lda_vis
+   >>> lda_vis(model_output)
+
 
 .. raw:: html
    :file: viz/ldavis_open.html
@@ -53,5 +47,3 @@ Example syntax for these:
 .. raw:: html
     :file: viz/reviews_pyldavis.html
 
-Each model is free to implement its own additional outputs - check the class
-members for what might be available.
