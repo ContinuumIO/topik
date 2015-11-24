@@ -9,7 +9,7 @@ internal representation for Topik. The main front end for importing data is the
 .. code-block:: python
 
    >>> from topik import read_input
-   >>> corpus = read_input(source="data_file.json", content_field="text")
+   >>> corpus = read_input(source="./reviews/")
 
 
 :func:`~.read_input` is a front-end to several potential reader backends. Presently,
@@ -25,17 +25,12 @@ characteristics of the source string you pass in. These criteria are:
     by content_field. Files may be gzipped.
 
 Any of the backends can also be forced by passing the source_type argument with
-one of the following string arguments:
+one of the following string arguments (see the :data:`topik.fileio.registered_inputs` dictionary):
 
   * elastic
   * json_stream
   * large_json
   * folder
-
-The ``content_field`` is a mandatory argument that in most cases specifies where the
-actual content to be analyzed will be drawn from. For all hierarchical data
-sources (everything except folders), this accesses some subfield of the data you
-feed in.
 
 
 JSON additional options
@@ -56,8 +51,7 @@ You would read using the following ``json_prefix`` argument:
 
 .. code-block:: python
 
-   >>> corpus = read_input(source="data_file.json", content_field="text",
-                           json_prefix="nested.dictionary")
+   >>> corpus = read_input(source="data_file.json", json_prefix="nested.dictionary")
 
 
 `Elasticsearch` additional options and notes
@@ -70,7 +64,7 @@ contain only the contents of the '_source' field returned from the query.
 
 .. code-block:: python
 
-   >>> corpus = read_input(source="https://localhost:9200", index="test_index", content_field="text")
+   >>> corpus = read_input(source="https://localhost:9200", index="test_index")
 
 
 Extra arguments passed by keyword are passed to the `Elasticsearch` instance
@@ -80,7 +74,7 @@ use SSL:
 .. code-block:: python
 
    >>> corpus = read_input(source="https://user:secret@localhost:9200",
-                           index="test_index", content_field="text", use_ssl=True)
+                           index="test_index", use_ssl=True)
 
 
 The source argument for Elasticsearch also supports multiple servers, though
@@ -89,7 +83,7 @@ this requires that you manually specify the 'elastic' source_type:
 .. code-block:: python
 
     >>> corpus = read_input(source=["https://server1", "https://server2"],
-                            index="test_index", source_type="elastic", content_field="text")
+                            index="test_index", source_type="elastic")
 
 
 For more information on server options, please refer to `Elasticsearch's
@@ -105,6 +99,25 @@ refer to `Elasticsearch's DSL docs
 .. code-block:: python
 
    >>> query = "{"filtered": {"query": {"match": { "tweet": "full text search"}}}}"
-   >>> corpus = read_input(source="https://localhost:9200", index="test_index",
-                           content_field="tweet", query=query)
+   >>> corpus = read_input(source="https://localhost:9200", index="test_index", query=query)
 
+
+Tracking documents
+==================
+
+One important aspect that hasn't come up here is that documents are tracked by hashing their
+contents.  Projects do this for you automatically:
+
+.. code-block:: python
+
+    >>> project = TopikProject("my_project")
+    >>> project.read_input("./reviews/", content_field="text")
+
+If you do not use Topik's project feature, then you need to create these id's yourself.  Tokenization
+and all subsequent steps expect data that has these id's, with the idea that any future parallelism
+will use these id's to keep track of data during and after processing.  One way to get id's is below:
+
+.. code-block:: python
+
+    >>> content_field = "text"
+    >>> raw_data = ((hash(item[content_field]), item[content_field]) for item in corpus)

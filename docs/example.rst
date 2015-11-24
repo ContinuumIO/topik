@@ -75,7 +75,7 @@ accessible in python:
 
 .. code-block:: python
 
-   >>> from topik.run import run_model
+   >>> from topik.simple_run.run import run_model
    >>> run_model("./reviews/", content_field="text")
 
 

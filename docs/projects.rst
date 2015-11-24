@@ -48,9 +48,9 @@ To ensure a uniform interface, output formats implement the interface
 described by :class:`~.OutputInterface`. Presently,
 two such backends are implemented:
 :class:`~.InMemoryOutput` and
-:class:`~.ElasticSearchOutpt`. Available outputs
+:class:`~.ElasticSearchOutput`. Available outputs
 can be examined by checking the keys of the
-:data:`~.registered_outputs` dictionary:
+:data:`topik.fileio.registered_outputs` dictionary:
 
 .. code-block:: python
 
@@ -120,7 +120,8 @@ dependent on the output backend in use.  There will always be two files:
   * a .topikproject file, describing the project metadata and how to load the project
   * a .topikdata file, containing or describing how to obtain the data contained in the project.
 
-Each of the above files are JSON format.  Additional files may store data in binary format.
+Each of the above files are JSON format.  Additional files may store data in binary format.  If you
+move your outputs on disk, make sure to move all of them, or Topik will not be able to load your results.
 
 If using the project with a context manager, data is saved and connections are closed when
 the context ends.  Otherwise, call the :meth:`~.OutputInterface.save` to write data

@@ -7,6 +7,7 @@ Each model supports a few standard outputs for examination of results:
   * Termite plots
   * LDAvis-based plots
 
+
     * topik's LDAvis-based plots use the pyLDAvis module, which is itself a
     Python port of the R_ldavis library.  The visualization consists of two
     linked, interactive views.  On the left is a projection of the topics onto
@@ -17,6 +18,7 @@ Each model supports a few standard outputs for examination of results:
     the words in a topic.  A value of 1 on the slider will rank terms by their
     probabilities for that topic (the red bar), whereas a value of 0 will rank
     them by their probabilities for that topic divided by their probabilities for the overall corpus (red divided by blue).
+
 
 Example syntax for these:
 
@@ -31,11 +33,14 @@ Example syntax for these:
    >>> termite = Termite(lda.termite_data(n_topics), "Termite Plot")
    >>> termite.plot(os.path.join(dir_path, 'termite.html'))
 
+
 .. raw:: html
    :file: viz/termite_open.html
 
+
 .. raw:: html
    :file: viz/reviews_termite.html
+
 
 .. code-block:: python
 
@@ -46,6 +51,7 @@ Example syntax for these:
    >>> model = registered_models["LDA"](tokenized_corpus, n_topics)
    >>> from topik.viz import plot_lda_vis
    >>> plot_lda_vis(model.to_py_lda_vis())
+
 
 .. raw:: html
    :file: viz/ldavis_open.html
