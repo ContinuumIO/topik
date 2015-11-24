@@ -75,8 +75,8 @@ accessible in python:
 
 .. code-block:: python
 
-   >>> from topik.simple_run.run import run_model
-   >>> run_model("./reviews/", content_field="text")
+   >>> from topik.simple_run.run import run_pipeline
+   >>> run_pipeline("./reviews/", content_field="text")
 
 
 Custom topic modeling flow

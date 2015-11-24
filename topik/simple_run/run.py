@@ -15,7 +15,7 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def run_model(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
+def run_pipeline(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
               content_field=None, tokenizer='simple', vectorizer='bag_of_words', ntopics=10,
               dir_path='./topic_model', model='lda', termite_plot=True, output_file=False,
               ldavis=False, seed=42, **kwargs):
