@@ -13,7 +13,7 @@ Bag of words is simply a word count.  Words are collected from the tokenized inp
 identifiers, and counted.
 
 :func:`~topik.vectorizers.bag_of_words.bag_of_words` is the default method applied
-by the :func:`~topik.vectorizers.vectorize` function:
+by the :func:`~topik.vectorizers._registry.vectorize` function:
 
 .. code-block:: python
 

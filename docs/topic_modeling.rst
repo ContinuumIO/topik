@@ -23,7 +23,7 @@ the ntopics parameter to come up with the results that are best for your
 collection of data.
 
 To perform topic modeling on your tokenized data, select a model function from the
-:data:`~.registered_models` dictionary, or simply import a model function directly,
+:data:`topik.models.registered_models` dictionary, or simply import a model function directly,
 and feed it your vectorized text.  Note that not all models are compatible with
 all vectorizer methods.  In particular, LDA is not compatible with TF-IDF vectorization.
 
