@@ -146,17 +146,20 @@ class TopikProject(object):
         # set _vectorizer_id internal handle to point to this data
         self._selected_vectorized_corpus_id = vectorize_parameter_string
 
-    def run_model(self, model_name="plsa", **kwargs):
+    def run_model(self, model_name="plsa", ntopics=3, **kwargs):
         """Analyze vectorized text; determine topics and assign document probabilities"""
+        if (model_name=='lda') and ('tfidf' in self._selected_vectorized_corpus_id):
+            raise ValueError('LDA models are incompatible with TF-IDF vectorization.  If you wish to use TFIDF vectorization, please select another type of model.')
         modeled_corpus = models.run_model(self.selected_vectorized_corpus,
-                                        model_name=model_name, **kwargs)
+                                          model_name=model_name,
+                                          ntopics=ntopics, **kwargs)
         model_id = "_".join([model_name, _get_parameters_string(**kwargs)])
         # store this internally
         self.output.modeled_corpora[model_id] = modeled_corpus
         # set _model_id internal handle to point to this data
         self._selected_modeled_corpus_id = model_id
 
-    def visualize(self, vis_name='termite', model_id=None, **kwargs):
+    def visualize(self, vis_name='lda_vis', model_id=None, **kwargs):
         """Plot model output"""
         if not model_id:
             modeled_corpus = self.selected_modeled_corpus

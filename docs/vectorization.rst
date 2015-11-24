@@ -28,6 +28,8 @@ on how much they occur in a single document, but also how much they occur across
 Words that occur many times in one document, but not much over the corpus are deemed to be more
 important under this scheme.
 
+NOTE: TF-IDF is NOT compatible with LDA models as Bag-Of-Words vectorization is a fundamental assumption of LDA.
+
 .. code-block:: python
 
     >>> from topik import vectorize

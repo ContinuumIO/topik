@@ -20,12 +20,13 @@ However, this does not handle any kind of persistence to disk.  Your changes wil
 
 .. code-block:: python
 
+    >>> from topik import TopikProject
     >>> with TopikProject("my_project") as project:
     >>>     project.read_input("./reviews/", content_field="text")
     >>>     project.tokenize()
     >>>     project.vectorize()
-    >>>     project.model(ntopics=4)
-    >>>     project.plot()
+    >>>     project.run_model(ntopics=4)
+    >>>     project.visualize()
     >>> # when project goes out of scope, any files are flushed to disk, and the project can later be loaded.
 
 
@@ -35,7 +36,7 @@ Projects create files on disk when instantiated if none already exist.  When pro
 .. code-block:: python
 
     >>> with TopikProject("my_project") as project:
-    >>>     project.plot()
+    >>>     project.visualize()
 
 
 Output formats

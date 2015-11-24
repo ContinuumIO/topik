@@ -20,7 +20,3 @@ There is also the option of just installing the Python features with pip.
    $ pip install topik
 
 
-.. warning::
-
-   The pip installation option will not provide all the available features, e.g. the LDAvis R package will not be
-   available.
