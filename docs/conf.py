@@ -22,7 +22,8 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 
-MOCK_MODULES = ['numpy', 'pandas', 'scipy', 'gensim', 'blaze', 'textblob', 'nltk', 'odo', 'bokeh', 'bokeh.models']
+MOCK_MODULES = ['numpy', 'pandas', 'scipy', 'gensim', 'blaze', 'textblob', 'nltk',
+                'odo', 'bokeh', 'bokeh.models', 'elasticsearch', 'jsonpickle']
 import sys
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
