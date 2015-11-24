@@ -24,7 +24,7 @@ registered_vectorizers = VectorizerRegistry()
 register = partial(_base_register_decorator, registered_vectorizers)
 
 
-def vectorize(corpus, method="tfidf", **kwargs):
+def vectorize(corpus, method="bag_of_words", **kwargs):
     """Represent documents as vectors in word-space.
 
     Note: bag-of-words model is implicitly used when no additional

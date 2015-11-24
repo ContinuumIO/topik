@@ -1,6 +1,6 @@
 import click
 
-from topik.simple_run.run import run_model
+from topik.simple_run.run import run_pipeline
 
 
 @click.command(help='Run topic modeling')
@@ -17,5 +17,5 @@ from topik.simple_run.run import run_model
 @click.option("--termite", help="Whether to output a termite plot as a result", default=True)
 @click.option("--ldavis", help="Whether to output an LDAvis-type plot as a result", default=False)
 def run(data, format, output, tokenizer, ntopics, field, model, termite, ldavis):
-    run_model(data_source=data, source_type=format, dir_path=output, tokenizer=tokenizer, n_topics=ntopics,
+    run_pipeline(data_source=data, source_type=format, dir_path=output, tokenizer=tokenizer, n_topics=ntopics,
               content_field=field, model=model, r_ldavis=ldavis, termite_plot=termite)

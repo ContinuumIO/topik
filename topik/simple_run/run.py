@@ -15,10 +15,10 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def run_model(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
+def run_pipeline(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
               content_field=None, tokenizer='simple', vectorizer='bag_of_words', ntopics=10,
-              dir_path='./topic_model', model='lda', termite_plot=True, output_file=False,
-              ldavis=False, seed=42, **kwargs):
+              dir_path='./topic_model', model='lda', termite_plot=False, output_file=False,
+              lda_vis=True, seed=42, **kwargs):
 
     """Run your data through all topik functionality and save all results to a specified directory.
 
@@ -71,7 +71,7 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
     if termite_plot:
         termite_html(model, filename="termite.html", plot_title="Termite plot", topn=15)
 
-    if ldavis:
-        visualizers["lda_vis"](model)
+    if lda_vis:
+        visualizers.visualize(model, "lda_vis")
 
 

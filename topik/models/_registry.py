@@ -25,5 +25,5 @@ register = partial(_base_register_decorator, registered_models)
 
 
 # this function is the primary API for people using any registered functions.
-def run_model(input_data, model_name, **kwargs):
-    return registered_models[model_name](input_data, **kwargs)
+def run_model(input_data, model_name='plsa', ntopics=3, **kwargs):
+    return registered_models[model_name](input_data, ntopics, **kwargs)

@@ -75,8 +75,8 @@ accessible in python:
 
 .. code-block:: python
 
-   >>> from topik.simple_run.run import run_model
-   >>> run_model("./reviews/", content_field="text")
+   >>> from topik.simple_run.run import run_pipeline
+   >>> run_pipeline("./reviews/", content_field="text")
 
 
 Custom topic modeling flow
@@ -98,6 +98,6 @@ An example complete workflow would be the following:
    >>> raw_data = ((hash(item[content_field]), item[content_field]) for item in raw_data)
    >>> tokenized_corpus = tokenize(raw_data)
    >>> vectorized_corpus = vectorize(tokenized_corpus)
-   >>> n_topics = 10
-   >>> model = run_model(vectorized_corpus, n_topics)
+   >>> ntopics = 10
+   >>> model = run_model(vectorized_corpus, ntopics=ntopics)
    >>> plot = visualize(model)

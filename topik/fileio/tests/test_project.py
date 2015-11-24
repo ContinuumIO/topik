@@ -95,7 +95,7 @@ class ProjectTest(object):
         self.project.tokenize()
         self.project.vectorize(method='tfidf')
         self.project.run_model(ntopics=2)
-        self.project.visualize(topn=5)
+        self.project.visualize(vis_name='termite', topn=5)
 
 
 class TestInMemoryOutput(unittest.TestCase, ProjectTest):

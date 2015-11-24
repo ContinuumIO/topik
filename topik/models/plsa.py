@@ -85,6 +85,6 @@ def _PLSA(vectorized_corpus, ntopics, max_iter):
 
 @register
 def plsa(vectorized_corpus, ntopics, max_iter=100, **kwargs):
-    return ModelOutput(vectorized_corpus, _PLSA, ntopics=ntopics, max_iter=max_iter, **kwargs)
+    return ModelOutput(vectorized_corpus=vectorized_corpus, model_func=_PLSA, ntopics=ntopics, max_iter=max_iter, **kwargs)
 
 
