@@ -110,8 +110,8 @@ These are more quickly accessible as selected properties of the project:
 These selected properties keep track of the last-used technique, and give you the corresponding
 data.
 
-You can change the selected state using the :method:`~.TopikProject.select_tokenized_corpus`,
-:method:`~.TopikProject.select_modeled_corpus`, and :method:`~.TopikProject.select_modeled_corpus`
+You can change the selected state using the :meth:`~.TopikProject.select_tokenized_corpus`,
+:meth:`~.TopikProject.select_modeled_corpus`, and :meth:`~.TopikProject.select_modeled_corpus`
 methods.
 
 Project objects also persist their state to disk.  This is done in two or more files,
@@ -123,8 +123,8 @@ dependent on the output backend in use.  There will always be two files:
 Each of the above files are JSON format.  Additional files may store data in binary format.
 
 If using the project with a context manager, data is saved and connections are closed when
-the context ends.  Otherwise, call the :method:`~.OutputInterface.save` to write data
-to disk, or the :method:`~.OutputInterface.close` method to write data to disk and close
+the context ends.  Otherwise, call the :meth:`~.OutputInterface.save` to write data
+to disk, or the :meth:`~.OutputInterface.close` method to write data to disk and close
 connections.
 
 Loading projects is achieved by providing simply the project name that you provided when creating
