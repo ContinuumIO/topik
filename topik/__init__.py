@@ -6,6 +6,7 @@ from topik.tokenizers import tokenize
 from topik.vectorizers import vectorize
 from topik.transformers import transform
 from topik.models import run_model
+from topik.visualizers import visualize
 
 from ._version import get_versions
 __version__ = get_versions()['version']

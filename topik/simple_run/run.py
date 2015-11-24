@@ -72,6 +72,6 @@ def run_model(data_source, source_type="auto", year_field=None, start_year=None,
         termite_html(model, filename="termite.html", plot_title="Termite plot", topn=15)
 
     if ldavis:
-        visualizers["lda_vis"](model)
+        visualizers.visualize(model, "lda_vis")
 
 
