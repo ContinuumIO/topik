@@ -80,8 +80,9 @@ def _PLSA(vectorized_corpus, ntopics, max_iter):
         if cur != 0 and abs((likelihood-cur)/cur) < 1e-8:
             break
         cur = likelihood
-    return _get_topic_term_matrix(zw, ntopics, vectorized_corpus.id_term_map), \
-        _get_doc_topic_matrix(dz, ntopics, vectorized_corpus)
+    topic_term_matrix = _get_topic_term_matrix(zw, ntopics, vectorized_corpus.id_term_map)
+    doc_topic_matrix = _get_doc_topic_matrix(dz, ntopics, vectorized_corpus)
+    return topic_term_matrix, doc_topic_matrix
 
 @register
 def plsa(vectorized_corpus, ntopics, max_iter=100, **kwargs):
