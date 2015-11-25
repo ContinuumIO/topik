@@ -36,8 +36,8 @@ class ProjectTest(object):
         with TopikProject("context_output", self.output_type, self.output_args) as project:
             project.read_input(source=test_data_path, content_field='abstract')
             project.tokenize()
-            project.vectorize()
-            project.run_model(ntopics=2)
+            project.vectorize(method='bag_of_words')
+            project.run_model(model_name='lda', ntopics=2)
 
         # above runs through a whole workflow (minus plotting.)  At end, it closes file.
         # load output here.
@@ -93,7 +93,7 @@ class ProjectTest(object):
 
     def test_visualize(self):
         self.project.tokenize()
-        self.project.vectorize(method='tfidf')
+        self.project.vectorize(method='bag_of_words')
         self.project.run_model(ntopics=2)
         self.project.visualize(vis_name='termite', topn=5)
 

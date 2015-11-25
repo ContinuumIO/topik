@@ -11,7 +11,7 @@ Basic functions are provided as immediate children of the topik module:
 
 .. code-block:: python
 
-    >>> from topik import TopikProject, tokenize, vectorize, run_model
+    >>> from topik import TopikProject, read_input, tokenize, vectorize, run_model
 
 These provide defaults, and allow pass-through of any other arguments as keyword arguments.
 

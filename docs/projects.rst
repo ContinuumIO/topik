@@ -11,7 +11,7 @@ Topik can be run by chaining the output of one step directly to the input of ano
     >>> raw_data = ((hash(item[content_field]), item[content_field]) for item in raw_data)
     >>> tokens = tokenize(raw_data)
     >>> vectors = vectorize(tokens)
-    >>> model_output = model(vectors, ntopics=4)
+    >>> model_output = run_model(vectors, ntopics=4)
     >>> plot = visualize(model_output)
 
 
@@ -35,6 +35,7 @@ Projects create files on disk when instantiated if none already exist.  When pro
 
 .. code-block:: python
 
+    >>> from topik import TopikProject
     >>> with TopikProject("my_project") as project:
     >>>     project.visualize()
 

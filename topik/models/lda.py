@@ -9,13 +9,13 @@ from .tests.test_data import test_vectorized_output
 
 
 def _topic_term_to_array(id_term_map, topic):
-    term_scores = {term: score for score, term in topic}
+    term_scores = {term: float(score) for score, term in topic}
     return [term_scores[id_term_map[id]] for id in range(len(id_term_map))]
 
 
 def _doc_topic_to_array(vectors_for_ids, doc_topic_output):
     ids = [id for id in vectors_for_ids]
-    collapsed_output = [[weight for topic, weight in doc] for doc in doc_topic_output]
+    collapsed_output = [[float(weight) for topic, weight in doc] for doc in doc_topic_output]
     return {id: vector for id, vector in zip(ids, collapsed_output)}
 
 
@@ -47,11 +47,11 @@ def _LDA(vectorized_output, ntopics, **kwargs):
     >>> numpy.random.seed(42)
     >>> topic_term_matrix, doc_topic_matrix = _LDA(test_vectorized_output, ntopics=3)
     >>> print(doc_topic_matrix)
-    {'doc2': [0.807951743410802, 0.10476330970525315, 0.087284946883944864], \
-'doc1': [0.062042881984474524, 0.88027674977651149, 0.057680368239013936]}
+    {'doc2': [0.807951743410802, 0.10476330970525315, 0.08728494688394486], \
+'doc1': [0.062042881984474524, 0.8802767497765115, 0.057680368239013936]}
     >>> print(topic_term_matrix)
-    {'topic1': [0.060135698638034689, 0.52159283671509715, 0.21211974713774981, 0.20615171750911851], \
-'topic0': [0.29823981660082644, 0.31304629647623466, 0.30501110125388842, 0.083702785669050442], \
+    {'topic1': [0.06013569863803469, 0.5215928367150972, 0.2121197471377498, 0.2061517175091185], \
+'topic0': [0.29823981660082644, 0.31304629647623466, 0.3050111012538884, 0.08370278566905044], \
 'topic2': [0.2433294456376143, 0.26854719743019123, 0.25425967705367086, 0.23386367987852355]}
     """
     # the minimum_probability=0 argument is necessary in order for
@@ -71,10 +71,12 @@ def _LDA(vectorized_output, ntopics, **kwargs):
                                                                           _model.show_topic(topic_no, None))
                          for topic_no in range(ntopics)}
     doc_topic_matrix = list(_model[bow])
+
     doc_topic_matrix = _doc_topic_to_array(vectorized_output.vectors, doc_topic_matrix)
+
     return topic_term_matrix, doc_topic_matrix
 
 
 @register
 def lda(vectorized_output, ntopics, **kwargs):
-    return ModelOutput(vectorized_output, _LDA, ntopics=ntopics, **kwargs)
+    return ModelOutput(vectorized_corpus=vectorized_output, model_func=_LDA, ntopics=ntopics, **kwargs)
