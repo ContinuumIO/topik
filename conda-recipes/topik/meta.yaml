@@ -1,16 +1,10 @@
 package:
   name: topik
-  version: 0.2.1
-build:
-  # Optional Python entry points
-  entry_points:
-    # This creates an entry point named topik that calls
-    # topik.cli.run()
-    - topik = topik.cli:run
+  version: 0.3.0
 
 source:
   git_url: git://github.com/ContinuumIO/topik.git
-  git_tag: v0.2.1
+  git_tag: v0.3.0
 
 requirements:
   build:
@@ -53,6 +47,13 @@ requirements:
     - pyldavis
     - matplotlib
     - smart_open
+
+build:
+  # Optional Python entry points
+  entry_points:
+    # This creates an entry point named topik that calls
+    # topik.cli.run()
+    - topik = topik.cli:run
 
 test:
   imports:
