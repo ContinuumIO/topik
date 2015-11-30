@@ -1,0 +1,23 @@
+package:
+  name: jsonpickle
+  version: 0.9.2
+
+source:
+  git_url: https://github.com/jsonpickle/jsonpickle
+  git_tag: v0.9.2
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+test:
+  imports:
+    - jsonpickle
+
+about:
+  home: https://github.com/jsonpickle/jsonpickle
+  license: BSD

@@ -10,7 +10,6 @@ requirements:
   build:
     - python
     - setuptools
-    - versioneer
     - ijson
     - pysolr
     - blaze
@@ -22,12 +21,14 @@ requirements:
     - textblob
     - click
     - solrpy
-    - elasticsearch
+    - elasticsearch-py
     - nltk
     - pyldavis
     - matplotlib
     - smart_open
     - setuptools-markdown
+    - jsonpickle
+    - versioneer
 
   run:
     - python
@@ -40,13 +41,14 @@ requirements:
     - textblob
     - click
     - solrpy
-    - elasticsearch
+    - elasticsearch-py
     - nltk
     - ijson
     - pysolr
     - pyldavis
     - matplotlib
     - smart_open
+    - jsonpickle
 
 build:
   # Optional Python entry points
