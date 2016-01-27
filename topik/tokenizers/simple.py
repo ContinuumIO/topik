@@ -38,11 +38,18 @@ def simple(raw_corpus, min_length=1, stopwords=None):
     Parameters
     ----------
     raw_corpus : iterable of tuple of (doc_id(str/int), doc_text(str))
-        body of documents to examine
+        Body of documents to examine.
     min_length : int
-        Minimum length of any single word
+        Minimum length of any single word.
     stopwords: None or iterable of str
-        Collection of words to ignore as tokens
+        Collection of words to ignore as tokens.
+
+    Yields
+    -------
+    doc_id: int/str
+        Identifier of each document, as supplied by raw_corpus.
+    tokens: sequence of str
+        Tokens from each document supplied by raw_corpus.
 
     Examples
     --------
@@ -54,4 +61,8 @@ def simple(raw_corpus, min_length=1, stopwords=None):
     True
     """
     for doc_id, doc_text in raw_corpus:
-        yield(doc_id, _simple_document(doc_text, min_length=min_length, stopwords=stopwords))
+        if doc_text:
+            tokens = _simple_document(doc_text, min_length=min_length, stopwords=stopwords)
+            yield doc_id, tokens
+        else:
+            logging.warning("Ignoring empty document with id: {}".format(str(doc_id)))
