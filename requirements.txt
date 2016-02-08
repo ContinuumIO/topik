@@ -1,7 +1,7 @@
 numpy
 pandas
 blaze
-bokeh
+bokeh~=0.11
 gensim
 pattern
 textblob
