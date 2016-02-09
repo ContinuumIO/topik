@@ -1,13 +1,12 @@
 numpy
 pandas
 blaze
-bokeh~=0.11
+bokeh==0.11.*
 gensim
 pattern
 textblob
 odo
 nltk
-pattern
 elasticsearch
 click
 ijson
