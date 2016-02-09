@@ -11,7 +11,11 @@ def bokeh_lda_vis(data=None):
     output_file("circles.html")
 
     plot = figure()
-    plot.circle(data["x"].tolist(), data["y"].tolist(), size=10)
+    xcoords = data["x"]
+    ycoords = data["y"]
+    frequency = data["Freq"]
+    for x, y, size in zip(xcoords, ycoords, frequency):
+        plot.circle(x, y, size=(size*2))
 
     # curdoc().add_root(plot)
     # session = push_session(curdoc())
