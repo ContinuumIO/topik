@@ -13,5 +13,5 @@ example_text = """
 
 
 def test_html_regex_filter():
-    assert "</div>" not in filter_regex(example_text, '<\/?[\w\d\s="]+>')
+    assert "</div>" not in filter_regex(example_text, 'html')
 
