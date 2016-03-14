@@ -15,8 +15,10 @@ sample_corpus = [
                          u"recently been popularized by such retired "
                          u"celebrities as Frank The Swank-Tank."))]
 
+
 # TODO: replace min_freqs with freq_bounds like ngrams takes.  Unify format across the board.
-def _collect_bigrams_and_trigrams(raw_corpus, top_n=10000, min_length=1, min_freqs=None, stopwords=None):
+def _collect_bigrams_and_trigrams(raw_corpus, top_n=10000, min_length=1, min_freqs=None,
+                                  stopwords=None, stop_regex=None):
     """collects bigrams and trigrams from collection of documents.  Input to collocation tokenizer.
 
     bigrams are pairs of words that recur in the collection; trigrams are triplets.
@@ -34,6 +36,9 @@ def _collect_bigrams_and_trigrams(raw_corpus, top_n=10000, min_length=1, min_fre
         starting with bigrams.
     stopwords : None or iterable of str
         Collection of words to ignore as tokens
+    stop_regex : str
+        A regular expression of content to remove from text before tokenizing.
+        Potentially useful for ignoring code (HTML tags).
 
     Examples
     --------
@@ -48,7 +53,8 @@ def _collect_bigrams_and_trigrams(raw_corpus, top_n=10000, min_length=1, min_fre
     from nltk.metrics import BigramAssocMeasures, TrigramAssocMeasures
 
     # generator of documents, turn each element to its list of words
-    doc_texts = (_simple_document(doc_text, min_length=min_length, stopwords=stopwords)
+    doc_texts = (_simple_document(doc_text, min_length=min_length, stopwords=stopwords,
+                                  stop_regex=stop_regex)
                  for doc_id, doc_text in raw_corpus)
     # generator, concatenate (chain) all words into a single sequence, lazily
     words = itertools.chain.from_iterable(doc_texts)
@@ -67,7 +73,7 @@ def _collect_bigrams_and_trigrams(raw_corpus, top_n=10000, min_length=1, min_fre
     return bigrams_patterns, trigrams_patterns
 
 
-def _collocation_document(text, patterns, min_length=1, stopwords=None):
+def _collocation_document(text, patterns, min_length=1, stopwords=None, stop_regex=None):
     """A text tokenizer that includes collocations(bigrams and trigrams).
 
     A collocation is sequence of words or terms that co-occur more often
@@ -90,6 +96,9 @@ def _collocation_document(text, patterns, min_length=1, stopwords=None):
         Minimum length of any single word
     stopwords : None or iterable of str
         Collection of words to ignore as tokens
+    stop_regex : str
+        A regular expression of content to remove from text before tokenizing.
+        Potentially useful for ignoring code (HTML tags).
 
     Examples
     --------
@@ -102,14 +111,15 @@ def _collocation_document(text, patterns, min_length=1, stopwords=None):
     ...     u'popular', u'pastime', u'sassy_unicorns', u'retirees', u'alike']
     True
     """
-    text = ' '.join(_simple_document(text, min_length=min_length, stopwords=stopwords))
+    text = ' '.join(_simple_document(text, min_length=min_length, stopwords=stopwords, stop_regex=stop_regex))
     for pattern in patterns:
         text = re.sub(pattern, lambda match: match.group(0).replace(' ', '_'), text)
     return text.split()
 
 @register
-def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=None):
-    '''
+def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=None,
+           stop_regex=None):
+    """
     A tokenizer that extracts collocations (bigrams and trigrams) from a corpus
     according to the frequency bounds, then tokenizes all documents using those
     extracted phrases.
@@ -128,6 +138,9 @@ def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=No
         limit results to this many entries
     stopwords: None or iterable of str
         Collection of words to ignore as tokens
+    stop_regex : str
+        A regular expression of content to remove from text before tokenizing.
+        Potentially useful for ignoring code (HTML tags).
 
     Examples
     --------
@@ -137,11 +150,12 @@ def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=No
     ...     u'prancercise', u'class', u'daily', u'prancercise', u'tremendously',
     ...     u'popular', u'pastime', u'sassy_unicorns', u'retirees', u'alike'])
     True
-    '''
+    """
     if not freq_bounds:
         freq_bounds=[(50, 10000), (20, 10000)]
     min_freqs = [freq[0] for freq in freq_bounds]
     patterns = _collect_bigrams_and_trigrams(raw_corpus, top_n=top_n, min_length=min_length, min_freqs=min_freqs,
-                                 stopwords=stopwords)
+                                             stopwords=stopwords, stop_regex=stop_regex)
     for doc_id, doc_text in raw_corpus:
-        yield doc_id, _collocation_document(doc_text, patterns, min_length=min_length, stopwords=stopwords)
+        yield doc_id, _collocation_document(doc_text, patterns, min_length=min_length,
+                                            stopwords=stopwords, stop_regex=stop_regex)

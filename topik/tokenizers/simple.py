@@ -2,9 +2,10 @@ import gensim
 
 # imports used only for doctests
 from topik.tokenizers._registry import register
+from topik.tokenizers.filter_regex import filter_regex
 
 
-def _simple_document(text, min_length=1, stopwords=None):
+def _simple_document(text, min_length=1, stopwords=None, stop_regex=None):
     """A text tokenizer that simply lowercases, matches alphabetic
     characters and removes stopwords.  For use on individual text documents.
 
@@ -16,6 +17,9 @@ def _simple_document(text, min_length=1, stopwords=None):
         Minimum length of any single word
     stopwords: None or iterable of str
         Collection of words to ignore as tokens
+    stop_regex : str
+        A regular expression of content to remove from text before tokenizing.
+        Potentially useful for ignoring code (HTML tags).
 
     Examples
     --------
@@ -26,12 +30,13 @@ def _simple_document(text, min_length=1, stopwords=None):
     """
     if not stopwords:
         from gensim.parsing.preprocessing import STOPWORDS as stopwords
+    text = filter_regex(text, stop_regex)
     return [word for word in gensim.utils.tokenize(text, lower=True)
             if word not in stopwords and len(word) >= min_length]
 
 
 @register
-def simple(raw_corpus, min_length=1, stopwords=None):
+def simple(raw_corpus, min_length=1, stopwords=None, stop_regex=None):
     """A text tokenizer that simply lowercases, matches alphabetic
     characters and removes stopwords.
 
@@ -54,4 +59,5 @@ def simple(raw_corpus, min_length=1, stopwords=None):
     True
     """
     for doc_id, doc_text in raw_corpus:
-        yield(doc_id, _simple_document(doc_text, min_length=min_length, stopwords=stopwords))
+        yield(doc_id, _simple_document(doc_text, min_length=min_length, stopwords=stopwords,
+                                       stop_regex=stop_regex))

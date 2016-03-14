@@ -58,8 +58,8 @@ def _collect_entities(raw_corpus, freq_min=2, freq_max=10000):
     return set(np_counts)
 
 
-def _tokenize_entities_document(text, entities, min_length=1, stopwords=None):
-    '''
+def _tokenize_entities_document(text, entities, min_length=1, stopwords=None, stop_regex=None):
+    """
     A text tokenizer that passes only terms (a.k.a. 'entities') explicitly
     contained in the entities argument.
 
@@ -73,6 +73,9 @@ def _tokenize_entities_document(text, entities, min_length=1, stopwords=None):
         Minimum length of any single word
     stopwords : None or iterable of str
         Collection of words to ignore as tokens
+    stop_regex : str
+        A regular expression of content to remove from text before tokenizing.
+        Potentially useful for ignoring code (HTML tags).
 
     Examples
     --------
@@ -82,19 +85,21 @@ def _tokenize_entities_document(text, entities, min_length=1, stopwords=None):
     >>> tokenized_text == [
     ...     u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns']
     True
-    '''
+    """
+
     result = []
     for np in TextBlob(text).noun_phrases:
         if np in entities:
             # filter out stop words
-            tmp = "_".join(_simple_document(np, min_length=min_length, stopwords=stopwords))
+            tmp = "_".join(_simple_document(np, min_length=min_length, stopwords=stopwords,
+                                            stop_regex=stop_regex))
             # if we end up with nothing, don't append an empty string
             if tmp:
                 result.append(tmp)
     return result
 
 
-def _tokenize_mixed_document(text, entities, min_length=1, stopwords=None):
+def _tokenize_mixed_document(text, entities, min_length=1, stopwords=None, stop_regex=None):
     """
     A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
 
@@ -108,6 +113,9 @@ def _tokenize_mixed_document(text, entities, min_length=1, stopwords=None):
         Minimum length of any single word
     stopwords : None or iterable of str
         Collection of words to ignore as tokens
+    stop_regex : str
+        A regular expression of content to remove from text before tokenizing.
+        Potentially useful for ignoring code (HTML tags).
 
     Examples
     --------
@@ -119,14 +127,17 @@ def _tokenize_mixed_document(text, entities, min_length=1, stopwords=None):
     ... u'pastime', u'sassy_unicorns']
     True
     """
+
     result = []
     for np in TextBlob(text).noun_phrases:
         if ' ' in np and np not in entities:
             # break apart the noun phrase; it does not occur often enough in the collection of text to be considered.
-            result.extend(_simple_document(np, min_length=min_length, stopwords=stopwords))
+            result.extend(_simple_document(np, min_length=min_length, stopwords=stopwords,
+                                           stop_regex=stop_regex))
         else:
             # filter out stop words
-            tmp = "_".join(_simple_document(np, min_length=min_length, stopwords=stopwords))
+            tmp = "_".join(_simple_document(np, min_length=min_length, stopwords=stopwords,
+                                            stop_regex=stop_regex))
             # if we end up with nothing, don't append an empty string
             if tmp:
                 result.append(tmp)
@@ -134,7 +145,7 @@ def _tokenize_mixed_document(text, entities, min_length=1, stopwords=None):
 
 
 @register
-def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
+def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None, stop_regex=None):
     """
     A tokenizer that extracts noun phrases from a corpus, then tokenizes all
     documents using those extracted phrases.
@@ -151,6 +162,9 @@ def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
         Maximum occurrence of phrase, beyond which it is ignored
     stopwords : None or iterable of str
         Collection of words to ignore as tokens
+    stop_regex : str
+        A regular expression of content to remove from text before tokenizing.
+        Potentially useful for ignoring code (HTML tags).
 
     Examples
     --------
@@ -162,11 +176,11 @@ def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
     entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
     for doc_id, doc_text in corpus:
         yield doc_id, _tokenize_entities_document(doc_text, entities, min_length=min_length,
-                                       stopwords=stopwords)
+                                                  stopwords=stopwords, stop_regex=stop_regex)
 
 
 @register
-def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
+def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None, stop_regex=None):
     """A text tokenizer that retrieves entities ('noun phrases') first and simple words for the rest of the text.
 
     Parameters
@@ -181,6 +195,9 @@ def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
         Maximum occurrence of phrase, beyond which it is ignored
     stopwords : None or iterable of str
         Collection of words to ignore as tokens
+    stop_regex : str
+        A regular expression of content to remove from text before tokenizing.
+        Potentially useful for ignoring code (HTML tags).
 
     Examples
     --------
@@ -192,5 +209,6 @@ def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
     entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
     for doc_id, doc_text in corpus:
         yield doc_id, _tokenize_mixed_document(doc_text, entities,
-                                                min_length=min_length,
-                                                stopwords=stopwords)
+                                               min_length=min_length,
+                                               stopwords=stopwords,
+                                               stop_regex=stop_regex)
