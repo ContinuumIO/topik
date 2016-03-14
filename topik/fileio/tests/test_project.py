@@ -9,6 +9,12 @@ import nose.tools as nt
 from topik.fileio import TopikProject
 from topik.fileio.tests import test_data_path
 
+# make logging quiet during testing, to keep Travis CI logs short.
+import logging
+logging.basicConfig()
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+
 SAVE_FILENAME = "test_project"
 
 sample_tokenized_doc = (2318580746137828354,
