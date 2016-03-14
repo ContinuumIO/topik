@@ -7,6 +7,12 @@ from ._solutions import solution_elastic
 
 INDEX = "test_elastic"
 
+# make logging quiet during testing, to keep Travis CI logs short.
+import logging
+logging.basicConfig()
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+
 def test_elastic_import():
     output_args = {'source': 'localhost',
                    'index': INDEX,

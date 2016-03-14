@@ -13,6 +13,13 @@ INDEX = "topik_unittest"
 SAVE_FILENAME = "test_save.topikdata"
 CONTENT_FIELD = "abstract"
 
+# make logging quiet during testing, to keep Travis CI logs short.
+import logging
+logging.basicConfig()
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+
+
 class BaseOutputTest(object):
     test_raw_data = None
 
