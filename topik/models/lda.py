@@ -9,7 +9,7 @@ from .tests.test_data import test_vectorized_output
 
 
 def _topic_term_to_array(id_term_map, topic):
-    term_scores = {term: float(score) for score, term in topic}
+    term_scores = {term: float(score) for term, score in topic}
     return [term_scores[id_term_map[id]] for id in range(len(id_term_map))]
 
 
