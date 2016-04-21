@@ -1,4 +1,3 @@
-from inspect import isgenerator
 import logging
 import itertools
 from textblob import TextBlob
