@@ -40,14 +40,14 @@ def read_document_folder(folder, content_field='text'):
             _open = gzip.open if file.endswith('.gz') else open
             fullpath = os.path.join(directory, file)
             try:
-                with _open(fullpath, 'rb') as f:
-                    record = _process_file(f, fullpath, content_field)
-                    yield record
+                with _open(fullpath, 'rb') as fd:
+                    yield _process_file(fd, fullpath, content_field)
             except ValueError as err:
                 logging.warning("Unable to process file: {}, error: {}".format(fullpath, err))
 
-def _process_file(f, fullpath, content_field):
-    content = f.read()
+
+def _process_file(fd, fullpath, content_field):
+    content = fd.read()
     try:
         u_content = text_type(content)
     except UnicodeDecodeError:
