@@ -1,4 +1,4 @@
-numpy>=1.9.5
+numpy>=1.9.4
 pandas
 blaze
 bokeh
@@ -12,6 +12,7 @@ nose
 elasticsearch
 click
 ijson
+stop_words
 versioneer
 setuptools-markdown
 jsonpickle
