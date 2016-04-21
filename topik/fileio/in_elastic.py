@@ -1,5 +1,6 @@
 from ._registry import register_input
 
+
 @register_input
 def read_elastic(hosts, **kwargs):
     """Iterate over all documents in the specified elasticsearch intance and index that match the specified query.

@@ -1,24 +1,26 @@
 from __future__ import absolute_import, print_function
 
+
+from topik.ish_inspector import ipsh
 import logging
 import os
+import sys
 
+from string import ascii_letters
 import numpy as np
 
 from topik.fileio import read_input
 from topik import tokenizers, vectorizers, models, visualizers
 from topik.visualizers.termite_plot import termite_html
 
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
-                    level=logging.INFO)
-
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
-
 
 def run_pipeline(data_source, source_type="auto", year_field=None, start_year=None, stop_year=None,
               content_field=None, tokenizer='simple', vectorizer='bag_of_words', ntopics=10,
               dir_path='./topic_model', model='lda', termite_plot=False, output_file=False,
               lda_vis=True, seed=42, **kwargs):
+
+
 
     """Run your data through all topik functionality and save all results to a specified directory.
 
@@ -38,7 +40,7 @@ def run_pipeline(data_source, source_type="auto", year_field=None, start_year=No
         For beginning of range filter on year_field values
     content_field : string
         The primary text field to parse.
-    tokenizer : {'simple', 'collocations', 'entities', 'mixed'}
+    tokenizer : {'simple', 'entities', 'mixed', 'ngrams'}
         The type of tokenizer to use. Default is 'simple'.
     vectorizer : {'bag_of_words', 'tfidf'}
         The type of vectorizer to use.  Default is 'bag_of_words'.
@@ -56,14 +58,24 @@ def run_pipeline(data_source, source_type="auto", year_field=None, start_year=No
         Set random number generator to seed, to be able to reproduce results. Default 42.
     **kwargs : additional keyword arguments, passed through to each individual step
     """
-
+    # FIXME: call this from elsewhere.. a stopword generator in its own module
+    stopwords = list(ascii_letters)
+    stopwords = stopwords + ["_"]
+    #stopwords = stopwords + ["the","of","in","and","to","is","that","for","we","with","are","by","as","be","it"]
+    #stopwords = stopwards + ["this", "on", "where", "can","which", "at", "not", "will", "has"]
+    #stopwords = stopwords + ["these","if","only","so","an","from","one",""]
+    # END FIXME
     np.random.seed(seed)
-
+    logging.info("Loading data as {} from {}".format(source_type, data_source))
     raw_data = read_input(data_source, content_field=content_field,
                           source_type=source_type, **kwargs)
     raw_data = ((hash(item[content_field]), item[content_field]) for item in raw_data)
-    tokenized_data = tokenizers.registered_tokenizers[tokenizer](raw_data, **kwargs)
+    logging.info("Tokenizing data with {}".format(tokenizer))
+    tokenized_data = tokenizers.registered_tokenizers[tokenizer](raw_data, stopwords=stopwords, **kwargs)
+    #ipsh()
+    logging.info("Vectorizing data with {}".format(vectorizer))
     vectorized_data = vectorizers.registered_vectorizers[vectorizer](tokenized_data, **kwargs)
+    #ipsh()
     model = models.registered_models[model](vectorized_data, ntopics=ntopics, **kwargs)
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)

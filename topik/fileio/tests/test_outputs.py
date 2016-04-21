@@ -1,6 +1,6 @@
 import os
 import unittest
-
+import logging
 import elasticsearch
 
 from topik.fileio.base_output import load_output
@@ -8,13 +8,15 @@ from topik.fileio.reader import read_input
 from topik.fileio.tests import test_data_path
 from topik.fileio.out_elastic import ElasticSearchOutput
 from topik.fileio.out_memory import InMemoryOutput
+from elasticsearch.exceptions import ConnectionError
+from nose.plugins.skip import SkipTest
 
 INDEX = "topik_unittest"
 SAVE_FILENAME = "test_save.topikdata"
 CONTENT_FIELD = "abstract"
 
 # make logging quiet during testing, to keep Travis CI logs short.
-import logging
+
 logging.basicConfig()
 logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 logging.getLogger('urllib3').setLevel(logging.ERROR)
@@ -49,12 +51,14 @@ class BaseOutputTest(object):
         self.assertTrue(-1611117933394825767 in [int(item[0]) for item in
                         result_list])
 
+
 class TestInMemoryOutput(unittest.TestCase, BaseOutputTest):
     def setUp(self):
         self.test_raw_data = InMemoryOutput()
         self.test_raw_data.import_from_iterable(read_input(
             '{}/test_data_json_stream.json'.format(test_data_path)),
             field_to_hash=CONTENT_FIELD)
+
 
 class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
     def setUp(self):
@@ -63,9 +67,13 @@ class TestElasticSearchOutput(unittest.TestCase, BaseOutputTest):
             index=INDEX,
             content_field='abstract'
         )
-        self.test_raw_data.import_from_iterable(read_input(
-            '{}/test_data_json_stream.json'.format(test_data_path)),
-            field_to_hash=CONTENT_FIELD)
+        try:
+            self.test_raw_data.import_from_iterable(read_input(
+                '{}/test_data_json_stream.json'.format(test_data_path)),
+                field_to_hash=CONTENT_FIELD)
+
+        except ConnectionError:
+            raise SkipTest("Skipping Elasticsearch test - elasticsearch not running")
 
     def tearDown(self):
         instance = elasticsearch.Elasticsearch("localhost")

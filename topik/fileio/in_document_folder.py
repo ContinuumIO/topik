@@ -40,7 +40,7 @@ def read_document_folder(folder, content_field='text'):
             try:
                 fullpath = os.path.join(directory, file)
                 with _open(fullpath, 'rb') as f:
-                    yield {content_field: f.read().decode('utf-8'),
+                    yield {content_field: unicode(f.read(),errors='ignore'),
                            'filename': fullpath}
             except (ValueError, UnicodeDecodeError) as err:
                 logging.warning("Unable to process file: {}, error: {}".format(fullpath, err))

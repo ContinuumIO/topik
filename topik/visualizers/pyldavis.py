@@ -1,5 +1,5 @@
 import pandas as pd
-
+import logging
 from ._registry import register
 
 def _to_py_lda_vis(modeled_corpus):
@@ -31,9 +31,9 @@ def lda_vis(modeled_corpus, mode='show', filename=None):
 
     model_vis_data = _to_py_lda_vis(modeled_corpus)
     prepared_model_vis_data = prepare(**model_vis_data)
-
     if mode == 'save_html' and filename:
+        logging.info("Saving pyLDAVis to {}".format(filename))
         save_html(prepared_model_vis_data, filename)
     else:
-        show(prepared_model_vis_data)
+        show(prepared_model_vis_data, ip="0.0.0.0", port=8888)
 

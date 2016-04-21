@@ -8,6 +8,7 @@ textblob
 odo
 nltk
 pattern
+nose
 elasticsearch
 click
 ijson

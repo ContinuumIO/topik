@@ -1,5 +1,5 @@
 import gensim
-
+import logging
 # imports used only for doctests
 from topik.tokenizers._registry import register
 
@@ -26,6 +26,7 @@ def _simple_document(text, min_length=1, stopwords=None):
     """
     if not stopwords:
         from gensim.parsing.preprocessing import STOPWORDS as stopwords
+    #logging.debug("Tokenizing text: {}".format(text))
     return [word for word in gensim.utils.tokenize(text, lower=True)
             if word not in stopwords and len(word) >= min_length]
 
@@ -54,4 +55,5 @@ def simple(raw_corpus, min_length=1, stopwords=None):
     True
     """
     for doc_id, doc_text in raw_corpus:
+        # logging.debug("Tokenizing doc_id: {}".format(doc_id))
         yield(doc_id, _simple_document(doc_text, min_length=min_length, stopwords=stopwords))

@@ -1,5 +1,5 @@
 import logging
-
+import itertools
 from textblob import TextBlob
 
 from topik.tokenizers.simple import _simple_document
@@ -159,8 +159,9 @@ def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
     ...     [u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns'])
     True
     """
-    entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
-    for doc_id, doc_text in corpus:
+    corpus_a, corpus_b = itertools.tee(corpus)
+    entities = _collect_entities(corpus_a, freq_min=freq_min, freq_max=freq_max)
+    for doc_id, doc_text in corpus_b:
         yield doc_id, _tokenize_entities_document(doc_text, entities, min_length=min_length,
                                        stopwords=stopwords)
 
@@ -189,8 +190,9 @@ def mixed(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
     ...     [u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns'])
     True
     """
-    entities = _collect_entities(corpus, freq_min=freq_min, freq_max=freq_max)
-    for doc_id, doc_text in corpus:
+    corpus_a, corpus_b = itertools.tee(corpus)
+    entities = _collect_entities(corpus_a, freq_min=freq_min, freq_max=freq_max)
+    for doc_id, doc_text in corpus_b:
         yield doc_id, _tokenize_mixed_document(doc_text, entities,
                                                 min_length=min_length,
                                                 stopwords=stopwords)
