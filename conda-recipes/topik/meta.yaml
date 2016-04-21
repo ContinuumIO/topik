@@ -1,10 +1,10 @@
 package:
   name: topik
-  version: 0.3.0
+  version: 0.3.1
 
 source:
   git_url: git://github.com/ContinuumIO/topik.git
-  git_tag: v0.3.0
+  git_tag: v0.3.1
 
 requirements:
   build:
