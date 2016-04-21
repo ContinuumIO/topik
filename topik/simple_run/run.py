@@ -1,14 +1,10 @@
 from __future__ import absolute_import, print_function
 
-
-from topik.ish_inspector import ipsh
 import logging
 import os
-import sys
-
-from string import ascii_letters
 import numpy as np
 
+from stop_words import get_stop_words
 from topik.fileio import read_input
 from topik import tokenizers, vectorizers, models, visualizers
 from topik.visualizers.termite_plot import termite_html
@@ -58,13 +54,8 @@ def run_pipeline(data_source, source_type="auto", year_field=None, start_year=No
         Set random number generator to seed, to be able to reproduce results. Default 42.
     **kwargs : additional keyword arguments, passed through to each individual step
     """
-    # FIXME: call this from elsewhere.. a stopword generator in its own module
-    stopwords = list(ascii_letters)
-    stopwords = stopwords + ["_"]
-    #stopwords = stopwords + ["the","of","in","and","to","is","that","for","we","with","are","by","as","be","it"]
-    #stopwords = stopwards + ["this", "on", "where", "can","which", "at", "not", "will", "has"]
-    #stopwords = stopwords + ["these","if","only","so","an","from","one",""]
-    # END FIXME
+
+    stopwords = get_stop_words("en")
     np.random.seed(seed)
     logging.info("Loading data as {} from {}".format(source_type, data_source))
     raw_data = read_input(data_source, content_field=content_field,
@@ -72,10 +63,8 @@ def run_pipeline(data_source, source_type="auto", year_field=None, start_year=No
     raw_data = ((hash(item[content_field]), item[content_field]) for item in raw_data)
     logging.info("Tokenizing data with {}".format(tokenizer))
     tokenized_data = tokenizers.registered_tokenizers[tokenizer](raw_data, stopwords=stopwords, **kwargs)
-    #ipsh()
     logging.info("Vectorizing data with {}".format(vectorizer))
     vectorized_data = vectorizers.registered_vectorizers[vectorizer](tokenized_data, **kwargs)
-    #ipsh()
     model = models.registered_models[model](vectorized_data, ntopics=ntopics, **kwargs)
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)

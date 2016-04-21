@@ -1,7 +1,7 @@
 import itertools
 import re
 import logging
-from topik.ish_inspector import ipsh
+
 from topik.tokenizers.simple import _simple_document
 from topik.tokenizers._registry import register
 from nltk.collocations import BigramCollocationFinder, TrigramCollocationFinder, QuadgramCollocationFinder
@@ -144,7 +144,7 @@ def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=No
 
     Examples
     --------
-    >>> tokenized_corpora = ngrams(sample_corpus, freq_bounds=[(4,50),(4,50)])
+    >>> tokenized_corpora = ngrams(sample_corpus, freq_bounds=[(2, 100), (2, 100), (2, 100)])
     >>> next(tokenized_corpora) == ('doc1',
     ...     [u'frank_swank', u'tank', u'walked', u'sassy', u'unicorn', u'brony',
     ...     u'prancercise', u'class', u'daily', u'prancercise', u'tremendously',
@@ -152,7 +152,7 @@ def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=No
     True
     '''
     if not freq_bounds:
-        freq_bounds=[(10, 10000), (5, 10000), (3, 10000)]
+        freq_bounds=[(50, 10000), (25, 10000), (15, 10000)]
     min_freqs = [freq[0] for freq in freq_bounds]
     # Copy corpus, since we exhaust it when finding patterns
     logging.debug("Collecting bigrams + trigrams")
