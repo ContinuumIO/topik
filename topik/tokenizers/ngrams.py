@@ -154,12 +154,11 @@ def ngrams(raw_corpus, min_length=1, freq_bounds=None, top_n=10000, stopwords=No
     if not freq_bounds:
         freq_bounds=[(50, 10000), (25, 10000), (15, 10000)]
     min_freqs = [freq[0] for freq in freq_bounds]
-    # Copy corpus, since we exhaust it when finding patterns
-    logging.debug("Collecting bigrams + trigrams")
-    corpus_copy, corpus = itertools.tee(raw_corpus)
-    patterns = _collect_ngrams(corpus_copy, top_n=top_n, min_length=min_length, min_freqs=min_freqs,
+    # Tee corpus, since we exhaust it when finding patterns
+    logging.debug("Collecting (bi/tri/quad)grams from corpus")
+    corpus_iterators = itertools.tee(raw_corpus, 2)
+    patterns = _collect_ngrams(corpus_iterators[0], top_n=top_n, min_length=min_length, min_freqs=min_freqs,
                                stopwords=stopwords)
-    del corpus_copy
     logging.debug("Determining collocation on corpus")
-    for doc_id, doc_text in corpus:
+    for doc_id, doc_text in corpus_iterators[1]:
         yield doc_id, _collocation_document(doc_text, patterns, min_length=min_length, stopwords=stopwords)

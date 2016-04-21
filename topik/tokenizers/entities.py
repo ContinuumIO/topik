@@ -1,3 +1,4 @@
+from inspect import isgenerator
 import logging
 import itertools
 from textblob import TextBlob
@@ -159,9 +160,10 @@ def entities(corpus, min_length=1, freq_min=2, freq_max=10000, stopwords=None):
     ...     [u'frank', u'swank_tank', u'prancercise', u'sassy_unicorns'])
     True
     """
-    corpus_a, corpus_b = itertools.tee(corpus)
-    entities = _collect_entities(corpus_a, freq_min=freq_min, freq_max=freq_max)
-    for doc_id, doc_text in corpus_b:
+    # Tee in case it is a generator (else it will get exhausted).
+    corpus_iterator = itertools.tee(corpus, 2)
+    entities = _collect_entities(corpus_iterator[0], freq_min=freq_min, freq_max=freq_max)
+    for doc_id, doc_text in corpus_iterator[1]:
         yield doc_id, _tokenize_entities_document(doc_text, entities, min_length=min_length,
                                        stopwords=stopwords)
 
