@@ -48,11 +48,9 @@ def read_document_folder(folder, content_field='text'):
 
 def _process_file(f, fullpath, content_field):
     content = f.read()
-    u_content = text_type()
     try:
         u_content = text_type(content)
     except UnicodeDecodeError:
         logging.warning("Encountered invalid unicode in file {}, ignoring invalid bytes".format(fullpath))
         u_content = text_type(content, errors='ignore')
-    finally:
-        return {content_field: u_content, 'filename': fullpath}
+    return {content_field: u_content, 'filename': fullpath}
