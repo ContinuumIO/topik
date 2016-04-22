@@ -55,7 +55,7 @@ build:
   entry_points:
     # This creates an entry point named topik that calls
     # topik.cli.run()
-    - topik = topik.cli:run
+    - topik = topik.simple_run.cli:run
 
 test:
   imports:
