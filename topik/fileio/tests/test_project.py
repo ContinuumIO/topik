@@ -5,6 +5,8 @@ import unittest
 
 import elasticsearch
 import nose.tools as nt
+from elasticsearch.exceptions import ConnectionError
+from nose.plugins.skip import SkipTest
 
 from topik.fileio import TopikProject
 from topik.fileio.tests import test_data_path
@@ -34,6 +36,7 @@ sample_tokenized_doc = (2318580746137828354,
   u'size', u'experimental', u'conditions', u'observed', u'nm'])
 
 test_data_path = os.path.join(test_data_path, "test_data_json_stream.json")
+
 
 class ProjectTest(object):
     def test_context_manager(self):
@@ -113,8 +116,10 @@ class TestInMemoryOutput(unittest.TestCase, ProjectTest):
                                     output_args=self.output_args)
         self.project.read_input(test_data_path, content_field="abstract")
 
+
 class TestElasticSearchOutput(unittest.TestCase, ProjectTest):
     INDEX = "test_index"
+
     def setUp(self):
         self.output_type = "ElasticSearchOutput"
         self.output_args = {'source': 'localhost',
@@ -122,8 +127,10 @@ class TestElasticSearchOutput(unittest.TestCase, ProjectTest):
                             'content_field': "abstract"}
         self.project = TopikProject("test_project", output_type=self.output_type,
                                     output_args=self.output_args)
-        self.project.read_input(test_data_path, content_field="abstract",
-                                synchronous_wait=30)
+        try:
+            self.project.read_input(test_data_path, content_field="abstract", synchronous_wait=30)
+        except ConnectionError:
+            raise SkipTest("Skipping Elasticsearch test - elasticsearch not running")
 
     def tearDown(self):
         instance = elasticsearch.Elasticsearch("localhost")

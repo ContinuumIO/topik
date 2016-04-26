@@ -2,6 +2,7 @@ import os
 import logging
 import gzip
 
+from six import text_type
 from topik.fileio._registry import register_input
 from topik.fileio.tests import test_data_path
 
@@ -37,10 +38,19 @@ def read_document_folder(folder, content_field='text'):
     for directory, subdirectories, files in os.walk(folder):
         for n, file in enumerate(sorted(files)):
             _open = gzip.open if file.endswith('.gz') else open
+            fullpath = os.path.join(directory, file)
             try:
-                fullpath = os.path.join(directory, file)
-                with _open(fullpath, 'rb') as f:
-                    yield {content_field: f.read().decode('utf-8'),
-                           'filename': fullpath}
-            except (ValueError, UnicodeDecodeError) as err:
+                with _open(fullpath, 'rb') as fd:
+                    yield _process_file(fd, fullpath, content_field)
+            except ValueError as err:
                 logging.warning("Unable to process file: {}, error: {}".format(fullpath, err))
+
+
+def _process_file(fd, fullpath, content_field):
+    content = fd.read()
+    try:
+        u_content = text_type(content)
+    except UnicodeDecodeError:
+        logging.warning("Encountered invalid unicode in file {}, ignoring invalid bytes".format(fullpath))
+        u_content = text_type(content, errors='ignore')
+    return {content_field: u_content, 'filename': fullpath}

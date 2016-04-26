@@ -1,4 +1,4 @@
-numpy
+numpy>=1.9.4
 pandas
 blaze
 bokeh
@@ -8,9 +8,11 @@ textblob
 odo
 nltk
 pattern
+nose
 elasticsearch
 click
 ijson
+stop_words
 versioneer
 setuptools-markdown
 jsonpickle

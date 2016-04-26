@@ -1,7 +1,9 @@
 import click
-
+import logging
+import sys
 from topik.simple_run.run import run_pipeline
 
+logging.basicConfig(stream=sys.stdout, format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 @click.command(help='Run topic modeling')
 @click.option("-d", "--data", required=True, help="Path to input data for topic modeling")
@@ -12,7 +14,7 @@ from topik.simple_run.run import run_pipeline
 @click.option("-m", "--model", help="Statistical topic model: lda, plsa", default="lda")
 @click.option("-o", "--output", help="Topic modeling output path", default="./topic_model")
 @click.option("-t", "--tokenizer", help="Tokenize method to use: "
-                "simple, collocations, entities, mix", default='simple')
+                "simple, entities, mixed, ngrams", default='simple')
 @click.option("-v", "--vectorizer", help="Vectorize method to use: "
                 "bag_of_words, tfidf.  Note: tfidf not compatible with lda models",
               default="bag_of_words")

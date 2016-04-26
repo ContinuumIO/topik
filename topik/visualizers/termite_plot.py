@@ -9,6 +9,7 @@ from bokeh.models import sources
 from ._registry import register
 from topik.models.tests.test_data import test_model_output
 
+
 def _get_top_words(modeled_corpus, topn):
     top_words = []
     # each "topic" is a row of the dz matrix
@@ -19,12 +20,14 @@ def _get_top_words(modeled_corpus, topn):
                            modeled_corpus.vocab[word_id]) for word_id in word_ids])
     return top_words
 
+
 def _termite_data(modeled_corpus, topn):
     top_words = _get_top_words(modeled_corpus, topn=topn)
     from itertools import chain
     top_words_df = pd.DataFrame(list(chain.from_iterable([{"topic": topic_id, "weight": weight, "word": word}
                                                   for topic_id, weight, word in topic] for topic in top_words)))
     return top_words_df.sort('topic')
+
 
 @register
 def termite(modeled_corpus, plot_title="Termite plot", topn=15):
